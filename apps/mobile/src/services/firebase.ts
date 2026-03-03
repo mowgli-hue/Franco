@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { FirebaseApp } from 'firebase/app';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
+  type Auth,
   createUserWithEmailAndPassword,
   getAuth,
   sendEmailVerification,
@@ -9,7 +11,7 @@ import {
   type User
 } from 'firebase/auth';
 
-import { env } from '../core/config/env';
+import { env, hasMissingPublicEnv, missingPublicEnvKeys } from '../core/config/env';
 
 const firebaseConfig = {
   apiKey: env.firebase.apiKey,
@@ -20,36 +22,55 @@ const firebaseConfig = {
   appId: env.firebase.appId
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
 
-const auth = (() => {
+if (hasMissingPublicEnv) {
+  console.error(
+    `[firebase] Missing required EXPO_PUBLIC Firebase env keys: ${missingPublicEnvKeys.join(', ')}`
+  );
+} else {
   try {
-    // Dynamic bridge for RN persistence keeps compatibility across firebase package variants.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const firebaseAuth = require('firebase/auth') as {
-      initializeAuth?: (a: unknown, opts?: unknown) => ReturnType<typeof getAuth>;
-      getReactNativePersistence?: (storage: typeof AsyncStorage) => unknown;
-    };
-    if (firebaseAuth.initializeAuth && firebaseAuth.getReactNativePersistence) {
-      return firebaseAuth.initializeAuth(app, {
-        persistence: firebaseAuth.getReactNativePersistence(AsyncStorage)
-      });
-    }
-    return getAuth(app);
-  } catch {
-    return getAuth(app);
+    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    auth = (() => {
+      try {
+        // Dynamic bridge for RN persistence keeps compatibility across firebase package variants.
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const firebaseAuth = require('firebase/auth') as {
+          initializeAuth?: (a: unknown, opts?: unknown) => ReturnType<typeof getAuth>;
+          getReactNativePersistence?: (storage: typeof AsyncStorage) => unknown;
+        };
+        if (firebaseAuth.initializeAuth && firebaseAuth.getReactNativePersistence) {
+          return firebaseAuth.initializeAuth(app, {
+            persistence: firebaseAuth.getReactNativePersistence(AsyncStorage)
+          });
+        }
+        return getAuth(app);
+      } catch {
+        return getAuth(app);
+      }
+    })();
+  } catch (error) {
+    console.error('[firebase] Initialization failed', error);
   }
-})();
+}
 
 export { app, auth };
 
+function ensureAuth(): Auth {
+  if (!auth) {
+    throw new Error('Firebase Auth is not configured. Check EXPO_PUBLIC_FIREBASE_* values.');
+  }
+  return auth;
+}
+
 export async function loginWithEmailPassword(email: string, password: string): Promise<User> {
-  const credential = await signInWithEmailAndPassword(auth, email, password);
+  const credential = await signInWithEmailAndPassword(ensureAuth(), email, password);
   return credential.user;
 }
 
 export async function registerWithEmailPassword(email: string, password: string): Promise<User> {
-  const credential = await createUserWithEmailAndPassword(auth, email, password);
+  const credential = await createUserWithEmailAndPassword(ensureAuth(), email, password);
   return credential.user;
 }
 
@@ -58,5 +79,5 @@ export async function sendVerificationEmail(user: User): Promise<void> {
 }
 
 export async function logoutCurrentUser(): Promise<void> {
-  await signOut(auth);
+  await signOut(ensureAuth());
 }
