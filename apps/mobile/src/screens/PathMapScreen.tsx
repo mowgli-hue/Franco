@@ -1,0 +1,296 @@
+import React from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
+import { Card } from '../components/Card';
+import { AnimatedProgressBar } from '../components/AnimatedProgressBar';
+import { useCurriculumProgress } from '../context/CurriculumProgressContext';
+import type { MainStackParamList } from '../navigation/AppNavigator';
+import { colors } from '../theme/colors';
+import { spacing } from '../theme/spacing';
+import { typography } from '../theme/typography';
+
+type Props = NativeStackScreenProps<MainStackParamList, 'PathMapScreen'>;
+type LessonNodeStatus = 'completed' | 'current' | 'locked' | 'open';
+
+type LessonNodeProps = {
+  title: string;
+  status: LessonNodeStatus;
+  isFirst: boolean;
+  isLast: boolean;
+  onPress?: () => void;
+};
+
+function formatLessonTitle(lessonId: string): string {
+  const a1 = lessonId.match(/^a1-lesson-(\d+)$/);
+  if (a1) return `A1 Lesson ${a1[1]}`;
+  const a2 = lessonId.match(/^a2-lesson-(\d+)$/);
+  if (a2) return `A2 Lesson ${a2[1]}`;
+  const b1 = lessonId.match(/^b1-lesson-(\d+)$/);
+  if (b1) return `B1 Lesson ${b1[1]}`;
+  const clb5 = lessonId.match(/^clb5-lesson-(\d+)$/);
+  if (clb5) return `CLB 5 Lesson ${clb5[1]}`;
+  const clb7 = lessonId.match(/^clb7-lesson-(\d+)$/);
+  if (clb7) return `CLB 7 Lesson ${clb7[1]}`;
+  if (lessonId.startsWith('foundation-lesson-')) return 'Foundation Lesson';
+  return lessonId.replace(/-/g, ' ');
+}
+
+function lessonStatusLabel(status: LessonNodeStatus): string {
+  if (status === 'completed') return 'Completed';
+  if (status === 'current') return 'Current Lesson';
+  if (status === 'locked') return 'Locked';
+  return 'Unlocked';
+}
+
+function LessonNode({ title, status, isFirst, isLast, onPress }: LessonNodeProps) {
+  const locked = status === 'locked';
+
+  return (
+    <View style={styles.nodeContainer}>
+      {!isFirst ? (
+        <View style={[styles.verticalLine, styles.verticalLineTop, status === 'completed' && styles.verticalLineDone]} />
+      ) : null}
+      {!isLast ? (
+        <View style={[styles.verticalLine, styles.verticalLineBottom, status === 'completed' && styles.verticalLineDone]} />
+      ) : null}
+
+      <Pressable
+        onPress={onPress}
+        disabled={locked}
+        style={({ pressed }) => [
+          styles.node,
+          status === 'completed' && styles.completedNode,
+          status === 'current' && styles.currentNode,
+          status === 'locked' && styles.lockedNode,
+          status === 'open' && styles.openNode,
+          pressed && !locked && styles.nodePressed
+        ]}
+      >
+        {status === 'completed' ? <Text style={styles.check}>✓</Text> : null}
+      </Pressable>
+
+      <View style={styles.nodeTextWrap}>
+        <Text style={styles.nodeTitle}>{title}</Text>
+        <Text style={[styles.nodeStatus, status === 'current' && styles.nodeStatusCurrent]}>{lessonStatusLabel(status)}</Text>
+      </View>
+    </View>
+  );
+}
+
+export function PathMapScreen({ navigation }: Props) {
+  const { currentLevel, currentModule, currentModuleLessons } = useCurriculumProgress();
+  const passedCount = currentModuleLessons.filter((l) => l.passed).length;
+  const totalCount = Math.max(1, currentModuleLessons.length);
+  const progressPercent = Math.round((passedCount / totalCount) * 100);
+  const moduleComplete = currentModuleLessons.length > 0 && passedCount === currentModuleLessons.length;
+  const showA1MysteryBox = currentLevel.id === 'a1';
+
+  const handleLessonPress = (lessonId: string) => {
+    if (lessonId === 'a1-lesson-1') {
+      navigation.navigate('A1Lesson1Screen');
+      return;
+    }
+    if (lessonId === 'a1-lesson-2') {
+      navigation.navigate('A1ModuleLessonScreen', { lessonId });
+      return;
+    }
+    if (lessonId === 'a1-lesson-3') {
+      navigation.navigate('A1Lesson3Screen');
+      return;
+    }
+    if (/^a1-lesson-(?:[4-9]|[12]\d|3\d|40)$/.test(lessonId)) {
+      navigation.navigate('A1ModuleLessonScreen', { lessonId });
+      return;
+    }
+    if (/^a2-lesson-(?:[1-9]|[1-3]\d|40)$/.test(lessonId)) {
+      navigation.navigate('A2ModuleLessonScreen', { lessonId });
+      return;
+    }
+    if (/^b1-lesson-(?:[1-9]|[1-3]\d|40)$/.test(lessonId)) {
+      navigation.navigate('B1ModuleLessonScreen', { lessonId });
+      return;
+    }
+    if (/^(clb5|clb7)-lesson-(?:[1-9]|[1-3]\d|40)$/.test(lessonId)) {
+      navigation.navigate('CLBModuleLessonScreen', { lessonId });
+      return;
+    }
+    if (lessonId.startsWith('foundation-lesson-')) {
+      const foundationMap: Record<string, string> = {
+        'foundation-lesson-1': 'alphabet-sounds',
+        'foundation-lesson-2': 'basic-greetings',
+        'foundation-lesson-3': 'introducing-yourself',
+        'foundation-lesson-4': 'numbers-0-20'
+      };
+      const foundationLessonId = foundationMap[lessonId];
+      if (foundationLessonId) {
+        navigation.navigate('FoundationLessonScreen', { lessonId: foundationLessonId });
+      } else {
+        navigation.navigate('BeginnerFoundationScreen');
+      }
+    }
+  };
+
+  return (
+    <ScrollView style={styles.root} contentContainerStyle={styles.pathContainer} showsVerticalScrollIndicator={false}>
+      <Text style={styles.moduleTitle}>{currentModule?.title ?? 'Path Module'}</Text>
+
+      <Card>
+        <View style={styles.metaHeader}>
+          <Text style={styles.metaLabel}>{String(currentLevel.title).toUpperCase()}</Text>
+          <Text style={styles.metaValue}>{passedCount}/{currentModuleLessons.length} completed</Text>
+        </View>
+        <AnimatedProgressBar value={progressPercent} color={colors.secondary} showValue label="Progress" />
+      </Card>
+
+      <Card>
+        {currentModuleLessons.map((item, index) => {
+          const status: LessonNodeStatus = item.locked ? 'locked' : item.passed ? 'completed' : item.isCurrent ? 'current' : 'open';
+          return (
+            <LessonNode
+              key={item.lesson.id}
+              title={formatLessonTitle(item.lesson.id)}
+              status={status}
+              isFirst={index === 0}
+              isLast={index === currentModuleLessons.length - 1}
+              onPress={item.locked ? undefined : () => handleLessonPress(item.lesson.id)}
+            />
+          );
+        })}
+      </Card>
+
+      {showA1MysteryBox ? (
+        <Pressable
+          disabled={!moduleComplete}
+          style={[styles.mysteryCard, moduleComplete ? styles.mysteryCardUnlocked : styles.mysteryCardLocked]}
+        >
+          <Text style={styles.mysteryIcon}>{moduleComplete ? '🏆' : '🎁'}</Text>
+          <View style={styles.mysteryTextWrap}>
+            <Text style={styles.mysteryTitle}>{moduleComplete ? 'A1 Certificate Ready' : 'A1 Certificate Locked'}</Text>
+            <Text style={styles.mysteryMeta}>
+              {moduleComplete ? 'You unlocked your A1 certificate.' : `Complete ${currentModuleLessons.length} lessons to unlock.`}
+            </Text>
+          </View>
+        </Pressable>
+      ) : null}
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#F8FAFC'
+  },
+  pathContainer: {
+    padding: 24,
+    gap: spacing.md
+  },
+  moduleTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 4,
+    color: '#0F172A'
+  },
+  metaHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm
+  },
+  metaLabel: {
+    ...typography.caption,
+    color: '#1E3A8A',
+    fontWeight: '700'
+  },
+  metaValue: {
+    ...typography.caption,
+    color: '#64748B'
+  },
+  nodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 62,
+    paddingVertical: 8
+  },
+  verticalLine: {
+    position: 'absolute',
+    left: 15,
+    width: 2,
+    backgroundColor: '#E2E8F0'
+  },
+  verticalLineTop: {
+    top: 0,
+    bottom: '50%'
+  },
+  verticalLineBottom: {
+    top: '50%',
+    bottom: 0
+  },
+  verticalLineDone: {
+    backgroundColor: '#93C5FD'
+  },
+  node: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16
+  },
+  completedNode: {
+    backgroundColor: '#2563EB'
+  },
+  currentNode: {
+    borderWidth: 2,
+    borderColor: '#2563EB',
+    backgroundColor: '#FFFFFF'
+  },
+  openNode: {
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+    backgroundColor: '#EFF6FF'
+  },
+  lockedNode: {
+    backgroundColor: '#E2E8F0'
+  },
+  nodePressed: {
+    transform: [{ scale: 0.95 }]
+  },
+  check: {
+    color: '#FFFFFF',
+    fontWeight: '700'
+  },
+  nodeTextWrap: {
+    flex: 1
+  },
+  nodeTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0F172A'
+  },
+  nodeStatus: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 4
+  },
+  nodeStatusCurrent: {
+    color: '#1D4ED8',
+    fontWeight: '600'
+  },
+  mysteryCard: {
+    marginTop: spacing.xs,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm
+  },
+  mysteryCardLocked: { backgroundColor: '#FFF7ED', borderColor: '#FED7AA' },
+  mysteryCardUnlocked: { backgroundColor: '#ECFDF5', borderColor: '#86EFAC' },
+  mysteryIcon: { fontSize: 20 },
+  mysteryTextWrap: { flex: 1 },
+  mysteryTitle: { ...typography.bodyStrong, color: colors.textPrimary },
+  mysteryMeta: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs }
+});

@@ -1,0 +1,38 @@
+{
+  "name": "clb-french-trainer",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:mobile": "npm run start --workspace @clb/mobile --",
+    "dev:mobile:node20": "PATH=\"/opt/homebrew/opt/node@20/bin:$PATH\" npm run start --workspace @clb/mobile --",
+    "dev:backend": "npm run dev --workspace @clb/backend",
+    "build": "npm run build --workspace @clb/backend",
+    "check:mobile": "npx tsc --noEmit -p apps/mobile/tsconfig.json",
+    "check:backend": "npx tsc --noEmit -p apps/backend/tsconfig.json",
+    "check:diagnostic-quality": "node scripts/checkDiagnosticQuality.cjs",
+    "check:diagnostic-quality:strict": "node scripts/checkDiagnosticQuality.cjs --strict",
+    "check:stability": "npm run check:mobile && npm run check:backend && npm run check:diagnostic-quality:strict && npm run lint --workspace @clb/mobile && npm run test --workspace @clb/mobile -- --watchAll=false --passWithNoTests",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "expo": "~54.0.33",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  },
+  "overrides": {
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-reanimated": "4.1.1",
+    "react-native-worklets": "0.5.1",
+    "react-native-gesture-handler": "~2.28.0",
+    "react-native-svg": "15.12.1"
+  }
+}
