@@ -1,6 +1,6 @@
 import { registerRootComponent } from 'expo';
 
-const hasWebDom = typeof globalThis !== 'undefined' && !!globalThis.window;
+const hasWebDom = typeof globalThis !== 'undefined' && !!globalThis.document;
 
 function renderWebCrash(title, detail) {
   if (!hasWebDom) return;
@@ -27,13 +27,15 @@ function renderWebCrash(title, detail) {
 if (hasWebDom) {
   const webWindow = globalThis.window;
 
-  webWindow.addEventListener('error', (event) => {
-    renderWebCrash('Web startup error', event?.error?.stack || event?.message);
-  });
+  if (webWindow && typeof webWindow.addEventListener === 'function') {
+    webWindow.addEventListener('error', (event) => {
+      renderWebCrash('Web startup error', event?.error?.stack || event?.message);
+    });
 
-  webWindow.addEventListener('unhandledrejection', (event) => {
-    renderWebCrash('Unhandled promise rejection', event?.reason?.stack || event?.reason);
-  });
+    webWindow.addEventListener('unhandledrejection', (event) => {
+      renderWebCrash('Unhandled promise rejection', event?.reason?.stack || event?.reason);
+    });
+  }
 }
 
 try {
