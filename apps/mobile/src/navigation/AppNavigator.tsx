@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationState, NavigatorScreenParams, useNavigationState } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -368,8 +368,8 @@ function OnboardingStackNavigator({
         />
       </OnboardingStack.Navigator>
       <OnboardingRouteTracker userId={userId} onCompleted={onCompleted} />
-      <GlobalFocusTimerBar />
-      <CompanionAssistant />
+      {Platform.OS !== 'web' ? <GlobalFocusTimerBar /> : null}
+      {Platform.OS !== 'web' ? <CompanionAssistant /> : null}
     </View>
   );
 }
@@ -607,8 +607,8 @@ function MainTabsNavigator({ userId, initialRoute }: { userId: string; initialRo
         />
       </Tab.Navigator>
       <MainTabsRouteTracker userId={userId} />
-      <GlobalFocusTimerBar />
-      <CompanionAssistant />
+      {Platform.OS !== 'web' ? <GlobalFocusTimerBar /> : null}
+      {Platform.OS !== 'web' ? <CompanionAssistant /> : null}
     </View>
   );
 }
