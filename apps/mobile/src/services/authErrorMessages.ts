@@ -13,6 +13,8 @@ export function mapAuthError(error: unknown): string {
       return 'Firebase API key is invalid. Check EXPO_PUBLIC_FIREBASE_API_KEY.';
     case 'auth/invalid-email':
       return 'Please enter a valid email address.';
+    case 'auth/unauthorized-domain':
+      return 'This web domain is not authorized in Firebase Auth. Add your Vercel domain in Firebase Authentication > Settings > Authorized domains.';
     case 'auth/invalid-credential':
     case 'auth/wrong-password':
       return 'Invalid email or password.';
