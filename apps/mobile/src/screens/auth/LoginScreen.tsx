@@ -70,8 +70,7 @@ export function LoginScreen({ navigation }: Props) {
     }
   };
 
-  return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+  const content = (
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.root}>
         <ScrollView
           contentContainerStyle={styles.content}
@@ -129,8 +128,13 @@ export function LoginScreen({ navigation }: Props) {
           </Card>
         </ScrollView>
       </KeyboardAvoidingView>
-    </TouchableWithoutFeedback>
   );
+
+  if (Platform.OS === 'web') {
+    return content;
+  }
+
+  return <TouchableWithoutFeedback onPress={Keyboard.dismiss}>{content}</TouchableWithoutFeedback>;
 }
 
 const styles = StyleSheet.create({
