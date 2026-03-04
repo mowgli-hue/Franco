@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { MotiView } from 'moti';
+import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 
 import { CircularSessionTimer } from './CircularSessionTimer';
@@ -34,12 +34,8 @@ export function FocusBreakModal({
       <View style={styles.backdrop}>
         <BlurView intensity={35} tint="light" style={styles.blurFill} />
 
-        <MotiView
-          from={{ opacity: 0, scale: 0.92 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'timing', duration: 260 }}
-          style={styles.card}
-        >
+        <Animated.View entering={FadeIn.duration(220)} style={styles.card}>
+          <Animated.View entering={ZoomIn.duration(220)}>
           {phase === 'prompt' ? (
             <>
               <Text style={styles.title}>Session Complete</Text>
@@ -73,7 +69,8 @@ export function FocusBreakModal({
               </Pressable>
             </>
           ) : null}
-        </MotiView>
+          </Animated.View>
+        </Animated.View>
       </View>
     </Modal>
   );
