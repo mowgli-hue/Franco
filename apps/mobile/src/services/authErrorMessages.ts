@@ -2,6 +2,7 @@ import type { FirebaseError } from 'firebase/app';
 
 export function mapAuthError(error: unknown): string {
   const firebaseError = error as FirebaseError | undefined;
+  const genericError = error as Error | undefined;
 
   switch (firebaseError?.code) {
     case 'auth/operation-not-allowed':
@@ -29,6 +30,12 @@ export function mapAuthError(error: unknown): string {
     case 'auth/network-request-failed':
       return 'Network error. Check your connection and try again.';
     default:
-      return `Authentication failed (${firebaseError?.code ?? 'unknown'}).`;
+      if (firebaseError?.code) {
+        return `Authentication failed (${firebaseError.code}).`;
+      }
+      if (genericError?.message) {
+        return `Authentication failed: ${genericError.message}`;
+      }
+      return 'Authentication failed. Please check Firebase web config and authorized domains.';
   }
 }
