@@ -59,7 +59,10 @@ export { app, auth };
 
 function ensureAuth(): Auth {
   if (!auth) {
-    throw new Error('Firebase Auth is not configured. Check EXPO_PUBLIC_FIREBASE_* values.');
+    const missing = missingPublicEnvKeys.join(', ');
+    throw new Error(
+      `Firebase Auth is not configured. Missing EXPO_PUBLIC keys: ${missing || 'unknown'}`
+    );
   }
   return auth;
 }
