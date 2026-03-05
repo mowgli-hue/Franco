@@ -11,7 +11,7 @@ import {
   type User
 } from 'firebase/auth';
 
-import { env, hasMissingPublicEnv, missingPublicEnvKeys } from '../core/config/env';
+import { env } from '../core/config/env';
 
 const firebaseConfig = {
   apiKey: env.firebase.apiKey,
@@ -25,10 +25,12 @@ const firebaseConfig = {
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 
-if (hasMissingPublicEnv) {
-  console.error(
-    `[firebase] Missing required EXPO_PUBLIC Firebase env keys: ${missingPublicEnvKeys.join(', ')}`
-  );
+const hasEffectiveFirebaseConfig = Object.values(firebaseConfig).every(
+  (value) => typeof value === 'string' && value.trim().length > 0
+);
+
+if (!hasEffectiveFirebaseConfig) {
+  console.error('[firebase] Firebase config is incomplete after env/default resolution.');
 } else {
   try {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig);
@@ -59,10 +61,7 @@ export { app, auth };
 
 function ensureAuth(): Auth {
   if (!auth) {
-    const missing = missingPublicEnvKeys.join(', ');
-    throw new Error(
-      `Firebase Auth is not configured. Missing EXPO_PUBLIC keys: ${missing || 'unknown'}`
-    );
+    throw new Error('Firebase Auth is not configured. Check Firebase config and authorized domains.');
   }
   return auth;
 }
