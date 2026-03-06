@@ -32,10 +32,33 @@ const firebasePublicFromExpo =
   ((Constants?.expoConfig?.extra as { firebasePublic?: FirebasePublicFallback } | undefined)?.firebasePublic ??
     {}) as FirebasePublicFallback;
 
+let firebasePublicFromAppJson: FirebasePublicFallback = {};
+try {
+  // Stable fallback for static web exports where Constants.expoConfig may be unavailable.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const appConfig = require('../../../app.json') as {
+    expo?: { extra?: { firebasePublic?: FirebasePublicFallback } };
+  };
+  firebasePublicFromAppJson = appConfig?.expo?.extra?.firebasePublic ?? {};
+} catch {
+  firebasePublicFromAppJson = {};
+}
+
 function envOrExpoFallback(key: string, expoValue?: string): string {
   const value = optionalEnv(key);
   if (value) return value;
-  return (expoValue ?? '').trim();
+  if (expoValue?.trim()) return expoValue.trim();
+
+  const appJsonMap: Record<string, string | undefined> = {
+    EXPO_PUBLIC_FIREBASE_API_KEY: firebasePublicFromAppJson.apiKey,
+    EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: firebasePublicFromAppJson.authDomain,
+    EXPO_PUBLIC_FIREBASE_PROJECT_ID: firebasePublicFromAppJson.projectId,
+    EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: firebasePublicFromAppJson.storageBucket,
+    EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: firebasePublicFromAppJson.messagingSenderId,
+    EXPO_PUBLIC_FIREBASE_APP_ID: firebasePublicFromAppJson.appId
+  };
+
+  return (appJsonMap[key] ?? '').trim();
 }
 
 const requiredFirebaseKeys = [
