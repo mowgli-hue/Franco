@@ -4,7 +4,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { SubscriptionStatusBadge } from '../components/SubscriptionStatusBadge';
 import { useAuth } from '../context/AuthContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import type { ProfileStackParamList } from '../navigation/AppNavigator';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
@@ -14,6 +16,7 @@ type Props = NativeStackScreenProps<ProfileStackParamList, 'ProfileScreen'>;
 
 export function ProfileScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
+  const { subscriptionProfile } = useSubscription();
   const [loading, setLoading] = useState(false);
 
   const emailVerificationStatus = useMemo(() => {
@@ -49,6 +52,10 @@ export function ProfileScreen({ navigation }: Props) {
           <View style={styles.row}>
             <Text style={styles.label}>Email verification</Text>
             <Text style={styles.value}>{emailVerificationStatus}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Subscription</Text>
+            <SubscriptionStatusBadge profile={subscriptionProfile} compact />
           </View>
 
           <View style={styles.quickLinksCard}>

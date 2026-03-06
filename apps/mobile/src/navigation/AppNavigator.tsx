@@ -27,7 +27,9 @@ import { LevelUnlockScreen } from '../screens/LevelUnlockScreen';
 import { LearningHubScreen } from '../screens/LearningHubScreen';
 import { ModuleReviewScreen } from '../screens/ModuleReviewScreen';
 import { PathMapScreen } from '../screens/PathMapScreen';
+import { PathPreparationScreen } from '../screens/PathPreparationScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { UpgradeScreen } from '../screens/UpgradeScreen';
 import { ContactUsScreen } from '../screens/profile/ContactUsScreen';
 import { ImmigrationServicesScreen } from '../screens/profile/ImmigrationServicesScreen';
 import { PrivacyPolicyScreen } from '../screens/profile/PrivacyPolicyScreen';
@@ -55,7 +57,12 @@ import {
 } from './routePersistence';
 
 export type AuthStackParamList = {
-  LoginScreen: undefined;
+  LoginScreen:
+    | {
+        prefillEmail?: string;
+        notice?: string;
+      }
+    | undefined;
   RegisterScreen: undefined;
 };
 
@@ -65,6 +72,10 @@ export type OnboardingStackParamList = {
   StudyPlanIntroScreen: { goalType: OnboardingGoalType; selfLevel: OnboardingSelfLevel };
   DiagnosticFlowScreen: { goalType: OnboardingGoalType; initialDifficulty?: 'A1' | 'A2' | 'B1' | 'B2' };
   DiagnosticResultScreen: { goalType: OnboardingGoalType; selfLevel: OnboardingSelfLevel };
+  PathPreparationScreen: {
+    nextRoute: keyof MainStackParamList;
+    nextParams?: Record<string, unknown>;
+  };
   LearningHubScreen: undefined;
   FocusSessionScreen:
     | {
@@ -87,6 +98,7 @@ export type OnboardingStackParamList = {
   CLBModuleLessonScreen: { lessonId: string };
   A1Lesson3Screen: undefined;
   PathMapScreen: undefined;
+  UpgradeScreen: undefined;
   ModuleReviewScreen: undefined;
   LevelUnlockScreen: undefined;
 };
@@ -103,6 +115,7 @@ export type PathStackParamList = {
   CLBModuleLessonScreen: { lessonId: string };
   A1Lesson3Screen: undefined;
   PathMapScreen: undefined;
+  UpgradeScreen: undefined;
   ModuleReviewScreen: undefined;
   LevelUnlockScreen: undefined;
   FoundationLessonScreen: { lessonId: string };
@@ -315,6 +328,11 @@ function OnboardingStackNavigator({
         <OnboardingStack.Screen name="StudyPlanIntroScreen" component={StudyPlanIntroScreen} options={{ title: 'Structure' }} />
         <OnboardingStack.Screen name="DiagnosticResultScreen" component={DiagnosticResultScreen} options={{ title: 'Reminder', gestureEnabled: false }} />
         <OnboardingStack.Screen
+          name="PathPreparationScreen"
+          component={PathPreparationScreen}
+          options={{ headerShown: false, gestureEnabled: false }}
+        />
+        <OnboardingStack.Screen
           name="LearningHubScreen"
           component={OnboardingCompletionBridge}
           options={{ headerShown: false }}
@@ -373,6 +391,11 @@ function OnboardingStackNavigator({
           name="A1Lesson3Screen"
           component={A1Lesson3Screen as React.ComponentType<any>}
           options={{ title: 'A1 Lesson 3' }}
+        />
+        <OnboardingStack.Screen
+          name="UpgradeScreen"
+          component={UpgradeScreen as React.ComponentType<any>}
+          options={{ title: 'Franco Pro' }}
         />
         <OnboardingStack.Screen
           name="ModuleReviewScreen"
@@ -454,6 +477,7 @@ function PathStackNavigator() {
         options={{ title: 'CLB Module Lesson' }}
       />
       <PathStack.Screen name="A1Lesson3Screen" component={A1Lesson3Screen as React.ComponentType<any>} options={{ title: 'A1 Lesson 3' }} />
+      <PathStack.Screen name="UpgradeScreen" component={UpgradeScreen as React.ComponentType<any>} options={{ title: 'Franco Pro' }} />
       <PathStack.Screen name="ModuleReviewScreen" component={ModuleReviewScreen as React.ComponentType<any>} options={{ title: 'Module Review' }} />
       <PathStack.Screen name="LevelUnlockScreen" component={LevelUnlockScreen as React.ComponentType<any>} options={{ title: 'Level Unlock' }} />
       <PathStack.Screen

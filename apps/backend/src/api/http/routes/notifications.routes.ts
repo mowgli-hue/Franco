@@ -2,9 +2,13 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { sendEmail } from '../../../modules/notifications/emailDelivery.service';
+import { buildSubject } from '../../../modules/notifications/emailSubject.service';
+import { runNotificationSchedulerTick } from '../../../modules/notifications/notificationScheduler';
 import {
   getNotificationPreferences,
   listNotificationPreferences,
+  markStudyReminderSent,
+  markWeeklyReportSent,
   markWelcomeEmailSent,
   upsertNotificationPreferences
 } from '../../../modules/notifications/notificationPreferences.store';
@@ -49,10 +53,10 @@ const updatePrefsSchema = z.object({
   })
 });
 
-function buildWelcomeEmail(name?: string) {
+async function buildWelcomeEmail(userId: string, name?: string) {
   const learnerName = name?.trim() || 'there';
   return {
-    subject: 'Welcome to CLB French Trainer',
+    subject: await buildSubject({ campaign: 'welcome', userId, displayName: name }),
     text: [
       `Hi ${learnerName},`,
       '',
@@ -99,7 +103,7 @@ notificationsRouter.post('/register-event', async (req, res) => {
 
     let welcomeEmailSent = false;
     if (prefs.onboardingEmailsEnabled && !prefs.lastWelcomeEmailSentAt) {
-      const email = buildWelcomeEmail(prefs.displayName);
+      const email = await buildWelcomeEmail(prefs.userId, prefs.displayName);
       await sendEmail({ to: prefs.email, subject: email.subject, text: email.text });
       await markWelcomeEmailSent(prefs.userId);
       welcomeEmailSent = true;
@@ -137,9 +141,15 @@ notificationsRouter.post('/jobs/send-study-reminders', async (_req, res) => {
     const targets = all.filter((p) => p.studyRemindersEnabled);
 
     for (const p of targets) {
+      const daySeed = new Date().toISOString().slice(0, 10);
       await sendEmail({
         to: p.email,
-        subject: 'Study reminder: your French session today',
+        subject: await buildSubject({
+          campaign: 'studyReminder',
+          userId: p.userId,
+          daySeed,
+          displayName: p.displayName
+        }),
         text: [
           `Hi ${p.displayName?.trim() || 'there'},`,
           '',
@@ -149,6 +159,7 @@ notificationsRouter.post('/jobs/send-study-reminders', async (_req, res) => {
           'Focus on your weakest skill and keep the streak going.'
         ].join('\n')
       });
+      await markStudyReminderSent(p.userId, daySeed);
     }
 
     return res.json({ ok: true, sent: targets.length });
@@ -164,9 +175,15 @@ notificationsRouter.post('/jobs/send-weekly-reports', async (_req, res) => {
     const targets = all.filter((p) => p.weeklyReportEnabled);
 
     for (const p of targets) {
+      const daySeed = new Date().toISOString().slice(0, 10);
       await sendEmail({
         to: p.email,
-        subject: 'Your weekly CLB French Trainer progress report',
+        subject: await buildSubject({
+          campaign: 'weeklyReport',
+          userId: p.userId,
+          daySeed,
+          displayName: p.displayName
+        }),
         text: [
           `Hi ${p.displayName?.trim() || 'there'},`,
           '',
@@ -179,9 +196,20 @@ notificationsRouter.post('/jobs/send-weekly-reports', async (_req, res) => {
           'Keep your 25:5 study routine consistent this week.'
         ].join('\n')
       });
+      await markWeeklyReportSent(p.userId, daySeed);
     }
 
     return res.json({ ok: true, sent: targets.length });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unexpected error';
+    return res.status(500).json({ message });
+  }
+});
+
+notificationsRouter.post('/jobs/run-scheduler-tick', async (_req, res) => {
+  try {
+    const result = await runNotificationSchedulerTick();
+    return res.json({ ok: true, ...result });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected error';
     return res.status(500).json({ message });

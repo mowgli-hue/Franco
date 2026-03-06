@@ -12,6 +12,7 @@ type CloudProfileState = {
   onboardingProfile?: unknown;
   lastMainRoute?: unknown;
   onboardingCompleted?: boolean;
+  subscriptionProfile?: unknown;
 };
 
 function profileRef(userId: string) {
@@ -72,6 +73,19 @@ export async function saveCloudOnboardingCompleted(userId: string, onboardingCom
     ref,
     {
       onboardingCompleted,
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
+}
+
+export async function saveCloudSubscriptionProfile(userId: string, subscriptionProfile: unknown): Promise<void> {
+  const ref = profileRef(userId);
+  if (!ref) return;
+  await setDoc(
+    ref,
+    {
+      subscriptionProfile,
       updatedAt: serverTimestamp()
     },
     { merge: true }

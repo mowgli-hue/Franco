@@ -6,6 +6,7 @@ import {
   auth,
   loginWithEmailPassword,
   logoutCurrentUser,
+  reloadUser,
   registerWithEmailPassword,
   sendVerificationEmail
 } from '../services/firebase';
@@ -16,6 +17,7 @@ type AuthContextValue = {
   initializing: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  resendVerification: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -44,7 +46,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       initializing,
       async login(email, password) {
-        await loginWithEmailPassword(email, password);
+        const loggedInUser = await loginWithEmailPassword(email, password);
+        await reloadUser(loggedInUser);
+
+        if (!loggedInUser.emailVerified) {
+          try {
+            await sendVerificationEmail(loggedInUser);
+          } catch {
+            // non-blocking; still enforce verification
+          }
+          await logoutCurrentUser();
+          const err = new Error('Please verify your email before login. We sent a new verification email.');
+          (err as Error & { code?: string }).code = 'auth/email-not-verified';
+          throw err;
+        }
       },
       async register(name, email, password) {
         const createdUser = await registerWithEmailPassword(email, password);
@@ -66,6 +81,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch {
           // non-blocking while backend may be offline during development
         }
+        await logoutCurrentUser();
+      },
+      async resendVerification(email, password) {
+        const sessionUser = await loginWithEmailPassword(email, password);
+        await reloadUser(sessionUser);
+
+        if (sessionUser.emailVerified) {
+          await logoutCurrentUser();
+          const err = new Error('This email is already verified. You can login directly.');
+          (err as Error & { code?: string }).code = 'auth/email-already-verified';
+          throw err;
+        }
+
+        await sendVerificationEmail(sessionUser);
+        await logoutCurrentUser();
       },
       async logout() {
         await logoutCurrentUser();

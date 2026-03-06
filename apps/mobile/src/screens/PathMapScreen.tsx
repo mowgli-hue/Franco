@@ -5,7 +5,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Card } from '../components/Card';
 import { AnimatedProgressBar } from '../components/AnimatedProgressBar';
 import { useCurriculumProgress } from '../context/CurriculumProgressContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import type { MainStackParamList } from '../navigation/AppNavigator';
+import { isProLessonId, shouldAllowSinglePreview, shouldRouteToUpgrade } from '../services/subscription/subscriptionGate';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
@@ -80,6 +82,7 @@ function LessonNode({ title, status, isFirst, isLast, onPress }: LessonNodeProps
 
 export function PathMapScreen({ navigation }: Props) {
   const { currentLevel, currentModule, currentModuleLessons } = useCurriculumProgress();
+  const { subscriptionProfile, markProPreviewUsed } = useSubscription();
   const passedCount = currentModuleLessons.filter((l) => l.passed).length;
   const totalCount = Math.max(1, currentModuleLessons.length);
   const progressPercent = Math.round((passedCount / totalCount) * 100);
@@ -87,6 +90,16 @@ export function PathMapScreen({ navigation }: Props) {
   const showA1MysteryBox = currentLevel.id === 'a1';
 
   const handleLessonPress = (lessonId: string) => {
+    if (isProLessonId(lessonId)) {
+      if (shouldRouteToUpgrade(subscriptionProfile)) {
+        navigation.navigate('UpgradeScreen');
+        return;
+      }
+      if (shouldAllowSinglePreview(subscriptionProfile)) {
+        void markProPreviewUsed();
+      }
+    }
+
     if (lessonId === 'a1-lesson-1') {
       navigation.navigate('A1Lesson1Screen');
       return;

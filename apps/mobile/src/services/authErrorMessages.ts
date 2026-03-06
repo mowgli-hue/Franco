@@ -21,6 +21,10 @@ export function mapAuthError(error: unknown): string {
       return 'Invalid email or password.';
     case 'auth/user-not-found':
       return 'No account found with this email.';
+    case 'auth/email-not-verified':
+      return 'Please verify your email before login. A new verification email has been sent.';
+    case 'auth/email-already-verified':
+      return 'Email is already verified. You can login now.';
     case 'auth/email-already-in-use':
       return 'This email is already registered.';
     case 'auth/weak-password':

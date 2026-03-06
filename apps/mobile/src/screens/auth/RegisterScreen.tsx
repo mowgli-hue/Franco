@@ -79,6 +79,10 @@ export function RegisterScreen({ navigation }: Props) {
     try {
       setLoading(true);
       await register(name, email.trim(), password);
+      navigation.navigate('LoginScreen', {
+        prefillEmail: email.trim(),
+        notice: 'Verification email sent. Please verify your email, then login.'
+      });
     } catch (error) {
       setErrors((prev) => ({ ...prev, submit: mapAuthError(error) }));
     } finally {

@@ -6,6 +6,7 @@ import {
   type Auth,
   createUserWithEmailAndPassword,
   getAuth,
+  reload,
   sendEmailVerification,
   signInWithEmailAndPassword,
   signOut,
@@ -82,6 +83,10 @@ export async function registerWithEmailPassword(email: string, password: string)
 
 export async function sendVerificationEmail(user: User): Promise<void> {
   await sendEmailVerification(user);
+}
+
+export async function reloadUser(user: User): Promise<void> {
+  await reload(user);
 }
 
 export async function logoutCurrentUser(): Promise<void> {

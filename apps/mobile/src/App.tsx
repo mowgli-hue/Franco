@@ -12,6 +12,7 @@ import { FoundationProgressProvider } from './context/FoundationProgressContext'
 import { LearningTelemetryProvider } from './context/LearningTelemetryContext';
 import { LessonNotesProvider } from './context/LessonNotesContext';
 import { LearningProgressProvider } from './context/LearningProgressContext';
+import { SubscriptionProvider } from './context/SubscriptionContext';
 import { AppNavigator } from './navigation/AppNavigator';
 
 type AppErrorBoundaryState = {
@@ -55,20 +56,22 @@ export default function App() {
         <AuthProvider>
           <CompanionProvider>
             <FocusSessionProvider>
-              <CurriculumProgressProvider>
-                <LearningTelemetryProvider>
-                  <LessonNotesProvider>
-                    <LearningProgressProvider>
-                      <FoundationProgressProvider>
-                        <NavigationContainer>
-                          <StatusBar style="dark" />
-                          <AppNavigator />
-                        </NavigationContainer>
-                      </FoundationProgressProvider>
-                    </LearningProgressProvider>
-                  </LessonNotesProvider>
-                </LearningTelemetryProvider>
-              </CurriculumProgressProvider>
+              <SubscriptionProvider>
+                <CurriculumProgressProvider>
+                  <LearningTelemetryProvider>
+                    <LessonNotesProvider>
+                      <LearningProgressProvider>
+                        <FoundationProgressProvider>
+                          <NavigationContainer>
+                            <StatusBar style="dark" />
+                            <AppNavigator />
+                          </NavigationContainer>
+                        </FoundationProgressProvider>
+                      </LearningProgressProvider>
+                    </LessonNotesProvider>
+                  </LearningTelemetryProvider>
+                </CurriculumProgressProvider>
+              </SubscriptionProvider>
             </FocusSessionProvider>
           </CompanionProvider>
         </AuthProvider>

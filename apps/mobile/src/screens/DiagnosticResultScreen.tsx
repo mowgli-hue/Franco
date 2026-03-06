@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Button } from '../components/Button';
@@ -42,13 +42,57 @@ function deriveTargetClb(goalType: Props['route']['params']['goalType']): 5 | 7 
   return 5;
 }
 
+function estimateDaysToGoal(selfLevel: OnboardingSelfLevel, targetClb: 5 | 7): number {
+  const baseByLevel: Record<OnboardingSelfLevel, number> = {
+    none: 230,
+    basic: 200,
+    simple: 170,
+    conversation: 130,
+    comfortable: 100
+  };
+
+  const base = baseByLevel[selfLevel];
+  return targetClb === 7 ? base : Math.max(70, base - 40);
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function formatDate(date: Date): string {
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 export function DiagnosticResultScreen({ navigation, route }: Props) {
   const { user } = useAuth();
   const { canChooseStartingLevel, setStartingLevel } = useCurriculumProgress();
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [selectedTime, setSelectedTime] = useState('18:00');
   const [saving, setSaving] = useState(false);
+  const [stage, setStage] = useState<'preparing' | 'ready'>('preparing');
   const isWeb = Platform.OS === 'web';
+
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const targetClb = deriveTargetClb(route.params.goalType);
+  const daysToGoal = useMemo(
+    () => estimateDaysToGoal(route.params.selfLevel, targetClb),
+    [route.params.selfLevel, targetClb]
+  );
+  const projectedDate = useMemo(() => addDays(new Date(), daysToGoal), [daysToGoal]);
+
+  useEffect(() => {
+    progressAnim.setValue(0);
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 1400,
+      useNativeDriver: false
+    }).start();
+
+    const timer = setTimeout(() => setStage('ready'), 1450);
+    return () => clearTimeout(timer);
+  }, [progressAnim]);
 
   const handleStartTraining = async () => {
     const nextRoute = determineStartingRoute(route.params.selfLevel, route.params.goalType);
@@ -58,7 +102,7 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
         await saveUserOnboardingProfile(user.uid, {
           goalType: route.params.goalType,
           selfLevel: route.params.selfLevel,
-          targetClb: deriveTargetClb(route.params.goalType),
+          targetClb,
           reminderEnabled,
           reminderTime: reminderEnabled ? selectedTime : undefined,
           hasCompletedOnboarding: true,
@@ -70,65 +114,104 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
         setStartingLevel(mapSelfLevelToCurriculum(route.params.selfLevel));
       }
 
-      navigation.reset({
-        index: 0,
-        routes: [{ name: nextRoute.name as never, params: nextRoute.params as never }]
+      navigation.navigate('PathPreparationScreen', {
+        nextRoute: nextRoute.name,
+        nextParams: nextRoute.params as Record<string, unknown> | undefined
       });
     } finally {
       setSaving(false);
     }
   };
 
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%']
+  });
+
+  const calendarDays = Array.from({ length: 7 }, (_, i) => i + 1);
+
   return (
     <View style={styles.root}>
       <View style={styles.container}>
         <Card>
-          <Text style={styles.step}>Step 5 of 5</Text>
-          <Text style={styles.title}>Would you like daily focus reminders?</Text>
-
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleCopy}>
-              <Text style={styles.toggleTitle}>Enable daily reminder</Text>
-              <Text style={styles.toggleHint}>Stay consistent with one structured session daily.</Text>
-            </View>
-            <Switch
-              value={reminderEnabled}
-              onValueChange={setReminderEnabled}
-              thumbColor={reminderEnabled ? colors.white : '#F1F5F9'}
-              trackColor={{ false: colors.border, true: colors.secondary }}
-            />
-          </View>
-
-          {isWeb ? (
-            <View style={styles.webInfoCard}>
-              <Text style={styles.webInfoTitle}>Web reminder setup</Text>
-              <Text style={styles.webInfoText}>
-                Browser push reminders are not enabled yet. You can still pick a preferred study time and we will apply it on mobile.
+          {stage === 'preparing' ? (
+            <>
+              <Text style={styles.step}>Step 5 of 5</Text>
+              <Text style={styles.title}>Preparing your journey...</Text>
+              <Text style={styles.subtitle}>
+                Building your personalized roadmap based on your current level and goal.
               </Text>
-            </View>
-          ) : null}
-
-          {reminderEnabled ? (
-            <View style={styles.timeSection}>
-              <Text style={styles.timeTitle}>Reminder time</Text>
-              <View style={styles.timeGrid}>
-                {reminderTimes.map((time) => {
-                  const selected = selectedTime === time;
-                  return (
-                    <Pressable
-                      key={time}
-                      onPress={() => setSelectedTime(time)}
-                      style={[styles.timeChip, selected && styles.timeChipSelected]}
-                    >
-                      <Text style={[styles.timeText, selected && styles.timeTextSelected]}>{time}</Text>
-                    </Pressable>
-                  );
-                })}
+              <View style={styles.progressTrack}>
+                <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
               </View>
-            </View>
+            </>
           ) : null}
 
-          <Button label="Start Training" onPress={handleStartTraining} loading={saving} />
+          {stage === 'ready' ? (
+            <>
+              <Text style={styles.step}>Step 5 of 5</Text>
+              <Text style={styles.title}>Your plan is ready</Text>
+              <Text style={styles.subtitle}>
+                Complete {daysToGoal} focused days to target CLB {targetClb}. Projected finish: {formatDate(projectedDate)}.
+              </Text>
+
+              <View style={styles.calendarCard}>
+                <Text style={styles.calendarTitle}>Week 1 roadmap</Text>
+                <View style={styles.calendarRow}>
+                  {calendarDays.map((day) => (
+                    <View key={day} style={styles.dayChip}>
+                      <Text style={styles.dayText}>D{day}</Text>
+                    </View>
+                  ))}
+                </View>
+                <Text style={styles.calendarHint}>1 structured session (25 min) per day.</Text>
+              </View>
+
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleCopy}>
+                  <Text style={styles.toggleTitle}>Enable daily reminder</Text>
+                  <Text style={styles.toggleHint}>Stay consistent with one structured session daily.</Text>
+                </View>
+                <Switch
+                  value={reminderEnabled}
+                  onValueChange={setReminderEnabled}
+                  thumbColor={reminderEnabled ? colors.white : '#F1F5F9'}
+                  trackColor={{ false: colors.border, true: colors.secondary }}
+                />
+              </View>
+
+              {isWeb ? (
+                <View style={styles.webInfoCard}>
+                  <Text style={styles.webInfoTitle}>Web reminder setup</Text>
+                  <Text style={styles.webInfoText}>
+                    Browser push reminders are not enabled yet. You can still pick a preferred study time and we will apply it on mobile.
+                  </Text>
+                </View>
+              ) : null}
+
+              {reminderEnabled ? (
+                <View style={styles.timeSection}>
+                  <Text style={styles.timeTitle}>Reminder time</Text>
+                  <View style={styles.timeGrid}>
+                    {reminderTimes.map((time) => {
+                      const selected = selectedTime === time;
+                      return (
+                        <Pressable
+                          key={time}
+                          onPress={() => setSelectedTime(time)}
+                          style={[styles.timeChip, selected && styles.timeChipSelected]}
+                        >
+                          <Text style={[styles.timeText, selected && styles.timeTextSelected]}>{time}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              ) : null}
+
+              <Button label="Let's Start" onPress={handleStartTraining} loading={saving} />
+            </>
+          ) : null}
         </Card>
       </View>
     </View>
@@ -156,6 +239,59 @@ const styles = StyleSheet.create({
     ...typography.heading2,
     color: colors.textPrimary,
     marginBottom: spacing.lg
+  },
+  subtitle: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: colors.border,
+    overflow: 'hidden',
+    marginBottom: spacing.sm
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: colors.secondary
+  },
+  calendarCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    backgroundColor: '#F8FBFF',
+    padding: spacing.md,
+    marginBottom: spacing.lg
+  },
+  calendarTitle: {
+    ...typography.bodyStrong,
+    color: colors.primary,
+    marginBottom: spacing.sm
+  },
+  calendarRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginBottom: spacing.sm
+  },
+  dayChip: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  dayText: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    fontWeight: '700'
+  },
+  calendarHint: {
+    ...typography.caption,
+    color: colors.textSecondary
   },
   toggleRow: {
     borderWidth: 1,

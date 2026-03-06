@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   loadCloudProfileState,
   saveCloudLastMainRoute,
-  saveCloudOnboardingProfile
+  saveCloudOnboardingProfile,
+  saveCloudSubscriptionProfile
 } from '../services/cloud/userStateRepository';
 
 export type MainTabName = 'HomeTab' | 'PathTab' | 'PracticeTab' | 'ProfileTab';
@@ -18,6 +19,7 @@ export type PathStackRouteName =
   | 'B1ModuleLessonScreen'
   | 'CLBModuleLessonScreen'
   | 'A1Lesson3Screen'
+  | 'UpgradeScreen'
   | 'ModuleReviewScreen'
   | 'LevelUnlockScreen'
   | 'FoundationLessonScreen';
@@ -61,12 +63,22 @@ export type UserOnboardingProfile = {
   completedAt: number;
 };
 
+export type UserSubscriptionProfile = {
+  subscriptionStatus: 'free' | 'active';
+  planType: 'free' | 'founder' | 'pro';
+  proPreviewUsed: boolean;
+};
+
 function storageKey(userId: string) {
   return `clb:last-main-route:${userId}`;
 }
 
 function profileStorageKey(userId: string) {
   return `clb:user-profile:${userId}`;
+}
+
+function subscriptionStorageKey(userId: string) {
+  return `clb:subscription-profile:${userId}`;
 }
 
 const ALLOWED_TABS: MainTabName[] = ['HomeTab', 'PathTab', 'PracticeTab', 'ProfileTab'];
@@ -82,6 +94,7 @@ const ALLOWED_NESTED = [
   'B1ModuleLessonScreen',
   'CLBModuleLessonScreen',
   'A1Lesson3Screen',
+  'UpgradeScreen',
   'ModuleReviewScreen',
   'LevelUnlockScreen',
   'FoundationLessonScreen',
@@ -254,5 +267,48 @@ export async function loadUserOnboardingProfile(userId: string): Promise<UserOnb
     };
   } catch {
     return null;
+  }
+}
+
+function normalizeSubscriptionProfile(value: unknown): UserSubscriptionProfile {
+  const raw = (value ?? {}) as Partial<UserSubscriptionProfile> & {
+    subscriptionStatus?: 'free' | 'active' | 'canceled';
+    completedFoundation?: boolean;
+  };
+  return {
+    subscriptionStatus: raw.subscriptionStatus === 'active' ? 'active' : 'free',
+    planType: raw.planType === 'founder' || raw.planType === 'pro' ? raw.planType : 'free',
+    proPreviewUsed: raw.proPreviewUsed === true
+  };
+}
+
+export async function saveUserSubscriptionProfile(userId: string, profile: UserSubscriptionProfile): Promise<void> {
+  const normalized = normalizeSubscriptionProfile(profile);
+  await AsyncStorage.setItem(subscriptionStorageKey(userId), JSON.stringify(normalized));
+  try {
+    await saveCloudSubscriptionProfile(userId, normalized);
+  } catch {
+    // local profile persistence still works offline or when cloud write fails
+  }
+}
+
+export async function loadUserSubscriptionProfile(userId: string): Promise<UserSubscriptionProfile> {
+  const cloud = await loadCloudProfileState(userId);
+  const cloudProfile = cloud?.subscriptionProfile as unknown;
+  if (cloudProfile) {
+    const normalized = normalizeSubscriptionProfile(cloudProfile);
+    await AsyncStorage.setItem(subscriptionStorageKey(userId), JSON.stringify(normalized));
+    return normalized;
+  }
+
+  const raw = await AsyncStorage.getItem(subscriptionStorageKey(userId));
+  if (!raw) {
+    return normalizeSubscriptionProfile(null);
+  }
+
+  try {
+    return normalizeSubscriptionProfile(JSON.parse(raw) as unknown);
+  } catch {
+    return normalizeSubscriptionProfile(null);
   }
 }

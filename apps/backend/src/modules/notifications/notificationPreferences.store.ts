@@ -17,6 +17,8 @@ export type NotificationPreferences = {
   createdAt: number;
   updatedAt: number;
   lastWelcomeEmailSentAt?: number;
+  lastStudyReminderLocalDate?: string; // YYYY-MM-DD in user's timezone
+  lastWeeklyReportLocalDate?: string; // YYYY-MM-DD in user's timezone
 };
 
 type NotificationPreferencesDb = {
@@ -114,6 +116,30 @@ export async function markWelcomeEmailSent(userId: string): Promise<void> {
   db.byUserId[userId] = {
     ...existing,
     lastWelcomeEmailSentAt: Date.now(),
+    updatedAt: Date.now()
+  };
+  await persist(db);
+}
+
+export async function markStudyReminderSent(userId: string, localDate: string): Promise<void> {
+  const db = await ensureDb();
+  const existing = db.byUserId[userId];
+  if (!existing) return;
+  db.byUserId[userId] = {
+    ...existing,
+    lastStudyReminderLocalDate: localDate,
+    updatedAt: Date.now()
+  };
+  await persist(db);
+}
+
+export async function markWeeklyReportSent(userId: string, localDate: string): Promise<void> {
+  const db = await ensureDb();
+  const existing = db.byUserId[userId];
+  if (!existing) return;
+  db.byUserId[userId] = {
+    ...existing,
+    lastWeeklyReportLocalDate: localDate,
     updatedAt: Date.now()
   };
   await persist(db);

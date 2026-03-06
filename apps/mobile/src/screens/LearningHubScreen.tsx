@@ -13,7 +13,9 @@ import {
   getRoadmapProgressFromCalendarDay
 } from '../content/program/sessionRoadmap';
 import { useCurriculumProgress } from '../context/CurriculumProgressContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import type { MainStackParamList } from '../navigation/AppNavigator';
+import { isProLessonId, shouldAllowSinglePreview, shouldRouteToUpgrade } from '../services/subscription/subscriptionGate';
 import type { LevelId, SkillFocus } from '../types/CurriculumTypes';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
@@ -55,6 +57,7 @@ export function LearningHubScreen({ navigation }: Props) {
     generateTodaySession,
     setStartingLevel
   } = useCurriculumProgress();
+  const { subscriptionProfile, markProPreviewUsed } = useSubscription();
 
   const currentLevelProgress = curriculumState.levels[curriculumState.currentLevelId];
   const progressionDecision = canUnlockNextLevel();
@@ -79,6 +82,16 @@ export function LearningHubScreen({ navigation }: Props) {
   const todayFocusSkill = todaySessionPlan?.skillFocus ?? progressionDecision.weakestSkill;
 
   const handleLessonPress = (lessonId: string) => {
+    if (isProLessonId(lessonId)) {
+      if (shouldRouteToUpgrade(subscriptionProfile)) {
+        (navigation.navigate as any)('UpgradeScreen');
+        return;
+      }
+      if (shouldAllowSinglePreview(subscriptionProfile)) {
+        void markProPreviewUsed();
+      }
+    }
+
     const parent = navigation.getParent?.();
     const openInPathTab = (screen: string, params?: Record<string, unknown>) => {
       if (parent) {

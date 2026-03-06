@@ -29,12 +29,15 @@ type LoginErrors = {
   submit?: string;
 };
 
-export function LoginScreen({ navigation }: Props) {
-  const { login } = useAuth();
-  const [email, setEmail] = useState('');
+export function LoginScreen({ navigation, route }: Props) {
+  const { login, resendVerification } = useAuth();
+  const [email, setEmail] = useState(route.params?.prefillEmail ?? '');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<LoginErrors>({});
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const notice = route.params?.notice;
 
   const canSubmit = useMemo(
     () => email.trim().length > 0 && password.trim().length > 0 && !loading,
@@ -62,11 +65,39 @@ export function LoginScreen({ navigation }: Props) {
 
     try {
       setLoading(true);
+      setInfoMessage(null);
       await login(email.trim(), password);
     } catch (error) {
       setErrors((prev) => ({ ...prev, submit: mapAuthError(error) }));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    const nextErrors: LoginErrors = {};
+
+    if (!email.trim()) {
+      nextErrors.email = 'Email is required';
+    } else if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      nextErrors.email = 'Enter a valid email address';
+    }
+    if (!password.trim()) {
+      nextErrors.password = 'Password is required';
+    }
+
+    setErrors((prev) => ({ ...prev, ...nextErrors, submit: undefined }));
+    if (Object.keys(nextErrors).length > 0) return;
+
+    try {
+      setResending(true);
+      setInfoMessage(null);
+      await resendVerification(email.trim(), password);
+      setInfoMessage('Verification email sent again. Please check inbox/spam and verify.');
+    } catch (error) {
+      setErrors((prev) => ({ ...prev, submit: mapAuthError(error) }));
+    } finally {
+      setResending(false);
     }
   };
 
@@ -114,10 +145,19 @@ export function LoginScreen({ navigation }: Props) {
               error={errors.password}
             />
 
+            {notice ? <Text style={styles.noticeText}>{notice}</Text> : null}
+            {infoMessage ? <Text style={styles.noticeText}>{infoMessage}</Text> : null}
             {errors.submit ? <Text style={styles.submitError}>{errors.submit}</Text> : null}
 
             <View style={styles.actions}>
               <Button label="Login" onPress={handleLogin} disabled={!canSubmit} loading={loading} />
+              <Button
+                label="Resend Verification Email"
+                onPress={handleResendVerification}
+                variant="text"
+                disabled={loading || resending}
+                loading={resending}
+              />
               <Button
                 label="Register"
                 onPress={() => navigation.navigate('RegisterScreen')}
@@ -184,6 +224,11 @@ const styles = StyleSheet.create({
   submitError: {
     ...typography.caption,
     color: colors.danger,
+    marginBottom: spacing.md
+  },
+  noticeText: {
+    ...typography.caption,
+    color: colors.secondary,
     marginBottom: spacing.md
   },
   actions: {

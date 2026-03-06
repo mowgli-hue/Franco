@@ -3,12 +3,15 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { AIReviewCard } from '../components/AIReviewCard';
+import { SubscriptionStatusBadge } from '../components/SubscriptionStatusBadge';
 import {
   countCompletedCurriculumLessonsAsSessions,
   getRoadmapProgressFromCalendarDay
 } from '../content/program/sessionRoadmap';
 import { useCurriculumProgress } from '../context/CurriculumProgressContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import type { MainStackParamList } from '../navigation/AppNavigator';
+import { isProLessonId, shouldAllowSinglePreview, shouldRouteToUpgrade } from '../services/subscription/subscriptionGate';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'LearningHubScreen'>;
 type LessonUiState = ReturnType<typeof useCurriculumProgress>['currentModuleLessons'][number];
@@ -67,6 +70,7 @@ function formatSkillLabel(skill: 'listening' | 'speaking' | 'writing' | 'reading
 
 export function HomeDashboardScreen({ navigation }: Props) {
   const { curriculumState, currentLevel, currentModule, currentModuleLessons, todaySessionPlan } = useCurriculumProgress();
+  const { subscriptionProfile, markProPreviewUsed } = useSubscription();
 
   const levelProgress = curriculumState.levels[curriculumState.currentLevelId];
   const currentLessonUi: LessonUiState | null =
@@ -104,6 +108,16 @@ export function HomeDashboardScreen({ navigation }: Props) {
     if (!currentLessonUi) return;
 
     const lessonId = currentLessonUi.lesson.id;
+    if (isProLessonId(lessonId)) {
+      if (shouldRouteToUpgrade(subscriptionProfile)) {
+        (navigation.navigate as any)('UpgradeScreen');
+        return;
+      }
+      if (shouldAllowSinglePreview(subscriptionProfile)) {
+        void markProPreviewUsed();
+      }
+    }
+
     const parent = navigation.getParent?.();
     const goPath = (screen: string, params?: Record<string, unknown>) => {
       try {
@@ -166,6 +180,10 @@ export function HomeDashboardScreen({ navigation }: Props) {
 
       <View style={styles.macroTrack}>
         <View style={[styles.macroFill, { width: `${completionPercent}%` }]} />
+      </View>
+
+      <View style={styles.subscriptionBadgeWrap}>
+        <SubscriptionStatusBadge profile={subscriptionProfile} />
       </View>
 
       <View style={styles.missionCard}>
@@ -251,6 +269,9 @@ const styles = StyleSheet.create({
   macroFill: {
     height: 6,
     backgroundColor: '#2563EB'
+  },
+  subscriptionBadgeWrap: {
+    marginBottom: 16
   },
   missionCard: {
     backgroundColor: '#FFFFFF',
