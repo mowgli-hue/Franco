@@ -44,6 +44,14 @@
       "expo-audio"
     ],
     "extra": {
+      "firebasePublic": {
+        "apiKey": "AIzaSyBAz-b1uC7l40gpoo4PpCkYReGHtvVmkb8",
+        "authDomain": "clb-french-trainer.firebaseapp.com",
+        "projectId": "clb-french-trainer",
+        "storageBucket": "clb-french-trainer.firebasestorage.app",
+        "messagingSenderId": "3957043103",
+        "appId": "1:3957043103:web:69b530f65d5c7ce30397aa"
+      },
       "eas": {
         "projectId": "9702e0c6-6684-45c3-a3be-1887bae26ff7"
       }

@@ -1,4 +1,5 @@
 declare const process: { env: Record<string, string | undefined> };
+import Constants from 'expo-constants';
 
 function normalizeApiBaseUrl(raw?: string): string {
   const fallback = 'http://localhost:4000/api';
@@ -18,6 +19,25 @@ function optionalEnv(key: string): string {
   return (process.env[key] ?? '').trim();
 }
 
+type FirebasePublicFallback = {
+  apiKey?: string;
+  authDomain?: string;
+  projectId?: string;
+  storageBucket?: string;
+  messagingSenderId?: string;
+  appId?: string;
+};
+
+const firebasePublicFromExpo =
+  ((Constants?.expoConfig?.extra as { firebasePublic?: FirebasePublicFallback } | undefined)?.firebasePublic ??
+    {}) as FirebasePublicFallback;
+
+function envOrExpoFallback(key: string, expoValue?: string): string {
+  const value = optionalEnv(key);
+  if (value) return value;
+  return (expoValue ?? '').trim();
+}
+
 const requiredFirebaseKeys = [
   'EXPO_PUBLIC_FIREBASE_API_KEY',
   'EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN',
@@ -33,11 +53,14 @@ export const hasMissingPublicEnv = missingPublicEnvKeys.length > 0;
 export const env = {
   apiBaseUrl: normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL),
   firebase: {
-    apiKey: optionalEnv('EXPO_PUBLIC_FIREBASE_API_KEY'),
-    authDomain: optionalEnv('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'),
-    projectId: optionalEnv('EXPO_PUBLIC_FIREBASE_PROJECT_ID'),
-    storageBucket: optionalEnv('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET'),
-    messagingSenderId: optionalEnv('EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
-    appId: optionalEnv('EXPO_PUBLIC_FIREBASE_APP_ID')
+    apiKey: envOrExpoFallback('EXPO_PUBLIC_FIREBASE_API_KEY', firebasePublicFromExpo.apiKey),
+    authDomain: envOrExpoFallback('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN', firebasePublicFromExpo.authDomain),
+    projectId: envOrExpoFallback('EXPO_PUBLIC_FIREBASE_PROJECT_ID', firebasePublicFromExpo.projectId),
+    storageBucket: envOrExpoFallback('EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET', firebasePublicFromExpo.storageBucket),
+    messagingSenderId: envOrExpoFallback(
+      'EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
+      firebasePublicFromExpo.messagingSenderId
+    ),
+    appId: envOrExpoFallback('EXPO_PUBLIC_FIREBASE_APP_ID', firebasePublicFromExpo.appId)
   }
 };
