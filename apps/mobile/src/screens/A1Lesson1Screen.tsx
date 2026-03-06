@@ -17,7 +17,9 @@ type Props = NativeStackScreenProps<MainStackParamList, 'A1Lesson1Screen'>;
 export function A1Lesson1Screen({ navigation }: Props) {
   const { completeLesson } = useCurriculumProgress();
   const { completedLessonIds, totalLessons } = useFoundationProgress();
-  const [result, setResult] = useState<{ passed: boolean; scorePercent: number } | null>(null);
+  const [result, setResult] = useState<
+    { passed: boolean; scorePercent: number; minorCorrection?: boolean } | null
+  >(null);
   const [foundationIntroSeen, setFoundationIntroSeen] = useState(false);
   const foundationCompleted = completedLessonIds.length === totalLessons;
 
@@ -49,6 +51,9 @@ export function A1Lesson1Screen({ navigation }: Props) {
                 ? 'You completed the structured lesson and can continue to A1 Lesson 2.'
                 : 'You finished the lesson but did not reach the mastery threshold yet. Retry and review the weak items.'}
             </Text>
+            {result.passed && result.minorCorrection ? (
+              <Text style={styles.minorPassText}>Passed with one minor correction.</Text>
+            ) : null}
             <View style={styles.scoreCard}>
               <Text style={styles.scoreLabel}>Score</Text>
               <Text style={styles.scoreValue}>{result.scorePercent}%</Text>
@@ -89,7 +94,7 @@ export function A1Lesson1Screen({ navigation }: Props) {
   return (
     <StructuredLessonScreen
       lessonId="a1-lesson-1"
-      onComplete={({ passed, scorePercent }) => {
+      onComplete={({ passed, scorePercent, minorCorrection }) => {
         if (passed) {
           completeLesson({
             lessonId: 'a1-lesson-1',
@@ -104,7 +109,7 @@ export function A1Lesson1Screen({ navigation }: Props) {
           });
         }
 
-        setResult({ passed, scorePercent });
+        setResult({ passed, scorePercent, minorCorrection });
       }}
     />
   );
@@ -136,6 +141,11 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textSecondary,
     marginBottom: spacing.lg
+  },
+  minorPassText: {
+    ...typography.caption,
+    color: colors.secondary,
+    marginBottom: spacing.md
   },
   scoreCard: {
     borderWidth: 1,

@@ -20,7 +20,9 @@ export function FoundationLessonScreen({ navigation, route }: Props) {
   const { markLessonComplete } = useFoundationProgress();
   const { completeLesson } = useCurriculumProgress();
   const structuredLesson = getStructuredLessonById(lessonId);
-  const [completionResult, setCompletionResult] = useState<{ passed: boolean; scorePercent: number } | null>(null);
+  const [completionResult, setCompletionResult] = useState<
+    { passed: boolean; scorePercent: number; minorCorrection?: boolean } | null
+  >(null);
 
   const curriculumLessonMap: Record<string, string> = {
     'alphabet-sounds': 'foundation-lesson-1',
@@ -40,6 +42,9 @@ export function FoundationLessonScreen({ navigation, route }: Props) {
                 ? 'Hurray! You completed the lesson successfully.'
                 : 'You finished the lesson, but the score is below the pass threshold. Review and try again.'}
             </Text>
+            {completionResult.passed && completionResult.minorCorrection ? (
+              <Text style={styles.minorPassText}>Passed with one minor correction.</Text>
+            ) : null}
             <View style={styles.scoreBox}>
               <Text style={styles.scoreLabel}>Score</Text>
               <Text style={styles.scoreValue}>{completionResult.scorePercent}%</Text>
@@ -67,7 +72,7 @@ export function FoundationLessonScreen({ navigation, route }: Props) {
     return (
       <StructuredLessonScreen
         lessonId={lessonId}
-        onComplete={({ passed, scorePercent }) => {
+        onComplete={({ passed, scorePercent, minorCorrection }) => {
           if (passed) {
             markLessonComplete(lessonId);
             const curriculumLessonId = curriculumLessonMap[lessonId];
@@ -87,7 +92,7 @@ export function FoundationLessonScreen({ navigation, route }: Props) {
               });
             }
           }
-          setCompletionResult({ passed, scorePercent });
+          setCompletionResult({ passed, scorePercent, minorCorrection });
         }}
       />
     );
@@ -128,6 +133,11 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textSecondary,
     marginBottom: spacing.lg
+  },
+  minorPassText: {
+    ...typography.caption,
+    color: colors.secondary,
+    marginBottom: spacing.md
   },
   scoreBox: {
     borderWidth: 1,

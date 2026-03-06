@@ -24,7 +24,9 @@ export function B1ModuleLessonScreen({ route, navigation }: Props) {
   const lessonId = route.params.lessonId;
   const lessonNumber = parseB1LessonNumber(lessonId);
   const { completeLesson } = useCurriculumProgress();
-  const [result, setResult] = useState<{ passed: boolean; scorePercent: number } | null>(null);
+  const [result, setResult] = useState<
+    { passed: boolean; scorePercent: number; minorCorrection?: boolean } | null
+  >(null);
 
   const nextLessonId = useMemo(() => {
     if (!lessonNumber || lessonNumber >= 40) return null;
@@ -72,6 +74,9 @@ export function B1ModuleLessonScreen({ route, navigation }: Props) {
                   : `Continue to B1 Lesson ${lessonNumber + 1}.`
                 : 'Review missed tasks and complete the retry round before moving on.'}
             </Text>
+            {result.passed && result.minorCorrection ? (
+              <Text style={styles.minorPassText}>Passed with one minor correction.</Text>
+            ) : null}
             <View style={styles.scoreBox}>
               <Text style={styles.scoreLabel}>Score</Text>
               <Text style={styles.scoreValue}>{result.scorePercent}%</Text>
@@ -93,7 +98,7 @@ export function B1ModuleLessonScreen({ route, navigation }: Props) {
   return (
     <StructuredLessonScreen
       lessonId={lessonId}
-      onComplete={({ passed, scorePercent }) => {
+      onComplete={({ passed, scorePercent, minorCorrection }) => {
         if (passed) {
           const base = Math.max(80, scorePercent);
           completeLesson({
@@ -109,7 +114,7 @@ export function B1ModuleLessonScreen({ route, navigation }: Props) {
             }
           });
         }
-        setResult({ passed, scorePercent });
+        setResult({ passed, scorePercent, minorCorrection });
       }}
     />
   );
@@ -142,6 +147,11 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textSecondary,
     marginBottom: spacing.lg
+  },
+  minorPassText: {
+    ...typography.caption,
+    color: colors.secondary,
+    marginBottom: spacing.md
   },
   scoreBox: {
     borderWidth: 1,

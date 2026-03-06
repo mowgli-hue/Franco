@@ -25,7 +25,9 @@ export function CLBModuleLessonScreen({ route, navigation }: Props) {
   const lessonId = route.params.lessonId;
   const parsed = parseCLBLessonInfo(lessonId);
   const { completeLesson } = useCurriculumProgress();
-  const [result, setResult] = useState<{ passed: boolean; scorePercent: number } | null>(null);
+  const [result, setResult] = useState<
+    { passed: boolean; scorePercent: number; minorCorrection?: boolean } | null
+  >(null);
 
   const nextLessonId = useMemo(() => {
     if (!parsed || parsed.lessonNumber >= 40) return null;
@@ -78,6 +80,9 @@ export function CLBModuleLessonScreen({ route, navigation }: Props) {
                   : `Continue to ${titlePrefix} Lesson ${parsed.lessonNumber + 1}.`
                 : 'Retry this lesson to meet benchmark quality before unlocking the next task.'}
             </Text>
+            {result.passed && result.minorCorrection ? (
+              <Text style={styles.minorPassText}>Passed with one minor correction.</Text>
+            ) : null}
             <View style={styles.scoreBox}>
               <Text style={styles.scoreLabel}>Score</Text>
               <Text style={styles.scoreValue}>{result.scorePercent}%</Text>
@@ -102,7 +107,7 @@ export function CLBModuleLessonScreen({ route, navigation }: Props) {
   return (
     <StructuredLessonScreen
       lessonId={lessonId}
-      onComplete={({ passed, scorePercent }) => {
+      onComplete={({ passed, scorePercent, minorCorrection }) => {
         if (passed) {
           const base = Math.max(minScore, scorePercent);
           completeLesson({
@@ -119,7 +124,7 @@ export function CLBModuleLessonScreen({ route, navigation }: Props) {
             timedPerformanceScore: base - 2
           });
         }
-        setResult({ passed, scorePercent });
+        setResult({ passed, scorePercent, minorCorrection });
       }}
     />
   );
@@ -153,6 +158,11 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: spacing.lg
   },
+  minorPassText: {
+    ...typography.caption,
+    color: colors.secondary,
+    marginBottom: spacing.md
+  },
   scoreBox: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -174,4 +184,3 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   }
 });
-

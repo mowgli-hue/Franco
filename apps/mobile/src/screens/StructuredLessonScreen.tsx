@@ -44,7 +44,12 @@ import { typography } from '../theme/typography';
 
 type Props = {
   lessonId: string;
-  onComplete?: (payload: { passed: boolean; scorePercent: number; lesson: StructuredLessonContent }) => void;
+  onComplete?: (payload: {
+    passed: boolean;
+    scorePercent: number;
+    lesson: StructuredLessonContent;
+    minorCorrection: boolean;
+  }) => void;
 };
 
 type RuntimeStep = LessonStep & {
@@ -1052,7 +1057,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       markLessonComplete({ lessonId: lesson.id });
     }
 
-    onComplete?.({ passed, scorePercent: blended, lesson });
+    onComplete?.({ passed, scorePercent: blended, lesson, minorCorrection: minorMistakePass && !basePassed });
   };
 
   const renderStepContent = () => {
