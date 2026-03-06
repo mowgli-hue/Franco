@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { FirebaseApp } from 'firebase/app';
 import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 import {
   type Auth,
   createUserWithEmailAndPassword,
@@ -24,6 +25,7 @@ const firebaseConfig = {
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
+let db: Firestore | null = null;
 
 const hasEffectiveFirebaseConfig = Object.values(firebaseConfig).every(
   (value) => typeof value === 'string' && value.trim().length > 0
@@ -34,6 +36,7 @@ if (!hasEffectiveFirebaseConfig) {
 } else {
   try {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    db = getFirestore(app);
     auth = (() => {
       try {
         // Dynamic bridge for RN persistence keeps compatibility across firebase package variants.
@@ -58,6 +61,7 @@ if (!hasEffectiveFirebaseConfig) {
 }
 
 export { app, auth };
+export { db };
 
 function ensureAuth(): Auth {
   if (!auth) {

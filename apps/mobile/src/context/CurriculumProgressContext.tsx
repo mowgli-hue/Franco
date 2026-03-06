@@ -27,6 +27,7 @@ import type {
   SkillProgress,
   UserCurriculumState
 } from '../types/CurriculumTypes';
+import { loadCloudCurriculumState, saveCloudCurriculumState } from '../services/cloud/userStateRepository';
 
 type CompleteLessonPayload = {
   lessonId: string;
@@ -101,6 +102,27 @@ export function CurriculumProgressProvider({ children }: { children: React.React
 
     (async () => {
       try {
+        const cloud = user?.uid
+          ? await loadCloudCurriculumState<UserCurriculumState, LevelCertificate[]>(user.uid)
+          : null;
+
+        if (cloud && mounted) {
+          const parsed = cloud.curriculumState;
+          const fallback = createInitialCurriculumState();
+          setCurriculumState({
+            ...parsed,
+            journeyStartedAt: typeof parsed.journeyStartedAt === 'number' ? parsed.journeyStartedAt : fallback.journeyStartedAt,
+            performanceCoach: parsed.performanceCoach ?? createInitialCurriculumState().performanceCoach
+          });
+          setEarnedCertificates(cloud.earnedCertificates ?? []);
+          await Promise.all([
+            AsyncStorage.setItem(progressStorageKey, JSON.stringify(parsed)),
+            AsyncStorage.setItem(certificatesStorageKey, JSON.stringify(cloud.earnedCertificates ?? []))
+          ]);
+          if (mounted) setHydrated(true);
+          return;
+        }
+
         const [rawProgress, rawCertificates] = await Promise.all([
           AsyncStorage.getItem(progressStorageKey),
           AsyncStorage.getItem(certificatesStorageKey)
@@ -137,7 +159,13 @@ export function CurriculumProgressProvider({ children }: { children: React.React
     }
 
     void AsyncStorage.setItem(progressStorageKey, JSON.stringify(curriculumState));
-  }, [curriculumState, hydrated, progressStorageKey]);
+    if (user?.uid) {
+      void saveCloudCurriculumState(user.uid, {
+        curriculumState,
+        earnedCertificates
+      }).catch(() => undefined);
+    }
+  }, [curriculumState, earnedCertificates, hydrated, progressStorageKey, user?.uid]);
 
   useEffect(() => {
     if (!hydrated) {

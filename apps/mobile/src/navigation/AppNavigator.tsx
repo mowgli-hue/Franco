@@ -43,6 +43,7 @@ import { WelcomeScreen } from '../screens/onboarding/WelcomeScreen';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
+import { loadCloudProfileState, saveCloudOnboardingCompleted } from '../services/cloud/userStateRepository';
 import {
   loadLastMainRoute,
   loadUserOnboardingProfile,
@@ -161,12 +162,24 @@ function onboardingKey(userId: string) {
 }
 
 async function loadOnboardingCompleted(userId: string): Promise<boolean> {
+  const cloud = await loadCloudProfileState(userId);
+  if (typeof cloud?.onboardingCompleted === 'boolean') {
+    const value = cloud.onboardingCompleted;
+    await AsyncStorage.setItem(onboardingKey(userId), value ? 'true' : 'false');
+    return value;
+  }
+
   const raw = await AsyncStorage.getItem(onboardingKey(userId));
   return raw === 'true';
 }
 
 async function saveOnboardingCompleted(userId: string, value: boolean): Promise<void> {
   await AsyncStorage.setItem(onboardingKey(userId), value ? 'true' : 'false');
+  try {
+    await saveCloudOnboardingCompleted(userId, value);
+  } catch {
+    // local onboarding flag remains fallback when cloud write fails
+  }
 }
 
 function screenOptions() {

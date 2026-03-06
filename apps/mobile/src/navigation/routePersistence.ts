@@ -1,4 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  loadCloudProfileState,
+  saveCloudLastMainRoute,
+  saveCloudOnboardingProfile
+} from '../services/cloud/userStateRepository';
 
 export type MainTabName = 'HomeTab' | 'PathTab' | 'PracticeTab' | 'ProfileTab';
 export type PathStackRouteName =
@@ -177,9 +182,21 @@ export async function saveLastMainRoute(userId: string, route: PersistedMainRout
   }
 
   await AsyncStorage.setItem(storageKey(userId), JSON.stringify(route));
+  try {
+    await saveCloudLastMainRoute(userId, route);
+  } catch {
+    // local route persistence still works offline or when cloud write fails
+  }
 }
 
 export async function loadLastMainRoute(userId: string): Promise<PersistedMainRoute | null> {
+  const cloud = await loadCloudProfileState(userId);
+  const cloudRoute = cloud?.lastMainRoute as unknown;
+  if (isValidPersistedMainRoute(cloudRoute)) {
+    await AsyncStorage.setItem(storageKey(userId), JSON.stringify(cloudRoute));
+    return cloudRoute;
+  }
+
   const raw = await AsyncStorage.getItem(storageKey(userId));
   if (!raw) {
     return null;
@@ -195,9 +212,30 @@ export async function loadLastMainRoute(userId: string): Promise<PersistedMainRo
 
 export async function saveUserOnboardingProfile(userId: string, profile: UserOnboardingProfile): Promise<void> {
   await AsyncStorage.setItem(profileStorageKey(userId), JSON.stringify(profile));
+  try {
+    await saveCloudOnboardingProfile(userId, profile);
+  } catch {
+    // local profile persistence still works offline or when cloud write fails
+  }
 }
 
 export async function loadUserOnboardingProfile(userId: string): Promise<UserOnboardingProfile | null> {
+  const cloud = await loadCloudProfileState(userId);
+  const cloudProfile = cloud?.onboardingProfile as unknown;
+  if (cloudProfile) {
+    const parsed = cloudProfile as UserOnboardingProfile;
+    if (parsed?.hasCompletedOnboarding === true) {
+      const fallbackTarget: 5 | 7 =
+        parsed.goalType === 'tef_canada' || parsed.goalType === 'express_entry_points' ? 7 : 5;
+      const normalized = {
+        ...parsed,
+        targetClb: parsed.targetClb === 7 ? 7 : parsed.targetClb === 5 ? 5 : fallbackTarget
+      };
+      await AsyncStorage.setItem(profileStorageKey(userId), JSON.stringify(normalized));
+      return normalized;
+    }
+  }
+
   const raw = await AsyncStorage.getItem(profileStorageKey(userId));
   if (!raw) {
     return null;
