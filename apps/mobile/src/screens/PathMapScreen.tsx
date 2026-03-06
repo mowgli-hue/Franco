@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Card } from '../components/Card';
@@ -16,10 +16,13 @@ type Props = NativeStackScreenProps<MainStackParamList, 'PathMapScreen'>;
 type LessonNodeStatus = 'completed' | 'current' | 'locked' | 'open';
 
 type LessonNodeProps = {
+  lessonId: string;
   title: string;
   status: LessonNodeStatus;
   isFirst: boolean;
   isLast: boolean;
+  highlightComplete?: boolean;
+  highlightUnlocked?: boolean;
   onPress?: () => void;
 };
 
@@ -45,11 +48,29 @@ function lessonStatusLabel(status: LessonNodeStatus): string {
   return 'Unlocked';
 }
 
-function LessonNode({ title, status, isFirst, isLast, onPress }: LessonNodeProps) {
+function LessonNode({
+  lessonId,
+  title,
+  status,
+  isFirst,
+  isLast,
+  highlightComplete = false,
+  highlightUnlocked = false,
+  onPress
+}: LessonNodeProps) {
   const locked = status === 'locked';
+  const pulse = useRef(new Animated.Value(highlightComplete || highlightUnlocked ? 0.96 : 1)).current;
+
+  useEffect(() => {
+    if (!highlightComplete && !highlightUnlocked) return;
+    Animated.sequence([
+      Animated.spring(pulse, { toValue: 1.06, useNativeDriver: true }),
+      Animated.spring(pulse, { toValue: 1, useNativeDriver: true })
+    ]).start();
+  }, [highlightComplete, highlightUnlocked, pulse, lessonId]);
 
   return (
-    <View style={styles.nodeContainer}>
+    <Animated.View style={[styles.nodeContainer, { transform: [{ scale: pulse }] }]}>
       {!isFirst ? (
         <View style={[styles.verticalLine, styles.verticalLineTop, status === 'completed' && styles.verticalLineDone]} />
       ) : null}
@@ -66,6 +87,8 @@ function LessonNode({ title, status, isFirst, isLast, onPress }: LessonNodeProps
           status === 'current' && styles.currentNode,
           status === 'locked' && styles.lockedNode,
           status === 'open' && styles.openNode,
+          highlightComplete && styles.nodeJustCompleted,
+          highlightUnlocked && styles.nodeJustUnlocked,
           pressed && !locked && styles.nodePressed
         ]}
       >
@@ -75,19 +98,38 @@ function LessonNode({ title, status, isFirst, isLast, onPress }: LessonNodeProps
       <View style={styles.nodeTextWrap}>
         <Text style={styles.nodeTitle}>{title}</Text>
         <Text style={[styles.nodeStatus, status === 'current' && styles.nodeStatusCurrent]}>{lessonStatusLabel(status)}</Text>
+        {highlightComplete ? <Text style={styles.justDoneText}>Completed now</Text> : null}
+        {highlightUnlocked ? <Text style={styles.justUnlockedText}>Unlocked now</Text> : null}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
-export function PathMapScreen({ navigation }: Props) {
+export function PathMapScreen({ navigation, route }: Props) {
   const { currentLevel, currentModule, currentModuleLessons } = useCurriculumProgress();
   const { subscriptionProfile, markProPreviewUsed } = useSubscription();
+  const [completionSummary, setCompletionSummary] = useState(route.params?.completionSummary);
   const passedCount = currentModuleLessons.filter((l) => l.passed).length;
   const totalCount = Math.max(1, currentModuleLessons.length);
   const progressPercent = Math.round((passedCount / totalCount) * 100);
   const moduleComplete = currentModuleLessons.length > 0 && passedCount === currentModuleLessons.length;
   const showA1MysteryBox = currentLevel.id === 'a1';
+
+  useEffect(() => {
+    if (route.params?.completionSummary) {
+      setCompletionSummary(route.params.completionSummary);
+      navigation.setParams({ completionSummary: undefined });
+    }
+  }, [navigation, route.params]);
+
+  const completedLessonTitle = useMemo(
+    () => (completionSummary?.completedLessonId ? formatLessonTitle(completionSummary.completedLessonId) : null),
+    [completionSummary?.completedLessonId]
+  );
+  const unlockedLessonTitle = useMemo(
+    () => (completionSummary?.nextLessonId ? formatLessonTitle(completionSummary.nextLessonId) : null),
+    [completionSummary?.nextLessonId]
+  );
 
   const handleLessonPress = (lessonId: string) => {
     if (isProLessonId(lessonId)) {
@@ -148,6 +190,21 @@ export function PathMapScreen({ navigation }: Props) {
     <ScrollView style={styles.root} contentContainerStyle={styles.pathContainer} showsVerticalScrollIndicator={false}>
       <Text style={styles.moduleTitle}>{currentModule?.title ?? 'Path Module'}</Text>
 
+      {completionSummary ? (
+        <Card>
+          <Text style={styles.summaryTitle}>Lesson Completed</Text>
+          <Text style={styles.summaryLine}>
+            {completedLessonTitle ?? 'Lesson'} completed with {Math.round(completionSummary.completedLessonScore)}%.
+          </Text>
+          {completionSummary.minorCorrection ? (
+            <Text style={styles.summarySubline}>Passed with one minor correction.</Text>
+          ) : null}
+          <Text style={styles.summaryLine}>
+            {unlockedLessonTitle ? `${unlockedLessonTitle} is now unlocked.` : 'Module progress updated.'}
+          </Text>
+        </Card>
+      ) : null}
+
       <Card>
         <View style={styles.metaHeader}>
           <Text style={styles.metaLabel}>{String(currentLevel.title).toUpperCase()}</Text>
@@ -162,10 +219,13 @@ export function PathMapScreen({ navigation }: Props) {
           return (
             <LessonNode
               key={item.lesson.id}
+              lessonId={item.lesson.id}
               title={formatLessonTitle(item.lesson.id)}
               status={status}
               isFirst={index === 0}
               isLast={index === currentModuleLessons.length - 1}
+              highlightComplete={completionSummary?.completedLessonId === item.lesson.id}
+              highlightUnlocked={completionSummary?.nextLessonId === item.lesson.id}
               onPress={item.locked ? undefined : () => handleLessonPress(item.lesson.id)}
             />
           );
@@ -270,6 +330,16 @@ const styles = StyleSheet.create({
   nodePressed: {
     transform: [{ scale: 0.95 }]
   },
+  nodeJustCompleted: {
+    backgroundColor: '#22C55E',
+    borderColor: '#16A34A',
+    borderWidth: 1
+  },
+  nodeJustUnlocked: {
+    borderColor: '#22C55E',
+    borderWidth: 2,
+    backgroundColor: '#ECFDF5'
+  },
   check: {
     color: '#FFFFFF',
     fontWeight: '700'
@@ -290,6 +360,32 @@ const styles = StyleSheet.create({
   nodeStatusCurrent: {
     color: '#1D4ED8',
     fontWeight: '600'
+  },
+  justDoneText: {
+    ...typography.caption,
+    color: '#047857',
+    fontWeight: '700',
+    marginTop: spacing.xs
+  },
+  justUnlockedText: {
+    ...typography.caption,
+    color: '#15803D',
+    fontWeight: '700',
+    marginTop: spacing.xs
+  },
+  summaryTitle: {
+    ...typography.bodyStrong,
+    color: '#166534',
+    marginBottom: spacing.xs
+  },
+  summaryLine: {
+    ...typography.body,
+    color: colors.textPrimary
+  },
+  summarySubline: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs
   },
   mysteryCard: {
     marginTop: spacing.xs,

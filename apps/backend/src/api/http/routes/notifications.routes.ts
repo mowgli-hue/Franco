@@ -53,6 +53,17 @@ const updatePrefsSchema = z.object({
   })
 });
 
+const lessonCompleteSchema = z.object({
+  userId: z.string().min(1),
+  email: z.string().email(),
+  displayName: z.string().optional(),
+  lessonId: z.string().min(1),
+  lessonTitle: z.string().min(1),
+  scorePercent: z.number().min(0).max(100),
+  nextLessonId: z.string().optional(),
+  minorCorrection: z.boolean().optional()
+});
+
 async function buildWelcomeEmail(userId: string, name?: string) {
   const learnerName = name?.trim() || 'there';
   return {
@@ -213,5 +224,46 @@ notificationsRouter.post('/jobs/run-scheduler-tick', async (_req, res) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected error';
     return res.status(500).json({ message });
+  }
+});
+
+notificationsRouter.post('/lesson-complete', async (req, res) => {
+  try {
+    const input = lessonCompleteSchema.parse(req.body ?? {});
+    const learnerName = input.displayName?.trim() || 'there';
+    const score = Math.round(input.scorePercent);
+    const nextLine = input.nextLessonId
+      ? `Next recommended lesson: ${input.nextLessonId.replace(/-/g, ' ')}.`
+      : 'You completed the current module checkpoint.';
+    const correctionLine = input.minorCorrection
+      ? 'Great work. You passed with one minor correction, keep refining accuracy.'
+      : 'Great work. Your progress is moving in the right direction.';
+
+    await sendEmail({
+      to: input.email,
+      subject: await buildSubject({
+        campaign: 'weeklyReport',
+        userId: input.userId,
+        daySeed: new Date().toISOString().slice(0, 10),
+        displayName: input.displayName
+      }),
+      text: [
+        `Hi ${learnerName},`,
+        '',
+        `Congratulations on completing ${input.lessonTitle}.`,
+        `Score: ${score}%`,
+        correctionLine,
+        nextLine,
+        '',
+        'Open Franco and continue your learning path.',
+        '',
+        'Franco Team'
+      ].join('\n')
+    });
+
+    return res.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unexpected error';
+    return res.status(400).json({ message });
   }
 });

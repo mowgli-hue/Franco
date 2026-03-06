@@ -4,9 +4,11 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { useAuth } from '../context/AuthContext';
 import { useCurriculumProgress } from '../context/CurriculumProgressContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import type { MainStackParamList } from '../navigation/AppNavigator';
+import { sendLessonCompletionEmail } from '../services/notifications/notificationEmailService';
 import { shouldAllowSinglePreview, shouldRouteToUpgrade } from '../services/subscription/subscriptionGate';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
@@ -25,6 +27,7 @@ function parseB1LessonNumber(lessonId: string): number | null {
 export function B1ModuleLessonScreen({ route, navigation }: Props) {
   const lessonId = route.params.lessonId;
   const lessonNumber = parseB1LessonNumber(lessonId);
+  const { user } = useAuth();
   const { completeLesson } = useCurriculumProgress();
   const { subscriptionProfile, markProPreviewUsed } = useSubscription();
   const [result, setResult] = useState<
@@ -127,6 +130,31 @@ export function B1ModuleLessonScreen({ route, navigation }: Props) {
             }
           });
         }
+        if (passed) {
+          if (user?.email) {
+            void sendLessonCompletionEmail({
+              userId: user?.uid ?? 'guest',
+              email: user.email,
+              displayName: user?.displayName ?? undefined,
+              lessonId,
+              lessonTitle: `B1 Lesson ${lessonNumber}`,
+              scorePercent,
+              nextLessonId: nextLessonId ?? undefined,
+              minorCorrection
+            }).catch(() => undefined);
+          }
+
+          (navigation.navigate as any)('PathMapScreen', {
+            completionSummary: {
+              completedLessonId: lessonId,
+              completedLessonScore: scorePercent,
+              nextLessonId: nextLessonId ?? undefined,
+              minorCorrection
+            }
+          });
+          return;
+        }
+
         setResult({ passed, scorePercent, minorCorrection });
       }}
     />

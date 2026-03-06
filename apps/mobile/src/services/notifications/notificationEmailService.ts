@@ -80,3 +80,27 @@ export async function updateNotificationEmailPreferences(input: {
   const data = (await response.json()) as { preferences: NotificationPreferencesResponse };
   return data.preferences;
 }
+
+export async function sendLessonCompletionEmail(input: {
+  userId: string;
+  email: string;
+  displayName?: string;
+  lessonId: string;
+  lessonTitle: string;
+  scorePercent: number;
+  nextLessonId?: string;
+  minorCorrection?: boolean;
+}): Promise<void> {
+  const response = await fetch(`${env.apiBaseUrl}/notifications/lesson-complete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...input,
+      timezone: getTimezone()
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Lesson completion email failed: ${response.status}`);
+  }
+}

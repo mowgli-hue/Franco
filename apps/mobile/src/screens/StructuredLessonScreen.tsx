@@ -871,6 +871,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const [retryChecked, setRetryChecked] = useState(false);
   const [retryQuestionIndex, setRetryQuestionIndex] = useState(0);
   const [retryExerciseVariants, setRetryExerciseVariants] = useState<Record<string, Exercise>>({});
+  const [practiceRecoveryQueue, setPracticeRecoveryQueue] = useState<string[]>([]);
+  const [practiceRecoveryCursor, setPracticeRecoveryCursor] = useState(0);
+  const [practiceRecoveryActive, setPracticeRecoveryActive] = useState(false);
+  const [showSessionSummary, setShowSessionSummary] = useState(false);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 200);
   const webMediaRecorderRef = useRef<any>(null);
@@ -883,6 +887,15 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const steps = useMemo(() => (lesson ? createSteps(lesson) : []), [lesson]);
   const canadaTemplate = useMemo(() => (lesson ? resolveCanadianPhaseTemplate(lesson) : null), [lesson]);
   const currentStep = steps[Math.min(stepIndex, Math.max(0, steps.length - 1))];
+  const exerciseStepIndexByExerciseId = useMemo(() => {
+    const map: Record<string, number> = {};
+    steps.forEach((step, index) => {
+      if (step.kind === 'exercise' && step.exerciseId) {
+        map[step.exerciseId] = index;
+      }
+    });
+    return map;
+  }, [steps]);
 
   useEffect(() => {
     if (!lesson) return;
@@ -1125,6 +1138,43 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   };
 
   const onContinueAfterExercise = () => {
+    if (practiceRecoveryActive && currentExercise?.id) {
+      const currentCorrect = session.exerciseStates[currentExercise.id]?.correct === true;
+      if (!currentCorrect) {
+        setFeedback({
+          tone: 'warning',
+          message: `${selectedCompanion.name}: This item is still incorrect. Review the hint and try it again.`
+        });
+        return;
+      }
+
+      const nextCursor = practiceRecoveryCursor + 1;
+      if (nextCursor < practiceRecoveryQueue.length) {
+        const nextExerciseId = practiceRecoveryQueue[nextCursor];
+        const nextStepIndex = nextExerciseId ? exerciseStepIndexByExerciseId[nextExerciseId] : undefined;
+        setPracticeRecoveryCursor(nextCursor);
+        if (typeof nextStepIndex === 'number') {
+          setStepIndex(nextStepIndex);
+          setFeedback({
+            tone: 'success',
+            message: `${selectedCompanion.name}: Good correction. Continue with the next missed question.`
+          });
+          return;
+        }
+      }
+
+      setPracticeRecoveryActive(false);
+      setPracticeRecoveryQueue([]);
+      setPracticeRecoveryCursor(0);
+      const completionIndex = steps.findIndex((step) => step.kind === 'completion');
+      setStepIndex(completionIndex >= 0 ? completionIndex : steps.length - 1);
+      setFeedback({
+        tone: 'success',
+        message: `${selectedCompanion.name}: Reinforcement round complete. Submit your session result.`
+      });
+      return;
+    }
+
     const alignedSession = alignSessionToCurrentExercise(session);
     const progressed = continueLesson(lesson, alignedSession);
     setSession(progressed);
@@ -1145,12 +1195,105 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     return Math.round((correct / practiceExerciseIds.length) * 100);
   }, [practiceExerciseIds, session.exerciseStates]);
 
+  const exercisePromptById = useMemo(() => {
+    const map: Record<string, string> = {};
+    steps.forEach((step) => {
+      if (step.kind === 'exercise' && step.exerciseId && step.exercise?.prompt) {
+        map[step.exerciseId] = step.exercise.prompt;
+      }
+    });
+    return map;
+  }, [steps]);
+
+  const practiceSummaryItems = useMemo(
+    () =>
+      practiceExerciseIds.map((id) => {
+        const prompt = exercisePromptById[id] ?? id;
+        const state = session.exerciseStates[id];
+        return {
+          id,
+          prompt: prompt.length > 88 ? `${prompt.slice(0, 88)}...` : prompt,
+          correct: state?.correct === true,
+          attempts: state?.attempts ?? 0
+        };
+      }),
+    [exercisePromptById, practiceExerciseIds, session.exerciseStates]
+  );
+
+  const practiceCorrectCount = useMemo(
+    () => practiceSummaryItems.reduce((acc, item) => acc + (item.correct ? 1 : 0), 0),
+    [practiceSummaryItems]
+  );
+
   const finishLesson = () => {
     const scorePercent = getLessonScorePercent(session);
     const masteryPercent = masteryQuestions.length ? Math.round((masteryScore / masteryQuestions.length) * 100) : 100;
     const blended = Math.round(scorePercent * 0.7 + masteryPercent * 0.3);
     const productionOk = !lesson.assessment.productionRequired || session.productionCompleted;
-    const passed = blended >= lesson.assessment.masteryThresholdPercent && productionOk && practicePercent >= 70;
+    const practiceOk = practicePercent >= 70;
+    const passed = blended >= lesson.assessment.masteryThresholdPercent && productionOk && practiceOk;
+
+    if (!passed) {
+      if (practiceRecoveryActive) {
+        setFeedback({
+          tone: 'warning',
+          message: `${selectedCompanion.name}: Complete the reinforcement questions before finishing this lesson.`
+        });
+        return;
+      }
+
+      if (!productionOk) {
+        setFeedback({
+          tone: 'warning',
+          message: `${selectedCompanion.name}: Complete the production task (speaking or writing) before finishing this lesson.`
+        });
+        return;
+      }
+
+      const importantRetryIds = steps
+        .filter((step) => step.kind === 'exercise' && step.exerciseId)
+        .map((step) => step.exerciseId as string)
+        .filter((id) => {
+          const state = session.exerciseStates[id];
+          return state?.attempts > 0 && state.correct !== true;
+        })
+        .slice(0, 6);
+
+      if (importantRetryIds.length > 0) {
+        setPracticeRecoveryActive(true);
+        setPracticeRecoveryQueue(importantRetryIds);
+        setPracticeRecoveryCursor(0);
+
+        setSubmittedSteps((prev) => {
+          const next = { ...prev };
+          importantRetryIds.forEach((exerciseId) => {
+            const stepIndexForExercise = exerciseStepIndexByExerciseId[exerciseId];
+            if (typeof stepIndexForExercise === 'number') {
+              const step = steps[stepIndexForExercise];
+              if (step?.id) delete next[step.id];
+            }
+          });
+          return next;
+        });
+
+        const firstMissedExerciseId = importantRetryIds[0];
+        const firstMissedStepIndex =
+          firstMissedExerciseId != null ? exerciseStepIndexByExerciseId[firstMissedExerciseId] : undefined;
+
+        if (typeof firstMissedStepIndex === 'number') {
+          setStepIndex(firstMissedStepIndex);
+        }
+
+        setFeedback({
+          tone: 'warning',
+          message:
+            practiceOk
+              ? `${selectedCompanion.name}: You are close. Retry only important missed parts now.`
+              : `${selectedCompanion.name}: Practice is ${practicePercent}%. Retry only important missed parts to reach 70%+.`
+        });
+        return;
+      }
+    }
 
     const evaluatedExerciseStates = Object.values(session.exerciseStates).filter((state) => state.attempts > 0);
     const missedCount = evaluatedExerciseStates.filter((state) => !state.correct).length;
@@ -1823,6 +1966,29 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       <View style={styles.centeredStep}>
         <Text style={styles.bigTitle}>Ready to finish</Text>
         <Text style={styles.bodyText}>Practice: {practicePercent}%  •  Mastery check complete. Submit session result.</Text>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Session Summary</Text>
+          <Text style={styles.summaryMeta}>
+            Practice correct: {practiceCorrectCount}/{practiceSummaryItems.length} • Mastery: {masteryScore}/{masteryQuestions.length}
+          </Text>
+          <Pressable onPress={() => setShowSessionSummary((prev) => !prev)} style={styles.summaryToggleBtn}>
+            <Text style={styles.summaryToggleText}>{showSessionSummary ? 'Hide detailed results' : 'Show detailed results'}</Text>
+          </Pressable>
+
+          {showSessionSummary ? (
+            <View style={styles.summaryList}>
+              {practiceSummaryItems.map((item, index) => (
+                <View key={item.id} style={styles.summaryRow}>
+                  <Text style={styles.summaryRowIndex}>{index + 1}.</Text>
+                  <Text style={styles.summaryRowPrompt}>{item.prompt}</Text>
+                  <Text style={[styles.summaryRowStatus, item.correct ? styles.summaryRowStatusGood : styles.summaryRowStatusBad]}>
+                    {item.correct ? 'Correct' : 'Wrong'}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
         {Platform.OS === 'web' ? (
           <Pressable onPress={downloadLessonNotes} style={styles.downloadBtn}>
             <Text style={styles.downloadBtnText}>Download Lesson Notes</Text>
@@ -2372,6 +2538,70 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#334155',
     lineHeight: 18
+  },
+  summaryCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF',
+    padding: 12,
+    gap: 8
+  },
+  summaryTitle: {
+    ...typography.bodyStrong,
+    color: colors.primary
+  },
+  summaryMeta: {
+    ...typography.caption,
+    color: '#334155'
+  },
+  summaryToggleBtn: {
+    alignSelf: 'flex-start',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 6
+  },
+  summaryToggleText: {
+    ...typography.caption,
+    color: '#1D4ED8',
+    fontWeight: '600'
+  },
+  summaryList: {
+    gap: 6
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 8
+  },
+  summaryRowIndex: {
+    width: 22,
+    ...typography.caption,
+    color: '#475569'
+  },
+  summaryRowPrompt: {
+    flex: 1,
+    ...typography.caption,
+    color: '#0F172A',
+    marginRight: 8
+  },
+  summaryRowStatus: {
+    ...typography.caption,
+    fontWeight: '700'
+  },
+  summaryRowStatusGood: {
+    color: '#047857'
+  },
+  summaryRowStatusBad: {
+    color: '#B91C1C'
   },
   examplesWrap: {
     gap: 10

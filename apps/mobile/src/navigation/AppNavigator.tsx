@@ -66,6 +66,13 @@ export type AuthStackParamList = {
   RegisterScreen: undefined;
 };
 
+type LessonCompletionSummaryParams = {
+  completedLessonId: string;
+  completedLessonScore: number;
+  nextLessonId?: string;
+  minorCorrection?: boolean;
+};
+
 export type OnboardingStackParamList = {
   WelcomeScreen: undefined;
   SelfAssessmentScreen: undefined;
@@ -97,7 +104,11 @@ export type OnboardingStackParamList = {
   B1ModuleLessonScreen: { lessonId: string };
   CLBModuleLessonScreen: { lessonId: string };
   A1Lesson3Screen: undefined;
-  PathMapScreen: undefined;
+  PathMapScreen:
+    | {
+        completionSummary?: LessonCompletionSummaryParams;
+      }
+    | undefined;
   UpgradeScreen: undefined;
   ModuleReviewScreen: undefined;
   LevelUnlockScreen: undefined;
@@ -114,7 +125,11 @@ export type PathStackParamList = {
   B1ModuleLessonScreen: { lessonId: string };
   CLBModuleLessonScreen: { lessonId: string };
   A1Lesson3Screen: undefined;
-  PathMapScreen: undefined;
+  PathMapScreen:
+    | {
+        completionSummary?: LessonCompletionSummaryParams;
+      }
+    | undefined;
   UpgradeScreen: undefined;
   ModuleReviewScreen: undefined;
   LevelUnlockScreen: undefined;
