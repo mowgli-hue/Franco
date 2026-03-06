@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Keyboard, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Keyboard, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { File } from 'expo-file-system';
 import {
   RecordingPresets,
@@ -86,6 +86,30 @@ type CLBPerformanceFeedback = {
 };
 
 type RetryCategory = 'articles' | 'verbTense' | 'wordOrder' | 'listening' | 'vocabulary';
+
+const frenchNumberMap: Record<string, string> = {
+  '0': 'zero',
+  '1': 'un',
+  '2': 'deux',
+  '3': 'trois',
+  '4': 'quatre',
+  '5': 'cinq',
+  '6': 'six',
+  '7': 'sept',
+  '8': 'huit',
+  '9': 'neuf',
+  '10': 'dix',
+  '11': 'onze',
+  '12': 'douze',
+  '13': 'treize',
+  '14': 'quatorze',
+  '15': 'quinze',
+  '16': 'seize',
+  '17': 'dix-sept',
+  '18': 'dix-huit',
+  '19': 'dix-neuf',
+  '20': 'vingt'
+};
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -304,6 +328,15 @@ function buildAdaptiveRetryVariant(
   }
 
   return exercise;
+}
+
+function getCueDisplay(cue: string): { primary: string; secondary?: string } {
+  const key = cue.trim();
+  const translated = frenchNumberMap[key];
+  if (translated) {
+    return { primary: key, secondary: translated };
+  }
+  return { primary: cue };
 }
 
 function buildActivationQuestions(lesson: StructuredLessonContent): QuizQuestion[] {
@@ -659,6 +692,49 @@ function buildMasteryQuestions(lesson: StructuredLessonContent): QuizQuestion[] 
   ];
 }
 
+function buildRetryMasteryQuestions(
+  questions: QuizQuestion[],
+  selections: Record<string, number>,
+  attemptRound: number
+): QuizQuestion[] {
+  return questions
+    .filter((question) => selections[question.id] !== question.correctIndex)
+    .map((question, index) => {
+      const optionMeta = question.options.map((option, optionIndex) => ({
+        option,
+        isCorrect: optionIndex === question.correctIndex
+      }));
+      const rotated = rotateArray(optionMeta, attemptRound + index + 1);
+      const nextCorrectIndex = rotated.findIndex((item) => item.isCorrect);
+      return {
+        id: `${question.id}-retry-${attemptRound}-${index}`,
+        prompt: `Retry (${attemptRound}) - ${question.prompt}`,
+        options: rotated.map((item) => item.option),
+        correctIndex: Math.max(0, nextCorrectIndex)
+      };
+    });
+}
+
+function derivePreviousLessonId(lesson: StructuredLessonContent): string | null {
+  const currentId = lesson.curriculumLessonId ?? lesson.id;
+  const foundationOrder = ['alphabet-sounds', 'basic-greetings', 'introducing-yourself', 'numbers-0-20'];
+  const foundationIndex = foundationOrder.indexOf(currentId);
+  if (foundationIndex > 0) {
+    return foundationOrder[foundationIndex - 1] ?? null;
+  }
+
+  const numbered = currentId.match(/^(a1|a2|b1|clb5|clb7)-lesson-(\d+)$/);
+  if (numbered) {
+    const track = numbered[1];
+    const lessonNum = Number(numbered[2]);
+    if (Number.isFinite(lessonNum) && lessonNum > 1) {
+      return `${track}-lesson-${lessonNum - 1}`;
+    }
+  }
+
+  return null;
+}
+
 function createSteps(lesson: StructuredLessonContent): RuntimeStep[] {
   const steps: RuntimeStep[] = [
     {
@@ -768,7 +844,17 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const [targetClb, setTargetClb] = useState<5 | 7>(5);
   const [performanceFeedbackByExercise, setPerformanceFeedbackByExercise] = useState<Record<string, CLBPerformanceFeedback>>({});
 
-  const activationQuestions = useMemo(() => (lesson ? buildActivationQuestions(lesson) : []), [lesson]);
+  const activationSourceLesson = useMemo(() => {
+    if (!lesson) return null;
+    const previousLessonId = derivePreviousLessonId(lesson);
+    if (!previousLessonId) return lesson;
+    return getStructuredLessonById(previousLessonId) ?? lesson;
+  }, [lesson]);
+
+  const activationQuestions = useMemo(
+    () => (activationSourceLesson ? buildActivationQuestions(activationSourceLesson) : []),
+    [activationSourceLesson]
+  );
   const [activationSelections, setActivationSelections] = useState<Record<string, number>>({});
   const [activationChecked, setActivationChecked] = useState(false);
   const [activationQuestionIndex, setActivationQuestionIndex] = useState(0);
@@ -778,6 +864,12 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const [masteryChecked, setMasteryChecked] = useState(false);
   const [masteryScore, setMasteryScore] = useState(0);
   const [masteryQuestionIndex, setMasteryQuestionIndex] = useState(0);
+  const [reviewMode, setReviewMode] = useState<'mastery' | 'retry'>('mastery');
+  const [reviewAttemptRound, setReviewAttemptRound] = useState(0);
+  const [retryQuestions, setRetryQuestions] = useState<QuizQuestion[]>([]);
+  const [retrySelections, setRetrySelections] = useState<Record<string, number>>({});
+  const [retryChecked, setRetryChecked] = useState(false);
+  const [retryQuestionIndex, setRetryQuestionIndex] = useState(0);
   const [retryExerciseVariants, setRetryExerciseVariants] = useState<Record<string, Exercise>>({});
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 200);
@@ -785,6 +877,8 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const webMediaStreamRef = useRef<any>(null);
   const webChunksRef = useRef<any[]>([]);
   const [webRecordingExerciseId, setWebRecordingExerciseId] = useState<string | null>(null);
+  const autoPlayedSegmentSteps = useRef<Record<string, boolean>>({});
+  const coachPulse = useRef(new Animated.Value(1)).current;
 
   const steps = useMemo(() => (lesson ? createSteps(lesson) : []), [lesson]);
   const canadaTemplate = useMemo(() => (lesson ? resolveCanadianPhaseTemplate(lesson) : null), [lesson]);
@@ -826,6 +920,17 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       playsInSilentMode: true
     }).catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(coachPulse, { toValue: 1.04, duration: 850, useNativeDriver: true }),
+        Animated.timing(coachPulse, { toValue: 1, duration: 850, useNativeDriver: true })
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [coachPulse]);
 
   if (!lesson || !session || !currentStep) {
     return (
@@ -1045,19 +1150,42 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     const masteryPercent = masteryQuestions.length ? Math.round((masteryScore / masteryQuestions.length) * 100) : 100;
     const blended = Math.round(scorePercent * 0.7 + masteryPercent * 0.3);
     const productionOk = !lesson.assessment.productionRequired || session.productionCompleted;
-    const basePassed = blended >= lesson.assessment.masteryThresholdPercent && productionOk && practicePercent >= 75;
+    const passed = blended >= lesson.assessment.masteryThresholdPercent && productionOk && practicePercent >= 70;
 
     const evaluatedExerciseStates = Object.values(session.exerciseStates).filter((state) => state.attempts > 0);
     const missedCount = evaluatedExerciseStates.filter((state) => !state.correct).length;
-    const nearThreshold = blended >= Math.max(0, lesson.assessment.masteryThresholdPercent - 8);
-    const minorMistakePass = missedCount <= 1 && productionOk && practicePercent >= 70 && nearThreshold;
-    const passed = basePassed || minorMistakePass;
+    const minorCorrection = passed && missedCount <= 1;
 
     if (passed) {
       markLessonComplete({ lessonId: lesson.id });
     }
 
-    onComplete?.({ passed, scorePercent: blended, lesson, minorCorrection: minorMistakePass && !basePassed });
+    onComplete?.({ passed, scorePercent: blended, lesson, minorCorrection });
+  };
+
+  const downloadLessonNotes = () => {
+    if (Platform.OS !== 'web') return;
+    const text = [
+      `Lesson: ${lesson.title}`,
+      `Level: ${lesson.levelId.toUpperCase()}`,
+      '',
+      'Objectives:',
+      ...lesson.outcomes.map((item) => `- ${item}`),
+      '',
+      'Vocabulary:',
+      ...lesson.vocabularyTargets.map((item) => `- ${item}`),
+      '',
+      'Grammar Targets:',
+      ...lesson.grammarTargets.map((item) => `- ${item}`)
+    ].join('\n');
+
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${lesson.id}-notes.txt`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   };
 
   const renderStepContent = () => {
@@ -1138,6 +1266,11 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       const segment = currentStep.segment;
       const interacted = interactedSteps[currentStep.id] === true;
       const cues = segment.pronunciationCues?.slice(0, 9) ?? [];
+      if (!autoPlayedSegmentSteps.current[currentStep.id]) {
+        autoPlayedSegmentSteps.current[currentStep.id] = true;
+        const spoken = segment.examples[0] ?? segment.pronunciationCues?.[0] ?? segment.title;
+        void playPronunciation(spoken);
+      }
       return (
         <View style={styles.centeredStep}>
           <Text style={styles.bigTitle}>{segment.title}</Text>
@@ -1145,18 +1278,22 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
           {!!segment.funFact ? <Text style={styles.hintText}>Fun Fact: {segment.funFact}</Text> : null}
           {cues.length ? (
             <View style={styles.cueGrid}>
-              {cues.map((cue) => (
-                <Pressable
-                  key={`${currentStep.id}-${cue}`}
-                  onPress={() => {
-                    setInteractedSteps((prev) => ({ ...prev, [currentStep.id]: true }));
-                    void playPronunciation(cue);
-                  }}
-                  style={styles.cueChip}
-                >
-                  <Text style={styles.cueChipText}>{cue}</Text>
-                </Pressable>
-              ))}
+              {cues.map((cue) => {
+                const display = getCueDisplay(cue);
+                return (
+                  <Pressable
+                    key={`${currentStep.id}-${cue}`}
+                    onPress={() => {
+                      setInteractedSteps((prev) => ({ ...prev, [currentStep.id]: true }));
+                      void playPronunciation(display.secondary ?? cue);
+                    }}
+                    style={styles.cueChip}
+                  >
+                    <Text style={styles.cueChipText}>{display.primary}</Text>
+                    {display.secondary ? <Text style={styles.cueChipSubText}>{display.secondary}</Text> : null}
+                  </Pressable>
+                );
+              })}
             </View>
           ) : null}
           <View style={styles.examplesWrap}>
@@ -1466,6 +1603,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         const durationSec = Math.round((recorderState.durationMillis ?? 0) / 1000);
         const aiSummary = aiSummaryByExercise[currentExercise.id];
         const performanceFeedback = performanceFeedbackByExercise[currentExercise.id];
+        const needsPronunciationRetry = performanceFeedback?.weaknesses.includes('pronunciation') ?? false;
 
         return (
           <View style={styles.interactiveStep}>
@@ -1480,6 +1618,15 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
               style={styles.multiInput}
             />
             <View style={styles.inlineActions}>
+              <Pressable
+                onPress={() => {
+                  void playPronunciation(currentExercise.sampleAnswer);
+                  setFeedback({ tone: 'neutral', message: 'Model pronunciation played. Listen, then repeat and record.' });
+                }}
+                style={styles.inlineBtn}
+              >
+                <Text style={styles.inlineBtnText}>Play Model Audio</Text>
+              </Pressable>
               {!isRecording ? (
                 <Pressable onPress={() => void startRecording(currentExercise.id)} style={styles.inlineBtn}>
                   <Text style={styles.inlineBtnText}>Start Recording</Text>
@@ -1498,6 +1645,35 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
               ) : null}
             </View>
             <Text style={styles.hintText}>Record first for pronunciation score, then press Check Answer.</Text>
+            {needsPronunciationRetry ? (
+              <Pressable
+                onPress={() => {
+                  setSubmittedSteps((prev) => ({ ...prev, [currentStep.id]: false }));
+                  setRecordingUriByExercise((prev) => {
+                    const next = { ...prev };
+                    delete next[currentExercise.id];
+                    return next;
+                  });
+                  setRecordingBase64ByExercise((prev) => {
+                    const next = { ...prev };
+                    delete next[currentExercise.id];
+                    return next;
+                  });
+                  setAiSummaryByExercise((prev) => ({
+                    ...prev,
+                    [currentExercise.id]:
+                      'Pronunciation needs improvement. Play model audio, then record again slowly.'
+                  }));
+                  setFeedback({
+                    tone: 'warning',
+                    message: `${selectedCompanion.name}: Slow down and keep syllables clear. Try again now.`
+                  });
+                }}
+                style={styles.inlineBtn}
+              >
+                <Text style={styles.inlineBtnText}>Retry Pronunciation</Text>
+              </Pressable>
+            ) : null}
             {aiSummary ? <Text style={styles.hintText}>{aiSummary}</Text> : null}
             {performanceFeedback ? (
               <PerformanceFeedbackPanel
@@ -1572,28 +1748,40 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     }
 
     if (currentStep.kind === 'review_block') {
-      const currentQuestion = masteryQuestions[masteryQuestionIndex];
+      const activeQuestions = reviewMode === 'retry' ? retryQuestions : masteryQuestions;
+      const currentQuestionIndex = reviewMode === 'retry' ? retryQuestionIndex : masteryQuestionIndex;
+      const checked = reviewMode === 'retry' ? retryChecked : masteryChecked;
+      const selections = reviewMode === 'retry' ? retrySelections : masterySelections;
+      const currentQuestion = activeQuestions[currentQuestionIndex];
       if (!currentQuestion) return null;
-      const selected = masterySelections[currentQuestion.id];
+      const selected = selections[currentQuestion.id];
 
       return (
         <View style={styles.centeredStep}>
-          <Text style={styles.questionCounter}>Question {masteryQuestionIndex + 1} / {masteryQuestions.length}</Text>
+          <Text style={styles.questionCounter}>
+            {reviewMode === 'retry' ? `Retry Round ${reviewAttemptRound}` : 'Mastery Check'} • Question {currentQuestionIndex + 1} / {activeQuestions.length}
+          </Text>
           <View style={styles.reviewQuestionWrap}>
             <Text style={styles.reviewPrompt}>{currentQuestion.prompt}</Text>
             <View style={styles.optionsWrap}>
               {currentQuestion.options.map((option, idx) => {
                 let correctness: 'correct' | 'wrong' | null = null;
-                if (masteryChecked && idx === currentQuestion.correctIndex) correctness = 'correct';
-                if (masteryChecked && idx === selected && idx !== currentQuestion.correctIndex) correctness = 'wrong';
+                if (checked && idx === currentQuestion.correctIndex) correctness = 'correct';
+                if (checked && idx === selected && idx !== currentQuestion.correctIndex) correctness = 'wrong';
                 return (
                   <OptionButton
                     key={`${currentQuestion.id}-${idx}`}
                     label={option}
                     selected={selected === idx}
-                    disabled={masteryChecked}
+                    disabled={checked}
                     correctness={correctness}
-                    onPress={() => setMasterySelections((prev) => ({ ...prev, [currentQuestion.id]: idx }))}
+                    onPress={() => {
+                      if (reviewMode === 'retry') {
+                        setRetrySelections((prev) => ({ ...prev, [currentQuestion.id]: idx }));
+                      } else {
+                        setMasterySelections((prev) => ({ ...prev, [currentQuestion.id]: idx }));
+                      }
+                    }}
                   />
                 );
               })}
@@ -1601,16 +1789,28 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
           </View>
           <View style={styles.inlineActions}>
             <Pressable
-              onPress={() => setMasteryQuestionIndex((prev) => Math.max(0, prev - 1))}
+              onPress={() => {
+                if (reviewMode === 'retry') {
+                  setRetryQuestionIndex((prev) => Math.max(0, prev - 1));
+                } else {
+                  setMasteryQuestionIndex((prev) => Math.max(0, prev - 1));
+                }
+              }}
               style={styles.inlineBtn}
-              disabled={masteryQuestionIndex === 0}
+              disabled={currentQuestionIndex === 0}
             >
               <Text style={styles.inlineBtnText}>Previous</Text>
             </Pressable>
             <Pressable
-              onPress={() => setMasteryQuestionIndex((prev) => Math.min(masteryQuestions.length - 1, prev + 1))}
+              onPress={() => {
+                if (reviewMode === 'retry') {
+                  setRetryQuestionIndex((prev) => Math.min(activeQuestions.length - 1, prev + 1));
+                } else {
+                  setMasteryQuestionIndex((prev) => Math.min(activeQuestions.length - 1, prev + 1));
+                }
+              }}
               style={styles.inlineBtn}
-              disabled={masteryQuestionIndex >= masteryQuestions.length - 1}
+              disabled={currentQuestionIndex >= activeQuestions.length - 1}
             >
               <Text style={styles.inlineBtnText}>Next</Text>
             </Pressable>
@@ -1623,6 +1823,11 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       <View style={styles.centeredStep}>
         <Text style={styles.bigTitle}>Ready to finish</Text>
         <Text style={styles.bodyText}>Practice: {practicePercent}%  •  Mastery check complete. Submit session result.</Text>
+        {Platform.OS === 'web' ? (
+          <Pressable onPress={downloadLessonNotes} style={styles.downloadBtn}>
+            <Text style={styles.downloadBtnText}>Download Lesson Notes</Text>
+          </Pressable>
+        ) : null}
         {canadaTemplate ? (
           <View style={styles.contextCard}>
             <Text style={styles.contextTitle}>Avatar Recap</Text>
@@ -1640,7 +1845,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     if (currentStep.kind === 'intro') return 'Continue';
     if (currentStep.kind === 'learn_segment') return 'Continue';
     if (currentStep.kind === 'exercise') return currentStepSubmitted ? 'Continue' : 'Check Answer';
-    if (currentStep.kind === 'review_block') return masteryChecked ? 'Continue' : 'Check Mastery';
+    if (currentStep.kind === 'review_block') {
+      if (reviewMode === 'retry') return retryChecked ? 'Continue' : 'Check Retry Round';
+      return masteryChecked ? 'Continue' : 'Check Mastery';
+    }
     return 'Finish Block';
   })();
 
@@ -1684,6 +1892,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       return !(textInputs[currentExercise.id] ?? '').trim();
     }
     if (currentStep.kind === 'review_block') {
+      if (reviewMode === 'retry') {
+        if (retryChecked) return false;
+        return retryQuestions.some((q) => retrySelections[q.id] == null);
+      }
       if (masteryChecked) return false;
       return masteryQuestions.some((q) => masterySelections[q.id] == null);
     }
@@ -1955,19 +2167,74 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     }
 
     if (currentStep.kind === 'review_block') {
+      if (reviewMode === 'retry') {
+        if (!retryChecked) {
+          const retryCorrect = retryQuestions.reduce(
+            (acc, q) => acc + (retrySelections[q.id] === q.correctIndex ? 1 : 0),
+            0
+          );
+          const masteryBaseCorrect = masteryQuestions.reduce(
+            (acc, q) => acc + (masterySelections[q.id] === q.correctIndex ? 1 : 0),
+            0
+          );
+          const combinedCorrect = masteryBaseCorrect + retryCorrect;
+          const combinedPercent = Math.round((combinedCorrect / masteryQuestions.length) * 100);
+          setMasteryScore(combinedCorrect);
+
+          if (combinedPercent >= 75) {
+            setRetryChecked(true);
+            setMasteryChecked(true);
+            setReviewMode('mastery');
+            setFeedback({ tone: 'success', message: `Mastery check passed at ${combinedPercent}% after retry.` });
+            triggerSuccess();
+            return;
+          }
+
+          const nextRound = reviewAttemptRound + 1;
+          const reroutedRetryQuestions = buildRetryMasteryQuestions(retryQuestions, retrySelections, nextRound);
+          setReviewAttemptRound(nextRound);
+          setRetryQuestions(reroutedRetryQuestions);
+          setRetrySelections({});
+          setRetryChecked(false);
+          setRetryQuestionIndex(0);
+          const sampleRetry = reroutedRetryQuestions[0];
+          const answerHint = sampleRetry ? sampleRetry.options[sampleRetry.correctIndex] : '';
+          setFeedback({
+            tone: 'warning',
+            message: `${selectedCompanion.name}: Still below 75% (${combinedPercent}%). Focus on the correction pattern. Suggested answer style: ${answerHint}`
+          });
+          return;
+        }
+        advanceStep();
+        return;
+      }
+
       if (!masteryChecked) {
         const correct = masteryQuestions.reduce((acc, q) => acc + (masterySelections[q.id] === q.correctIndex ? 1 : 0), 0);
         const percent = Math.round((correct / masteryQuestions.length) * 100);
         setMasteryScore(correct);
-        setMasteryChecked(true);
+
+        if (percent >= 75) {
+          setMasteryChecked(true);
+          setFeedback({ tone: 'success', message: `Mastery check passed at ${percent}%.` });
+          triggerSuccess();
+          return;
+        }
+
+        const nextRound = reviewAttemptRound + 1;
+        const retryRoundQuestions = buildRetryMasteryQuestions(masteryQuestions, masterySelections, nextRound);
+        setReviewAttemptRound(nextRound);
+        setReviewMode('retry');
+        setRetryQuestions(retryRoundQuestions);
+        setRetrySelections({});
+        setRetryChecked(false);
+        setRetryQuestionIndex(0);
+        const sampleRetry = retryRoundQuestions[0];
+        const answerHint = sampleRetry ? sampleRetry.options[sampleRetry.correctIndex] : '';
         setFeedback({
-          tone: percent >= 75 ? 'success' : 'warning',
-          message:
-            percent >= 75
-              ? `Mastery check passed at ${percent}%.`
-              : `${selectedCompanion.name}: Reinforcement required. You are at ${percent}%. Review core concept in next session.`
+          tone: 'warning',
+          message: `${selectedCompanion.name}: You are at ${percent}%. Retry only missed questions now. Tip: ${answerHint}`
         });
-        if (percent >= 75) triggerSuccess();
         return;
       }
 
@@ -1980,6 +2247,14 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
   const title = currentStep.kind === 'exercise' ? currentStep.exercise?.prompt : currentStep.title;
   const subtitle = currentStep.subtitle;
+  const coachMessage =
+    currentStep.kind === 'learn_segment'
+      ? 'Listen once, repeat once, then continue.'
+      : currentStep.kind === 'exercise'
+        ? 'Answer clearly. You will get instant correction.'
+        : currentStep.kind === 'review_block'
+          ? 'Focus and finish strong.'
+          : 'Stay consistent. One step at a time.';
 
   return (
     <LessonStepEngine
@@ -2004,6 +2279,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       }
     >
       <AnimatedSuccess visible={showSuccess} />
+      <Animated.View style={[styles.coachBubble, { transform: [{ scale: coachPulse }] }]}>
+        <Text style={styles.coachTitle}>{selectedCompanion.emoji} AI Coach</Text>
+        <Text style={styles.coachText}>{coachMessage}</Text>
+      </Animated.View>
       {renderStepContent()}
     </LessonStepEngine>
   );
@@ -2025,6 +2304,24 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     paddingTop: spacing.xs,
     gap: spacing.md
+  },
+  coachBubble: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.sm
+  },
+  coachTitle: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '700'
+  },
+  coachText: {
+    ...typography.caption,
+    color: colors.textSecondary
   },
   interactiveStep: {
     flex: 1,
@@ -2100,6 +2397,24 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     color: colors.primary,
     textAlign: 'center'
+  },
+  cueChipSubText: {
+    ...typography.caption,
+    color: '#1E40AF',
+    textAlign: 'center',
+    marginTop: 2
+  },
+  downloadBtn: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF',
+    paddingVertical: spacing.sm,
+    alignItems: 'center'
+  },
+  downloadBtnText: {
+    ...typography.bodyStrong,
+    color: colors.primary
   },
   exampleBtn: {
     borderRadius: 14,

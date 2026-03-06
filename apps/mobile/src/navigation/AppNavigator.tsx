@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Platform, StyleSheet, Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationState, NavigatorScreenParams, useNavigationState } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { CompanionAssistant } from '../components/CompanionAssistant';
 import { GlobalFocusTimerBar } from '../components/GlobalFocusTimerBar';
@@ -193,7 +194,11 @@ function screenOptions() {
 }
 
 function tabIcon(icon: string) {
-  return ({ color }: { color: string }) => <Text style={{ color, fontSize: 16 }}>{icon}</Text>;
+  return ({ color, focused }: { color: string; focused: boolean }) => (
+    <View style={[styles.tabIconWrap, focused && styles.tabIconWrapActive]}>
+      <MaterialCommunityIcons name={icon as any} size={20} color={color} />
+    </View>
+  );
 }
 
 function OnboardingRedirectToSelfAssessment({ navigation }: { navigation: any }) {
@@ -381,7 +386,7 @@ function OnboardingStackNavigator({
         />
       </OnboardingStack.Navigator>
       <OnboardingRouteTracker userId={userId} onCompleted={onCompleted} />
-      {Platform.OS !== 'web' ? <GlobalFocusTimerBar /> : null}
+      <GlobalFocusTimerBar />
       {Platform.OS !== 'web' ? <CompanionAssistant /> : null}
     </View>
   );
@@ -578,14 +583,15 @@ function MainTabsNavigator({ userId, initialRoute }: { userId: string; initialRo
           headerShown: false,
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textSecondary,
-          tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.border },
-          tabBarLabelStyle: { fontSize: 12, fontWeight: '600' }
+          tabBarStyle: styles.tabBar,
+          tabBarItemStyle: styles.tabBarItem,
+          tabBarLabelStyle: styles.tabBarLabel
         }}
       >
         <Tab.Screen
           name="HomeTab"
           component={HomeStackNavigator}
-          options={{ tabBarLabel: 'Home', tabBarIcon: tabIcon('🏠') }}
+          options={{ tabBarLabel: 'Home', tabBarIcon: tabIcon('home-variant') }}
         />
         <Tab.Screen
           name="PathTab"
@@ -595,7 +601,7 @@ function MainTabsNavigator({ userId, initialRoute }: { userId: string; initialRo
               ? ({ screen: initialRoute.nested.name, params: initialRoute.nested.params } as any)
               : undefined
           }
-          options={{ tabBarLabel: 'Path', tabBarIcon: tabIcon('🧭') }}
+          options={{ tabBarLabel: 'Path', tabBarIcon: tabIcon('map-marker-path') }}
         />
         <Tab.Screen
           name="PracticeTab"
@@ -611,16 +617,16 @@ function MainTabsNavigator({ userId, initialRoute }: { userId: string; initialRo
               navigation.navigate('PracticeTab', { screen: 'PracticeHubScreen' } as never);
             }
           })}
-          options={{ tabBarLabel: 'Practice', tabBarIcon: tabIcon('🎯') }}
+          options={{ tabBarLabel: 'Practice', tabBarIcon: tabIcon('target') }}
         />
         <Tab.Screen
           name="ProfileTab"
           component={ProfileStackNavigator}
-          options={{ tabBarLabel: 'Profile', tabBarIcon: tabIcon('👤') }}
+          options={{ tabBarLabel: 'Profile', tabBarIcon: tabIcon('account-circle') }}
         />
       </Tab.Navigator>
       <MainTabsRouteTracker userId={userId} />
-      {Platform.OS !== 'web' ? <GlobalFocusTimerBar /> : null}
+      <GlobalFocusTimerBar />
       {Platform.OS !== 'web' ? <CompanionAssistant /> : null}
     </View>
   );
@@ -635,11 +641,24 @@ function AuthBootstrapScreen() {
 }
 
 function BrandSplashScreen() {
+  const pulse = React.useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.06, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true })
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+
   return (
     <View style={styles.brandSplashRoot}>
-      <View style={styles.brandSplashMark}>
+      <Animated.View style={[styles.brandSplashMark, { transform: [{ scale: pulse }] }]}>
         <Text style={styles.brandSplashMarkEmoji}>🍁</Text>
-      </View>
+      </Animated.View>
       <Text style={styles.brandSplashName}>FRANCO</Text>
       <Text style={styles.brandSplashSub}>Powered by Jungle Labs</Text>
     </View>
@@ -756,5 +775,32 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
     marginTop: spacing.sm
+  },
+  tabBar: {
+    backgroundColor: colors.white,
+    borderTopColor: '#DCE5F2',
+    borderTopWidth: 1,
+    height: Platform.OS === 'ios' ? 84 : 70,
+    paddingBottom: Platform.OS === 'ios' ? 18 : 10,
+    paddingTop: 8
+  },
+  tabBarItem: {
+    paddingVertical: 2
+  },
+  tabBarLabel: {
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  tabIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  tabIconWrapActive: {
+    backgroundColor: '#EAF2FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE'
   }
 });
