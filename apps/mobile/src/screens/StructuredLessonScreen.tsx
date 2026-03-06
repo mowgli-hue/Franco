@@ -1040,7 +1040,13 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     const masteryPercent = masteryQuestions.length ? Math.round((masteryScore / masteryQuestions.length) * 100) : 100;
     const blended = Math.round(scorePercent * 0.7 + masteryPercent * 0.3);
     const productionOk = !lesson.assessment.productionRequired || session.productionCompleted;
-    const passed = blended >= lesson.assessment.masteryThresholdPercent && productionOk && practicePercent >= 75;
+    const basePassed = blended >= lesson.assessment.masteryThresholdPercent && productionOk && practicePercent >= 75;
+
+    const evaluatedExerciseStates = Object.values(session.exerciseStates).filter((state) => state.attempts > 0);
+    const missedCount = evaluatedExerciseStates.filter((state) => !state.correct).length;
+    const nearThreshold = blended >= Math.max(0, lesson.assessment.masteryThresholdPercent - 8);
+    const minorMistakePass = missedCount <= 1 && productionOk && practicePercent >= 70 && nearThreshold;
+    const passed = basePassed || minorMistakePass;
 
     if (passed) {
       markLessonComplete({ lessonId: lesson.id });
