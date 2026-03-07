@@ -87,6 +87,15 @@ function buildTip(metrics: ReflexSessionMetrics): string {
   return 'Strong run. Increase difficulty and keep consistency for CLB-ready reflex speed.';
 }
 
+function getWarmupSpeedMultiplier(levelId: 1 | 2 | 3 | 4 | 5, roundCount: number): number {
+  if (roundCount >= 4) return 1;
+  if (levelId === 1) return 0.74 + roundCount * 0.08;
+  if (levelId === 2) return 0.8 + roundCount * 0.06;
+  if (levelId === 3) return 0.86 + roundCount * 0.05;
+  if (levelId === 4) return 0.9 + roundCount * 0.04;
+  return 0.94 + roundCount * 0.03;
+}
+
 export function FrenchReflexRunScreen({ navigation }: Props) {
   const { user } = useAuth();
   const { trackEvent } = useLearningTelemetry();
@@ -238,8 +247,10 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
       void playPronunciation(nextRound.targetPrompt);
     }
 
+    const warmupMultiplier = getWarmupSpeedMultiplier(levelId, roundCount);
+    const effectiveSpeed = Math.max(level.minSpeed, speed * warmupMultiplier);
     const distancePx = hitLineYRef.current + PANEL_HEIGHT;
-    const durationMs = Math.max(650, Math.round((distancePx / Math.max(level.minSpeed, speed)) * 1000));
+    const durationMs = Math.max(680, Math.round((distancePx / effectiveSpeed) * 1000));
 
     fallingAnimRef.current = Animated.timing(obstacleY, {
       toValue: hitLineYRef.current,
