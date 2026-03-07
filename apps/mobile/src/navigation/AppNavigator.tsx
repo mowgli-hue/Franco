@@ -20,6 +20,7 @@ import { BeginnerFoundationScreen } from '../screens/BeginnerFoundationScreen';
 import { DiagnosticFlowScreen } from '../screens/DiagnosticFlowScreen';
 import { DiagnosticResultScreen } from '../screens/DiagnosticResultScreen';
 import { ErrorHunterScreen } from '../screens/ErrorHunterScreen';
+import { FrenchReflexRunScreen } from '../screens/FrenchReflexRunScreen';
 import { FocusSessionScreen } from '../screens/FocusSessionScreen';
 import { FoundationLessonScreen } from '../screens/FoundationLessonScreen';
 import { HomeDashboardScreen } from '../screens/HomeDashboardScreen';
@@ -141,6 +142,7 @@ export type PracticeStackParamList = {
   TeacherScriptsScreen: undefined;
   SpeedRecallScreen: undefined;
   ErrorHunterScreen: undefined;
+  FrenchReflexRunScreen: undefined;
   FocusSessionScreen:
     | {
         lessonId?: string;
@@ -185,6 +187,11 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const DEFAULT_MAIN_ROUTE: PersistedMainRoute = { tab: 'HomeTab', nested: { name: 'LearningHubScreen' } };
 const APP_SPLASH_MS = 2000;
+const TESTER_EMAIL_FOUNDATION4 = 'ztalentrecruitmentservices@gmail.com';
+const TESTER_FOUNDATION4_ROUTE: PersistedMainRoute = {
+  tab: 'PathTab',
+  nested: { name: 'FoundationLessonScreen', params: { lessonId: 'numbers-0-20' } }
+};
 
 function onboardingKey(userId: string) {
   return `clb:onboarding-completed:${userId}`;
@@ -528,6 +535,11 @@ function PracticeStackNavigator() {
         options={{ title: 'Error Hunter' }}
       />
       <PracticeStack.Screen
+        name="FrenchReflexRunScreen"
+        component={FrenchReflexRunScreen as React.ComponentType<any>}
+        options={{ title: 'French Reflex Run' }}
+      />
+      <PracticeStack.Screen
         name="FocusSessionScreen"
         component={FocusSessionScreen as React.ComponentType<any>}
         options={{ title: 'Focus Session' }}
@@ -716,6 +728,13 @@ export function AppNavigator() {
       setRestoreReady(true);
       setMainRoute(DEFAULT_MAIN_ROUTE);
       setOnboardingCompleted(false);
+      return;
+    }
+
+    if ((user.email ?? '').trim().toLowerCase() === TESTER_EMAIL_FOUNDATION4) {
+      setMainRoute(TESTER_FOUNDATION4_ROUTE);
+      setOnboardingCompleted(true);
+      setRestoreReady(true);
       return;
     }
 

@@ -13,6 +13,7 @@ type CloudProfileState = {
   lastMainRoute?: unknown;
   onboardingCompleted?: boolean;
   subscriptionProfile?: unknown;
+  reflexPerformanceProfile?: unknown;
 };
 
 function profileRef(userId: string) {
@@ -86,6 +87,19 @@ export async function saveCloudSubscriptionProfile(userId: string, subscriptionP
     ref,
     {
       subscriptionProfile,
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
+}
+
+export async function saveCloudReflexPerformanceProfile(userId: string, reflexPerformanceProfile: unknown): Promise<void> {
+  const ref = profileRef(userId);
+  if (!ref) return;
+  await setDoc(
+    ref,
+    {
+      reflexPerformanceProfile,
       updatedAt: serverTimestamp()
     },
     { merge: true }

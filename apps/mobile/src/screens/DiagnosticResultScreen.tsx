@@ -21,8 +21,14 @@ type StartingRoute = { name: keyof MainStackParamList; params?: Record<string, u
 
 function determineStartingRoute(
   level: OnboardingSelfLevel,
-  goalType: Props['route']['params']['goalType']
+  goalType: Props['route']['params']['goalType'],
+  userEmail?: string | null
 ): StartingRoute {
+  // Temporary QA shortcut: route this tester account directly to Foundation Lesson 4.
+  if ((userEmail ?? '').trim().toLowerCase() === 'ztalentrecruitmentservices@gmail.com') {
+    return { name: 'FoundationLessonScreen', params: { lessonId: 'numbers-0-20' } };
+  }
+
   if (level === 'none') return { name: 'BeginnerFoundationScreen' };
   if (level === 'basic') return { name: 'A1FoundationScreen' };
   if (level === 'simple') return { name: 'A1Lesson1Screen' };
@@ -95,7 +101,7 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
   }, [progressAnim]);
 
   const handleStartTraining = async () => {
-    const nextRoute = determineStartingRoute(route.params.selfLevel, route.params.goalType);
+    const nextRoute = determineStartingRoute(route.params.selfLevel, route.params.goalType, user?.email);
     try {
       setSaving(true);
       if (user?.uid) {

@@ -11,27 +11,51 @@ import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'ErrorHunterScreen'>;
+type DrillMode = 'all' | 'wrongOnly';
+type ResultMap = Record<string, { correct: boolean; selectedIndex: number }>;
 
 export function ErrorHunterScreen({ navigation }: Props) {
+  const [drillMode, setDrillMode] = useState<DrillMode>('all');
+  const [queue, setQueue] = useState(errorHunterPrompts.map((p) => p.id));
   const [index, setIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
+  const [resultsById, setResultsById] = useState<ResultMap>({});
 
-  const current = errorHunterPrompts[index];
-  const finished = index >= errorHunterPrompts.length;
+  const promptsById = useMemo(() => {
+    const map: Record<string, (typeof errorHunterPrompts)[number]> = {};
+    errorHunterPrompts.forEach((p) => {
+      map[p.id] = p;
+    });
+    return map;
+  }, []);
+
+  const currentPromptId = queue[index];
+  const current = currentPromptId ? promptsById[currentPromptId] : undefined;
+  const finished = index >= queue.length || !current;
   const accuracy = useMemo(() => {
-    if (!errorHunterPrompts.length) return 0;
-    return Math.round((correctCount / errorHunterPrompts.length) * 100);
-  }, [correctCount]);
+    if (!queue.length) return 0;
+    return Math.round((correctCount / queue.length) * 100);
+  }, [correctCount, queue.length]);
+
+  const wrongIds = useMemo(
+    () => Object.entries(resultsById).filter(([, result]) => !result.correct).map(([id]) => id),
+    [resultsById]
+  );
 
   const handleCheck = () => {
-    if (selectedIndex === null || submitted) {
+    if (selectedIndex === null || submitted || !current) {
       return;
     }
-    if (selectedIndex === current.correctIndex) {
+    const isCorrect = selectedIndex === current.correctIndex;
+    if (isCorrect) {
       setCorrectCount((prev) => prev + 1);
     }
+    setResultsById((prev) => ({
+      ...prev,
+      [current.id]: { correct: isCorrect, selectedIndex }
+    }));
     setSubmitted(true);
   };
 
@@ -42,10 +66,39 @@ export function ErrorHunterScreen({ navigation }: Props) {
   };
 
   const restart = () => {
+    setDrillMode('all');
+    setQueue(errorHunterPrompts.map((p) => p.id));
     setIndex(0);
     setSelectedIndex(null);
     setSubmitted(false);
     setCorrectCount(0);
+    setResultsById({});
+  };
+
+  const retryCurrent = () => {
+    if (!current) return;
+    const wasCorrect = resultsById[current.id]?.correct === true;
+    if (wasCorrect) {
+      setCorrectCount((prev) => Math.max(0, prev - 1));
+    }
+    setResultsById((prev) => {
+      const next = { ...prev };
+      delete next[current.id];
+      return next;
+    });
+    setSelectedIndex(null);
+    setSubmitted(false);
+  };
+
+  const startWrongOnlyRound = () => {
+    if (!wrongIds.length) return;
+    setDrillMode('wrongOnly');
+    setQueue(wrongIds);
+    setIndex(0);
+    setSelectedIndex(null);
+    setSubmitted(false);
+    setCorrectCount(0);
+    setResultsById({});
   };
 
   if (finished) {
@@ -53,9 +106,30 @@ export function ErrorHunterScreen({ navigation }: Props) {
       <View style={styles.root}>
         <Card>
           <Text style={styles.title}>Error Hunter Complete</Text>
-          <Text style={styles.summary}>Score: {correctCount} / {errorHunterPrompts.length}</Text>
+          <Text style={styles.summary}>Mode: {drillMode === 'all' ? 'All Sentences' : 'Wrong-Only Retry'}</Text>
+          <Text style={styles.summary}>Score: {correctCount} / {queue.length}</Text>
           <Text style={styles.summary}>Accuracy: {accuracy}%</Text>
+          {Object.keys(resultsById).length ? (
+            <View style={styles.resultList}>
+              {Object.entries(resultsById).map(([id, result], idx) => {
+                const prompt = promptsById[id];
+                if (!prompt) return null;
+                return (
+                  <View key={id} style={styles.resultRow}>
+                    <Text style={styles.resultIndex}>{idx + 1}.</Text>
+                    <Text style={styles.resultText}>{prompt.incorrectSentence}</Text>
+                    <Text style={[styles.resultStatus, result.correct ? styles.resultGood : styles.resultBad]}>
+                      {result.correct ? 'Correct' : 'Wrong'}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
           <View style={styles.actions}>
+            {drillMode === 'all' && wrongIds.length ? (
+              <AnimatedButton label="Retry Wrong Only" onPress={startWrongOnlyRound} />
+            ) : null}
             <AnimatedButton label="Try Again" onPress={restart} />
             <AnimatedButton label="Back to Practice" variant="outline" onPress={() => navigation.goBack()} />
           </View>
@@ -65,12 +139,13 @@ export function ErrorHunterScreen({ navigation }: Props) {
   }
 
   const canCheck = selectedIndex !== null && !submitted;
-  const ctaLabel = submitted ? (index === errorHunterPrompts.length - 1 ? 'Finish Drill' : 'Next Sentence') : 'Check Answer';
+  const ctaLabel = submitted ? (index === queue.length - 1 ? 'Finish Drill' : 'Next Sentence') : 'Check Answer';
 
   return (
     <View style={styles.root}>
       <Text style={styles.header}>Error Hunter</Text>
-      <Text style={styles.progress}>Sentence {index + 1} / {errorHunterPrompts.length}</Text>
+      <Text style={styles.progress}>Sentence {index + 1} / {queue.length}</Text>
+      <Text style={styles.progress}>{drillMode === 'all' ? 'All Sentences' : 'Wrong-Only Retry'}</Text>
 
       <Card>
         <Text style={styles.blockLabel}>Incorrect sentence</Text>
@@ -109,7 +184,12 @@ export function ErrorHunterScreen({ navigation }: Props) {
 
         <View style={styles.actions}>
           {submitted ? (
-            <AnimatedButton label={ctaLabel} onPress={handleNext} />
+            <>
+              {selectedIndex !== current.correctIndex ? (
+                <AnimatedButton label="Retry This Sentence" variant="outline" onPress={retryCurrent} />
+              ) : null}
+              <AnimatedButton label={ctaLabel} onPress={handleNext} />
+            </>
           ) : (
             <AnimatedButton label={ctaLabel} onPress={handleCheck} disabled={!canCheck} />
           )}
@@ -200,5 +280,40 @@ const styles = StyleSheet.create({
   actions: {
     marginTop: spacing.md,
     gap: spacing.sm
+  },
+  resultList: {
+    marginTop: spacing.md,
+    gap: spacing.xs
+  },
+  resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    backgroundColor: colors.white,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs
+  },
+  resultIndex: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    width: 20
+  },
+  resultText: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    flex: 1,
+    marginRight: spacing.sm
+  },
+  resultStatus: {
+    ...typography.caption,
+    fontWeight: '700'
+  },
+  resultGood: {
+    color: '#047857'
+  },
+  resultBad: {
+    color: colors.danger
   }
 });

@@ -28,6 +28,7 @@ export type PracticeStackRouteName =
   | 'TeacherScriptsScreen'
   | 'SpeedRecallScreen'
   | 'ErrorHunterScreen'
+  | 'FrenchReflexRunScreen'
   | 'FocusSessionScreen'
   | 'AITeacherSessionScreen';
 export type ProfileStackRouteName =
@@ -101,6 +102,7 @@ const ALLOWED_NESTED = [
   'TeacherScriptsScreen',
   'SpeedRecallScreen',
   'ErrorHunterScreen',
+  'FrenchReflexRunScreen',
   'FocusSessionScreen',
   'PracticeHubScreen',
   'AITeacherSessionScreen',

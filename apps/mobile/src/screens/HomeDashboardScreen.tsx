@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -8,6 +8,7 @@ import {
   countCompletedCurriculumLessonsAsSessions,
   getRoadmapProgressFromCalendarDay
 } from '../content/program/sessionRoadmap';
+import { useAuth } from '../context/AuthContext';
 import { useCurriculumProgress } from '../context/CurriculumProgressContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import type { MainStackParamList } from '../navigation/AppNavigator';
@@ -69,8 +70,32 @@ function formatSkillLabel(skill: 'listening' | 'speaking' | 'writing' | 'reading
 }
 
 export function HomeDashboardScreen({ navigation }: Props) {
+  const { user } = useAuth();
   const { curriculumState, currentLevel, currentModule, currentModuleLessons, todaySessionPlan } = useCurriculumProgress();
   const { subscriptionProfile, markProPreviewUsed } = useSubscription();
+  const testerRedirectedRef = useRef(false);
+
+  const navigateToPathTab = (screen: string, params?: Record<string, unknown>) => {
+    const tabsNavigation = navigation.getParent?.()?.getParent?.();
+    if (!tabsNavigation) return false;
+    try {
+      (tabsNavigation.navigate as any)('PathTab', { screen, params });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const email = (user?.email ?? '').trim().toLowerCase();
+    if (email !== 'ztalentrecruitmentservices@gmail.com') return;
+    if (testerRedirectedRef.current) return;
+    testerRedirectedRef.current = true;
+
+    if (!navigateToPathTab('FoundationLessonScreen', { lessonId: 'numbers-0-20' })) {
+      (navigation.navigate as any)('LearningHubScreen');
+    }
+  }, [navigation, user?.email]);
 
   const levelProgress = curriculumState.levels[curriculumState.currentLevelId];
   const currentLessonUi: LessonUiState | null =
@@ -118,50 +143,42 @@ export function HomeDashboardScreen({ navigation }: Props) {
       }
     }
 
-    const parent = navigation.getParent?.();
-    const goPath = (screen: string, params?: Record<string, unknown>) => {
-      try {
-        parent?.navigate('PathTab', { screen, params });
-        return true;
-      } catch {
-        return false;
-      }
-    };
+    const goPath = (screen: string, params?: Record<string, unknown>) => navigateToPathTab(screen, params);
 
     if (lessonId.startsWith('foundation-lesson-')) {
-      if (!goPath('BeginnerFoundationScreen')) (navigation.navigate as any)('PathMapScreen');
+      if (!goPath('BeginnerFoundationScreen')) (navigation.navigate as any)('LearningHubScreen');
       return;
     }
     if (lessonId === 'a1-lesson-1') {
-      if (!goPath('A1Lesson1Screen')) (navigation.navigate as any)('PathMapScreen');
+      if (!goPath('A1Lesson1Screen')) (navigation.navigate as any)('LearningHubScreen');
       return;
     }
     if (lessonId === 'a1-lesson-2') {
-      if (!goPath('A1ModuleLessonScreen', { lessonId })) (navigation.navigate as any)('PathMapScreen');
+      if (!goPath('A1ModuleLessonScreen', { lessonId })) (navigation.navigate as any)('LearningHubScreen');
       return;
     }
     if (lessonId === 'a1-lesson-3') {
-      if (!goPath('A1Lesson3Screen')) (navigation.navigate as any)('PathMapScreen');
+      if (!goPath('A1Lesson3Screen')) (navigation.navigate as any)('LearningHubScreen');
       return;
     }
     if (/^a1-lesson-(?:[4-9]|[12]\d|3\d|40)$/.test(lessonId)) {
-      if (!goPath('A1ModuleLessonScreen', { lessonId })) (navigation.navigate as any)('PathMapScreen');
+      if (!goPath('A1ModuleLessonScreen', { lessonId })) (navigation.navigate as any)('LearningHubScreen');
       return;
     }
     if (/^a2-lesson-(?:[1-9]|[1-3]\d|40)$/.test(lessonId)) {
-      if (!goPath('A2ModuleLessonScreen', { lessonId })) (navigation.navigate as any)('PathMapScreen');
+      if (!goPath('A2ModuleLessonScreen', { lessonId })) (navigation.navigate as any)('LearningHubScreen');
       return;
     }
     if (/^b1-lesson-(?:[1-9]|[1-3]\d|40)$/.test(lessonId)) {
-      if (!goPath('B1ModuleLessonScreen', { lessonId })) (navigation.navigate as any)('PathMapScreen');
+      if (!goPath('B1ModuleLessonScreen', { lessonId })) (navigation.navigate as any)('LearningHubScreen');
       return;
     }
     if (/^(clb5|clb7)-lesson-(?:[1-9]|[1-3]\d|40)$/.test(lessonId)) {
-      if (!goPath('CLBModuleLessonScreen', { lessonId })) (navigation.navigate as any)('PathMapScreen');
+      if (!goPath('CLBModuleLessonScreen', { lessonId })) (navigation.navigate as any)('LearningHubScreen');
       return;
     }
 
-    (navigation.navigate as any)('PathMapScreen');
+    (navigation.navigate as any)('LearningHubScreen');
   };
 
   return (

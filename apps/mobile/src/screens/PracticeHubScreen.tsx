@@ -43,6 +43,7 @@ export function PracticeHubScreen({ navigation }: Props) {
             <View style={styles.quickButtons}>
               <AnimatedButton label="Speed Recall (60s)" onPress={() => navigation.navigate('SpeedRecallScreen')} />
               <AnimatedButton label="Error Hunter" variant="outline" onPress={() => navigation.navigate('ErrorHunterScreen')} />
+              <AnimatedButton label="French Reflex Run" variant="outline" onPress={() => navigation.navigate('FrenchReflexRunScreen')} />
               <AnimatedButton label="A1 Scripts" variant="outline" onPress={() => navigation.navigate('TeacherScriptsScreen')} />
             </View>
           </Card>
