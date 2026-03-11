@@ -40,7 +40,7 @@ type Round = {
 
 const PANEL_HEIGHT = 68;
 const HORIZONTAL_PADDING = 22;
-const SWIPE_THRESHOLD = 30;
+const SWIPE_THRESHOLD = 20;
 const MAX_ROUNDS_PER_SESSION = 26;
 
 function randomItem<T>(items: T[]): T {
@@ -167,6 +167,12 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
       stiffness: 220,
       damping: 20
     }).start();
+  };
+
+  const moveToLane = (nextLane: 0 | 1 | 2) => {
+    if (nextLane === laneRef.current) return;
+    setLane(nextLane);
+    animateRunnerToLane(nextLane);
   };
 
   const shakeOnMiss = () => {
@@ -336,16 +342,10 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
           if (status !== 'playing') return;
           if (gestureState.dx <= -SWIPE_THRESHOLD) {
             const next = Math.max(0, laneRef.current - 1) as 0 | 1 | 2;
-            if (next !== laneRef.current) {
-              setLane(next);
-              animateRunnerToLane(next);
-            }
+            moveToLane(next);
           } else if (gestureState.dx >= SWIPE_THRESHOLD) {
             const next = Math.min(2, laneRef.current + 1) as 0 | 1 | 2;
-            if (next !== laneRef.current) {
-              setLane(next);
-              animateRunnerToLane(next);
-            }
+            moveToLane(next);
           }
         }
       }),
@@ -459,6 +459,14 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
             <View style={styles.laneGuide} />
             <View style={styles.laneGuide} />
           </View>
+
+          {status === 'playing' ? (
+            <View style={styles.tapLanesOverlay} pointerEvents="box-none">
+              <Pressable style={styles.tapLane} onPress={() => moveToLane(0)} />
+              <Pressable style={styles.tapLane} onPress={() => moveToLane(1)} />
+              <Pressable style={styles.tapLane} onPress={() => moveToLane(2)} />
+            </View>
+          ) : null}
           {[0, 1, 2, 3, 4].map((i) => {
             const opacityBase = 0.12 + i * 0.03;
             return (
@@ -650,6 +658,14 @@ const styles = StyleSheet.create({
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderRightWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(148,163,184,0.14)'
+  },
+  tapLanesOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'row',
+    zIndex: 2
+  },
+  tapLane: {
+    flex: 1
   },
   speedStreak: {
     position: 'absolute',
