@@ -60,6 +60,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           (err as Error & { code?: string }).code = 'auth/email-not-verified';
           throw err;
         }
+
+        try {
+          await registerNotificationEmailUser({
+            userId: loggedInUser.uid,
+            email: loggedInUser.email ?? email,
+            displayName: loggedInUser.displayName ?? undefined,
+            emailVerified: loggedInUser.emailVerified
+          });
+        } catch {
+          // non-blocking while backend may be offline during development
+        }
       },
       async register(name, email, password) {
         const createdUser = await registerWithEmailPassword(email, password);

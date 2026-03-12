@@ -242,7 +242,7 @@ notificationsRouter.post('/lesson-complete', async (req, res) => {
     await sendEmail({
       to: input.email,
       subject: await buildSubject({
-        campaign: 'weeklyReport',
+        campaign: 'lessonComplete',
         userId: input.userId,
         daySeed: new Date().toISOString().slice(0, 10),
         displayName: input.displayName

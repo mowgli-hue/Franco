@@ -1,6 +1,6 @@
 import { config } from '../../infrastructure/config/env';
 
-type CampaignType = 'welcome' | 'studyReminder' | 'weeklyReport';
+type CampaignType = 'welcome' | 'studyReminder' | 'weeklyReport' | 'lessonComplete';
 
 function pickBySeed(options: string[], seed: string): string {
   let hash = 0;
@@ -44,6 +44,17 @@ function buildFallbackSubject(input: SubjectInput): string {
     );
   }
 
+  if (input.campaign === 'lessonComplete') {
+    return pickBySeed(
+      [
+        'Lesson complete: keep your French momentum',
+        'Great progress today - your next French lesson is ready',
+        'You completed a lesson: continue your CLB journey'
+      ],
+      baseSeed
+    );
+  }
+
   return pickBySeed(
     [
       'Your weekly Franco progress summary',
@@ -62,6 +73,8 @@ async function generateAiSubject(input: SubjectInput): Promise<string | null> {
       ? 'Welcome/onboarding email'
       : input.campaign === 'studyReminder'
         ? 'Daily study reminder email'
+        : input.campaign === 'lessonComplete'
+          ? 'Lesson completion confirmation email'
         : 'Weekly progress summary email';
 
   const fallback = buildFallbackSubject(input);

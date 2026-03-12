@@ -146,10 +146,10 @@ export async function loadCloudCurriculumState<TState, TCertificates>(
     const snap = await getDoc(ref);
     if (!snap.exists()) return null;
     const data = snap.data() as Partial<CloudCurriculumPayload<TState, TCertificates>>;
-    if (!data.curriculumState || !data.earnedCertificates) return null;
+    if (!data.curriculumState) return null;
     return {
       curriculumState: data.curriculumState as TState,
-      earnedCertificates: data.earnedCertificates as TCertificates
+      earnedCertificates: ((data.earnedCertificates ?? []) as unknown) as TCertificates
     };
   } catch {
     return null;

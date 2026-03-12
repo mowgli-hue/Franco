@@ -76,7 +76,8 @@ export function HomeDashboardScreen({ navigation }: Props) {
   const testerRedirectedRef = useRef(false);
 
   const navigateToPathTab = (screen: string, params?: Record<string, unknown>) => {
-    const tabsNavigation = navigation.getParent?.()?.getParent?.();
+    const parent = navigation.getParent?.();
+    const tabsNavigation = parent?.navigate ? parent : parent?.getParent?.();
     if (!tabsNavigation) return false;
     try {
       (tabsNavigation.navigate as any)('PathTab', { screen, params });
