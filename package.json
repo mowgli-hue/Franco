@@ -21,7 +21,9 @@
     "test": "npm run test --workspaces",
     "desktop": "electron .",
     "desktop:dev": "FRANCO_DESKTOP_URL=http://localhost:8081 electron .",
-    "build:desktop": "electron-builder"
+    "build:desktop": "electron-builder",
+    "update:mobile:preview": "eas update --channel preview --message \"Preview OTA update\"",
+    "update:mobile:production": "eas update --channel production --message \"Production OTA update\""
   },
   "engines": {
     "node": ">=20"
@@ -42,6 +44,13 @@
       "output": "release"
     },
     "artifactName": "Franco-${version}-${os}-${arch}.${ext}",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "mowgli-hue",
+        "repo": "Franco"
+      }
+    ],
     "files": [
       "electron/**/*",
       "package.json"

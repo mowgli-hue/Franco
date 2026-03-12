@@ -40,8 +40,17 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9702e0c6-6684-45c3-a3be-1887bae26ff7",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "plugins": [
-      "expo-audio"
+      "expo-audio",
+      "expo-updates"
     ],
     "extra": {
       "firebasePublic": {

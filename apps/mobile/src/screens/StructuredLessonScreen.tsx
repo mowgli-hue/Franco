@@ -34,6 +34,7 @@ import {
 import { assessPronunciation } from '../services/ai/PronunciationAssessmentService';
 import { assessSpeakingResponse } from '../services/ai/SpeakingAssessmentService';
 import { assessWritingResponse } from '../services/ai/WritingCorrectionService';
+import { playCorrectAnswerSound } from '../services/audio/answerFeedbackAudio';
 import { playPronunciation } from '../services/audio/pronunciationAudio';
 import { loadUserOnboardingProfile } from '../navigation/routePersistence';
 import type { Exercise, StructuredLessonContent, TeachingSegment } from '../types/LessonContentTypes';
@@ -976,6 +977,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   };
 
   const triggerSuccess = () => {
+    void playCorrectAnswerSound();
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 420);
   };

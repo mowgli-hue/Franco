@@ -8,6 +8,7 @@ import {
   type AILessonStep,
   type AnswerValidationRule
 } from '../data/aiLessons';
+import { playCorrectAnswerSound } from '../services/audio/answerFeedbackAudio';
 
 type FeedbackState = {
   type: 'success' | 'error' | 'info';
@@ -198,6 +199,7 @@ export function useLessonSession(lessonId: string): LessonSessionController {
     const isCorrect = validateAnswer(userInput, step.interaction.validation);
 
     if (isCorrect) {
+      void playCorrectAnswerSound();
       setStatus('validated');
       setFeedback({ type: 'success', text: step.interaction.successFeedback });
       return;
@@ -229,6 +231,7 @@ export function useLessonSession(lessonId: string): LessonSessionController {
     setCheckpointResults(nextResults);
 
     if (checkpointQuestionIndex < step.questions.length - 1) {
+      void playCorrectAnswerSound();
       setCheckpointQuestionIndex((prev) => prev + 1);
       setUserInput('');
       setStatus('awaitingInput');
@@ -240,6 +243,7 @@ export function useLessonSession(lessonId: string): LessonSessionController {
     setCheckpointScore(percent);
 
     if (percent >= step.passThreshold) {
+      void playCorrectAnswerSound();
       setStatus('validated');
       setFeedback({ type: 'success', text: `Checkpoint passed (${percent}%). You are ready to move forward.` });
       return;

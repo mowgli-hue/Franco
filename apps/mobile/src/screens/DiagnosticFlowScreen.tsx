@@ -14,6 +14,7 @@ import {
 } from '../learning/engines';
 import type { MainStackParamList } from '../navigation/AppNavigator';
 import type { OnboardingSelfLevel } from '../navigation/routePersistence';
+import { playCorrectAnswerSound } from '../services/audio/answerFeedbackAudio';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
@@ -121,6 +122,10 @@ export function DiagnosticFlowScreen({ navigation, route }: Props) {
 
   const handleNextAssessment = () => {
     if (selectedOption === null) return;
+    const isCorrectAnswer = selectedOption === currentQuestion.correctOption;
+    if (isCorrectAnswer) {
+      void playCorrectAnswerSound();
+    }
     const nextState = submitAdaptiveAnswer(diagnosticState, currentQuestion, selectedOption);
     setSelectedOption(null);
 

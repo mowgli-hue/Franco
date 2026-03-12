@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -14,6 +14,7 @@ import { LessonNotesProvider } from './context/LessonNotesContext';
 import { LearningProgressProvider } from './context/LearningProgressContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
 import { AppNavigator } from './navigation/AppNavigator';
+import { setupOtaUpdateChecks } from './services/updates/otaUpdateService';
 
 type AppErrorBoundaryState = {
   hasError: boolean;
@@ -50,6 +51,11 @@ class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, Ap
 }
 
 export default function App() {
+  useEffect(() => {
+    const unsubscribe = setupOtaUpdateChecks();
+    return unsubscribe;
+  }, []);
+
   return (
     <AppErrorBoundary>
       <SafeAreaProvider>

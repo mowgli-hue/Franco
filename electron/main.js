@@ -4,6 +4,16 @@ const path = require('path');
 const PROD_URL = 'https://franco.app';
 const APP_URL = process.env.FRANCO_DESKTOP_URL || PROD_URL;
 const APP_ICON = path.join(__dirname, 'assets', 'icon.png');
+const hasDesktopUpdater = process.env.FRANCO_DESKTOP_UPDATER !== 'off';
+
+let autoUpdater = null;
+if (hasDesktopUpdater) {
+  try {
+    ({ autoUpdater } = require('electron-updater'));
+  } catch {
+    autoUpdater = null;
+  }
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -31,6 +41,12 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  if (autoUpdater) {
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+    void autoUpdater.checkForUpdatesAndNotify().catch(() => undefined);
+  }
+
   createWindow();
 
   app.on('activate', () => {
