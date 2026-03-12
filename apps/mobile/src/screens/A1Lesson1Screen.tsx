@@ -8,6 +8,7 @@ import { Card } from '../components/Card';
 import { useCurriculumProgress } from '../context/CurriculumProgressContext';
 import { useFoundationProgress } from '../context/FoundationProgressContext';
 import type { MainStackParamList } from '../navigation/AppNavigator';
+import { navigateToPathTab } from '../navigation/pathTabNavigation';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
@@ -24,17 +25,8 @@ export function A1Lesson1Screen({ navigation }: Props) {
   const foundationCompleted = completedLessonIds.length === totalLessons;
 
   const goToLesson2 = () => {
-    const parent = navigation.getParent?.();
-    if (parent) {
-      try {
-        (parent.navigate as any)('PathTab', {
-          screen: 'A1ModuleLessonScreen',
-          params: { lessonId: 'a1-lesson-2' }
-        });
-        return;
-      } catch {
-        // onboarding stack fallback
-      }
+    if (navigateToPathTab(navigation as any, 'A1ModuleLessonScreen', { lessonId: 'a1-lesson-2' })) {
+      return;
     }
     (navigation.navigate as any)('A1ModuleLessonScreen', { lessonId: 'a1-lesson-2' });
   };

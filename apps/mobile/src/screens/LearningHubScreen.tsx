@@ -15,6 +15,7 @@ import {
 import { useCurriculumProgress } from '../context/CurriculumProgressContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import type { MainStackParamList } from '../navigation/AppNavigator';
+import { navigateToPathTab } from '../navigation/pathTabNavigation';
 import { isProLessonId, shouldAllowSinglePreview, shouldRouteToUpgrade } from '../services/subscription/subscriptionGate';
 import type { LevelId, SkillFocus } from '../types/CurriculumTypes';
 import { colors } from '../theme/colors';
@@ -92,21 +93,8 @@ export function LearningHubScreen({ navigation }: Props) {
       }
     }
 
-    const parent = navigation.getParent?.();
     const openInPathTab = (screen: string, params?: Record<string, unknown>) => {
-      if (parent) {
-        try {
-          (parent.navigate as any)('PathTab', {
-            screen,
-            params
-          });
-          return true;
-        } catch {
-          return false;
-        }
-      }
-
-      return false;
+      return navigateToPathTab(navigation as any, screen, params);
     };
 
     if (lessonId === 'a1-lesson-1') {

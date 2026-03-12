@@ -8,6 +8,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { CompanionAssistant } from '../components/CompanionAssistant';
 import { GlobalFocusTimerBar } from '../components/GlobalFocusTimerBar';
+import { HelpFeedbackButton } from '../components/HelpFeedbackButton';
 import { useAuth } from '../context/AuthContext';
 import { A1FoundationScreen } from '../screens/A1FoundationScreen';
 import { A1Lesson1Screen } from '../screens/A1Lesson1Screen';
@@ -676,6 +677,7 @@ function MainTabsNavigator({ userId, initialRoute }: { userId: string; initialRo
           options={{ tabBarLabel: 'Profile', tabBarIcon: tabIcon('account-circle') }}
         />
       </Tab.Navigator>
+      <HelpFeedbackButton />
       <MainTabsRouteTracker userId={userId} />
       <GlobalFocusTimerBar />
       {Platform.OS !== 'web' ? <CompanionAssistant /> : null}

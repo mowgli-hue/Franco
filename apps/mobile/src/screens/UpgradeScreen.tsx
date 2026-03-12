@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useSubscription } from '../context/SubscriptionContext';
+import { env } from '../core/config/env';
 import type { MainStackParamList } from '../navigation/AppNavigator';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
@@ -24,30 +25,31 @@ const FEATURES = [
 ];
 
 export function UpgradeScreen({ navigation }: Props) {
-  const { founderSeatsRemaining, refreshFounderSeats, setActivePlan } = useSubscription();
+  const { founderSeatsRemaining, refreshFounderSeats, refreshSubscriptionStatus, setActivePlan } = useSubscription();
   const [loading, setLoading] = useState(false);
 
   const handleSubscribe = async (planType: 'founder' | 'pro') => {
     try {
       setLoading(true);
-      // Placeholder for Stripe checkout flow per plan.
-      const result = await setActivePlan(planType);
+      const successUrl = `${env.webAppBaseUrl}/subscription/success`;
+      const cancelUrl = `${env.webAppBaseUrl}/subscription/cancel`;
+      const result = await setActivePlan(planType, { successUrl, cancelUrl });
       if (!result.ok) {
         if (result.reason === 'sold_out') {
           Alert.alert('Founding Member Sold Out', 'All 50 founding seats are already taken.');
+        } else if (result.reason === 'auth_required') {
+          Alert.alert('Login Required', 'Please login again to start checkout.');
         } else {
-          Alert.alert('Subscription', 'Could not activate plan right now. Please try again.');
+          Alert.alert('Subscription', 'Could not start checkout right now. Please try again.');
         }
         await refreshFounderSeats();
         return;
       }
-      Alert.alert(
-        'Subscription Active',
-        planType === 'founder'
-          ? 'Founding Member plan activated at $49/month.'
-          : 'Franco Pro activated at $99/month.'
-      );
-      navigation.goBack();
+      if (result.checkoutUrl) {
+        await Linking.openURL(result.checkoutUrl);
+        Alert.alert('Checkout Opened', 'Complete payment in browser, then return to app.');
+      }
+      await refreshSubscriptionStatus();
     } finally {
       setLoading(false);
     }
@@ -80,12 +82,12 @@ export function UpgradeScreen({ navigation }: Props) {
           {founderSeatsRemaining > 0 ? (
             <View style={[styles.planCard, styles.planCardFounder]}>
               <Text style={styles.planBadge}>FOUNDING MEMBER</Text>
-              <Text style={styles.planTitle}>Franco Founding</Text>
-              <Text style={styles.price}>$49/month</Text>
-              <Text style={styles.priceMeta}>Same full Pro features. Limited to first 50 learners.</Text>
-              <Text style={styles.seatMeta}>{founderSeatsRemaining} seats remaining</Text>
-              <Button label="Get Founding Plan" onPress={() => void handleSubscribe('founder')} loading={loading} />
-            </View>
+            <Text style={styles.planTitle}>Franco Founding</Text>
+            <Text style={styles.price}>$49/month</Text>
+            <Text style={styles.priceMeta}>Same full Pro features. Limited to first 50 learners.</Text>
+            <Text style={styles.seatMeta}>{founderSeatsRemaining} seats remaining</Text>
+            <Button label="Checkout Founding Plan" onPress={() => void handleSubscribe('founder')} loading={loading} />
+          </View>
           ) : null}
 
           <View style={styles.planCard}>
@@ -93,7 +95,7 @@ export function UpgradeScreen({ navigation }: Props) {
             <Text style={styles.planTitle}>Standard Pro</Text>
             <Text style={styles.price}>$99/month</Text>
             <Text style={styles.priceMeta}>Full structured CLB 3-7 immigration training.</Text>
-            <Button label="Unlock Franco Pro" onPress={() => void handleSubscribe('pro')} loading={loading} />
+            <Button label="Checkout Franco Pro" onPress={() => void handleSubscribe('pro')} loading={loading} />
           </View>
 
           <View style={styles.actions}>

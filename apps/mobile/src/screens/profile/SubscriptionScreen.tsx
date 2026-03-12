@@ -1,24 +1,60 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
+import { useSubscription } from '../../context/SubscriptionContext';
+import { env } from '../../core/config/env';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
+function formatCurrentPlanLabel(planType: 'free' | 'founder' | 'pro', status: 'free' | 'active') {
+  if (status !== 'active') return 'Free Starter';
+  if (planType === 'founder') return 'Founding Member';
+  if (planType === 'pro') return 'Franco Pro';
+  return 'Free Starter';
+}
+
 export function SubscriptionScreen() {
+  const { loading, subscriptionProfile, openBillingPortal, refreshSubscriptionStatus } = useSubscription();
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const currentPlanLabel = useMemo(
+    () => formatCurrentPlanLabel(subscriptionProfile.planType, subscriptionProfile.subscriptionStatus),
+    [subscriptionProfile.planType, subscriptionProfile.subscriptionStatus]
+  );
+
+  const handleOpenPortal = async () => {
+    try {
+      setPortalLoading(true);
+      setStatusMessage(null);
+      const result = await openBillingPortal({ returnUrl: `${env.webAppBaseUrl}/subscription/account` });
+      if (!result.ok || !result.portalUrl) {
+        setStatusMessage('Billing portal unavailable right now. If you just subscribed, try again in 1 minute.');
+        return;
+      }
+      await Linking.openURL(result.portalUrl);
+      setStatusMessage('Billing portal opened in browser.');
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
   return (
     <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Card>
           <Text style={styles.title}>Subscription</Text>
-          <Text style={styles.subtitle}>Manage your learning plan and premium access.</Text>
+          <Text style={styles.subtitle}>Manage billing, renewals, and your premium access.</Text>
 
           <View style={styles.planCardCurrent}>
             <Text style={styles.planTitle}>Current Plan</Text>
-            <Text style={styles.planName}>Free Starter</Text>
-            <Text style={styles.planMeta}>Foundation + selected guided lessons</Text>
+            <Text style={styles.planName}>{currentPlanLabel}</Text>
+            <Text style={styles.planMeta}>
+              Status: {subscriptionProfile.subscriptionStatus === 'active' ? 'Active' : 'Free'}
+            </Text>
           </View>
 
           <View style={styles.planCard}>
@@ -28,27 +64,34 @@ export function SubscriptionScreen() {
           </View>
 
           <View style={styles.planCard}>
-            <Text style={styles.planTitle}>Pro Yearly</Text>
-            <Text style={styles.planName}>Best value</Text>
-            <Text style={styles.planMeta}>All premium features with annual discount</Text>
+            <Text style={styles.planTitle}>Founder Monthly</Text>
+            <Text style={styles.planName}>Discounted legacy pricing</Text>
+            <Text style={styles.planMeta}>Same premium features at founder pricing while seats last</Text>
           </View>
 
           <View style={styles.securityCard}>
             <Text style={styles.securityTitle}>Security & Privacy</Text>
-            <Text style={styles.securityLine}>• Payments will use encrypted processor checkout (PCI-compliant).</Text>
-            <Text style={styles.securityLine}>• Card details will not be stored directly in app servers.</Text>
-            <Text style={styles.securityLine}>• Account data is protected with access controls and audit-ready logs.</Text>
+            <Text style={styles.securityLine}>• Billing is handled on Stripe-hosted encrypted checkout (PCI-compliant).</Text>
+            <Text style={styles.securityLine}>• Card details are not stored in Franco app servers.</Text>
+            <Text style={styles.securityLine}>• You can manage renewal/cancel from Stripe customer portal.</Text>
           </View>
 
-          <View style={styles.paymentNextCard}>
-            <Text style={styles.paymentNextTitle}>Next step: Payment Methods</Text>
-            <Text style={styles.paymentNextLine}>We will add secure support for:</Text>
-            <Text style={styles.paymentNextLine}>• Credit/Debit Cards</Text>
-            <Text style={styles.paymentNextLine}>• Apple Pay / Google Pay</Text>
-            <Text style={styles.paymentNextLine}>• Renewal + cancellation controls in Profile</Text>
-          </View>
+          {statusMessage ? <Text style={styles.statusMessage}>{statusMessage}</Text> : null}
 
-          <Button label="Upgrade (Coming Soon)" disabled onPress={() => undefined} />
+          <View style={styles.actions}>
+            <Button
+              label="Refresh Subscription Status"
+              variant="outline"
+              onPress={() => void refreshSubscriptionStatus()}
+              disabled={loading || portalLoading}
+            />
+            <Button
+              label="Open Billing Portal"
+              onPress={() => void handleOpenPortal()}
+              disabled={loading || portalLoading || subscriptionProfile.subscriptionStatus !== 'active'}
+              loading={portalLoading}
+            />
+          </View>
         </Card>
       </ScrollView>
     </View>
@@ -97,22 +140,12 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: 2
   },
-  paymentNextCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    backgroundColor: colors.white,
-    padding: spacing.md,
-    marginBottom: spacing.md
-  },
-  paymentNextTitle: {
-    ...typography.bodyStrong,
-    color: colors.textPrimary,
-    marginBottom: spacing.xs
-  },
-  paymentNextLine: {
+  statusMessage: {
     ...typography.caption,
     color: colors.textSecondary,
-    marginBottom: 2
+    marginBottom: spacing.sm
+  },
+  actions: {
+    gap: spacing.sm
   }
 });

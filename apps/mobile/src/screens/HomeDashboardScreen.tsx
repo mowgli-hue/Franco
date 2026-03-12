@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCurriculumProgress } from '../context/CurriculumProgressContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import type { MainStackParamList } from '../navigation/AppNavigator';
+import { navigateToPathTab } from '../navigation/pathTabNavigation';
 import { isProLessonId, shouldAllowSinglePreview, shouldRouteToUpgrade } from '../services/subscription/subscriptionGate';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'LearningHubScreen'>;
@@ -75,25 +76,13 @@ export function HomeDashboardScreen({ navigation }: Props) {
   const { subscriptionProfile, markProPreviewUsed } = useSubscription();
   const testerRedirectedRef = useRef(false);
 
-  const navigateToPathTab = (screen: string, params?: Record<string, unknown>) => {
-    const parent = navigation.getParent?.();
-    const tabsNavigation = parent?.navigate ? parent : parent?.getParent?.();
-    if (!tabsNavigation) return false;
-    try {
-      (tabsNavigation.navigate as any)('PathTab', { screen, params });
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
   useEffect(() => {
     const email = (user?.email ?? '').trim().toLowerCase();
     if (email !== 'ztalentrecruitmentservices@gmail.com') return;
     if (testerRedirectedRef.current) return;
     testerRedirectedRef.current = true;
 
-    if (!navigateToPathTab('FoundationLessonScreen', { lessonId: 'numbers-0-20' })) {
+    if (!navigateToPathTab(navigation as any, 'FoundationLessonScreen', { lessonId: 'numbers-0-20' })) {
       (navigation.navigate as any)('LearningHubScreen');
     }
   }, [navigation, user?.email]);
@@ -144,7 +133,8 @@ export function HomeDashboardScreen({ navigation }: Props) {
       }
     }
 
-    const goPath = (screen: string, params?: Record<string, unknown>) => navigateToPathTab(screen, params);
+    const goPath = (screen: string, params?: Record<string, unknown>) =>
+      navigateToPathTab(navigation as any, screen, params);
 
     if (lessonId.startsWith('foundation-lesson-')) {
       if (!goPath('BeginnerFoundationScreen')) (navigation.navigate as any)('LearningHubScreen');

@@ -22,14 +22,19 @@ export function ContactUsScreen() {
           <Text style={styles.title}>Contact Us</Text>
           <Text style={styles.subtitle}>Reach support for account, billing, or learning issues.</Text>
 
-          <Pressable style={styles.item} onPress={() => void openUrl('mailto:support@newtonimmigration.org')}>
+          <Pressable style={styles.item} onPress={() => void openUrl('mailto:franco@newtonimmigration.org')}>
             <Text style={styles.itemTitle}>📧 Email Support</Text>
-            <Text style={styles.itemMeta}>support@newtonimmigration.org</Text>
+            <Text style={styles.itemMeta}>franco@newtonimmigration.org</Text>
           </Pressable>
 
-          <Pressable style={styles.item} onPress={() => void openUrl('mailto:franco@newtonimmigration.org')}>
+          <Pressable style={styles.item} onPress={() => void openUrl('mailto:admin@junglelabsworld.com')}>
             <Text style={styles.itemTitle}>🏢 Admin Contact</Text>
-            <Text style={styles.itemMeta}>franco@newtonimmigration.org</Text>
+            <Text style={styles.itemMeta}>admin@junglelabsworld.com</Text>
+          </Pressable>
+
+          <Pressable style={styles.item} onPress={() => void openUrl('tel:+16049028699')}>
+            <Text style={styles.itemTitle}>📞 Phone</Text>
+            <Text style={styles.itemMeta}>6049028699</Text>
           </Pressable>
 
           <Pressable style={styles.item} onPress={() => void openUrl('https://newtonimmigration.org')}>

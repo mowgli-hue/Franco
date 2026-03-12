@@ -19,6 +19,12 @@ function optionalEnv(key: string): string {
   return (process.env[key] ?? '').trim();
 }
 
+function normalizeWebAppBaseUrl(raw?: string): string {
+  const value = (raw ?? '').trim();
+  if (!value) return 'https://franco.app';
+  return value.replace(/\/+$/, '');
+}
+
 type FirebasePublicFallback = {
   apiKey?: string;
   authDomain?: string;
@@ -75,6 +81,7 @@ export const hasMissingPublicEnv = missingPublicEnvKeys.length > 0;
 
 export const env = {
   apiBaseUrl: normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL),
+  webAppBaseUrl: normalizeWebAppBaseUrl(process.env.EXPO_PUBLIC_APP_BASE_URL),
   firebase: {
     apiKey: envOrExpoFallback('EXPO_PUBLIC_FIREBASE_API_KEY', firebasePublicFromExpo.apiKey),
     authDomain: envOrExpoFallback('EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN', firebasePublicFromExpo.authDomain),

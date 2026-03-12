@@ -6,7 +6,12 @@ import {
   saveUserSubscriptionProfile,
   type UserSubscriptionProfile
 } from '../navigation/routePersistence';
-import { fetchFounderSeatsRemaining, reserveFounderSeat } from '../services/subscription/subscriptionService';
+import {
+  createCheckoutSession,
+  fetchFounderSeatsRemaining,
+  getSubscriptionStatus,
+  openCustomerPortal
+} from '../services/subscription/subscriptionService';
 
 type SubscriptionContextValue = {
   subscriptionProfile: UserSubscriptionProfile;
@@ -14,7 +19,12 @@ type SubscriptionContextValue = {
   loading: boolean;
   canAccessProLesson: boolean;
   markProPreviewUsed: () => Promise<void>;
-  setActivePlan: (planType: 'founder' | 'pro') => Promise<{ ok: boolean; reason?: string }>;
+  setActivePlan: (
+    planType: 'founder' | 'pro',
+    options?: { successUrl?: string; cancelUrl?: string }
+  ) => Promise<{ ok: boolean; reason?: string; checkoutUrl?: string }>;
+  openBillingPortal: (options?: { returnUrl?: string }) => Promise<{ ok: boolean; portalUrl?: string; reason?: string }>;
+  refreshSubscriptionStatus: () => Promise<void>;
   refreshFounderSeats: () => Promise<void>;
 };
 
@@ -47,6 +57,20 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         if (!active) return;
         setSubscriptionProfileState(profile);
         setFounderSeatsRemaining(seats);
+        if (user?.uid) {
+          void getSubscriptionStatus(user.uid)
+            .then((remote) => {
+              if (!remote || !active) return;
+              const next: UserSubscriptionProfile = {
+                subscriptionStatus: remote.subscriptionStatus === 'active' ? 'active' : 'free',
+                planType: remote.planType === 'founder' || remote.planType === 'pro' ? remote.planType : 'free',
+                proPreviewUsed: profile.proPreviewUsed
+              };
+              setSubscriptionProfileState(next);
+              void saveUserSubscriptionProfile(user.uid, next);
+            })
+            .catch(() => undefined);
+        }
       })
       .finally(() => {
         if (!active) return;
@@ -77,21 +101,63 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     setFounderSeatsRemaining(seats);
   }, []);
 
+  const refreshSubscriptionStatus = useCallback(async () => {
+    if (!user?.uid) return;
+    const remote = await getSubscriptionStatus(user.uid);
+    if (!remote) return;
+    const next: UserSubscriptionProfile = {
+      subscriptionStatus: remote.subscriptionStatus === 'active' ? 'active' : 'free',
+      planType: remote.planType === 'founder' || remote.planType === 'pro' ? remote.planType : 'free',
+      proPreviewUsed: subscriptionProfile.proPreviewUsed
+    };
+    setSubscriptionProfileState(next);
+    await saveUserSubscriptionProfile(user.uid, next);
+  }, [subscriptionProfile.proPreviewUsed, user?.uid]);
+
   const setActivePlan = useCallback(
-    async (planType: 'founder' | 'pro') => {
-      if (planType === 'founder') {
-        const result = await reserveFounderSeat(user?.uid);
-        if (!result.ok) {
-          await refreshFounderSeats();
-          return { ok: false, reason: result.reason };
-        }
-        setFounderSeatsRemaining(result.seatsRemaining);
+    async (planType: 'founder' | 'pro', options?: { successUrl?: string; cancelUrl?: string }) => {
+      if (!user?.uid || !user?.email) {
+        return { ok: false, reason: 'auth_required' };
       }
 
-      await persist({ ...subscriptionProfile, subscriptionStatus: 'active', planType });
-      return { ok: true };
+      try {
+        const checkout = await createCheckoutSession({
+          userId: user.uid,
+          email: user.email,
+          planType,
+          successUrl: options?.successUrl,
+          cancelUrl: options?.cancelUrl
+        });
+        await refreshFounderSeats();
+        return { ok: true, checkoutUrl: checkout.checkoutUrl };
+      } catch (error) {
+        const code = (error as Error & { code?: string }).code;
+        if (code === 'sold_out') {
+          await refreshFounderSeats();
+          return { ok: false, reason: 'sold_out' };
+        }
+        return { ok: false, reason: 'failed' };
+      }
     },
-    [persist, refreshFounderSeats, subscriptionProfile, user?.uid]
+    [refreshFounderSeats, user?.email, user?.uid]
+  );
+
+  const openBillingPortalAction = useCallback(
+    async (options?: { returnUrl?: string }) => {
+      if (!user?.uid) {
+        return { ok: false, reason: 'auth_required' };
+      }
+      try {
+        const result = await openCustomerPortal({
+          userId: user.uid,
+          returnUrl: options?.returnUrl
+        });
+        return { ok: true, portalUrl: result.portalUrl };
+      } catch {
+        return { ok: false, reason: 'failed' };
+      }
+    },
+    [user?.uid]
   );
 
   const canAccessProLesson =
@@ -105,6 +171,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       canAccessProLesson,
       markProPreviewUsed,
       setActivePlan,
+      openBillingPortal: openBillingPortalAction,
+      refreshSubscriptionStatus,
       refreshFounderSeats
     }),
     [
@@ -112,6 +180,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       founderSeatsRemaining,
       loading,
       markProPreviewUsed,
+      openBillingPortalAction,
+      refreshSubscriptionStatus,
       refreshFounderSeats,
       setActivePlan,
       subscriptionProfile
