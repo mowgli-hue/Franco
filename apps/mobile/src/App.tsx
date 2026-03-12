@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -51,6 +51,8 @@ class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, Ap
 }
 
 export default function App() {
+  const WebAnalytics = Platform.OS === 'web' ? require('@vercel/analytics/react').Analytics : null;
+
   useEffect(() => {
     const unsubscribe = setupOtaUpdateChecks();
     return unsubscribe;
@@ -71,6 +73,7 @@ export default function App() {
                           <NavigationContainer>
                             <StatusBar style="dark" />
                             <AppNavigator />
+                            {WebAnalytics ? <WebAnalytics /> : null}
                           </NavigationContainer>
                         </FoundationProgressProvider>
                       </LearningProgressProvider>
