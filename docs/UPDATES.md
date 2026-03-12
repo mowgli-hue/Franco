@@ -5,7 +5,7 @@
 This project is configured for EAS OTA updates:
 
 - `apps/mobile/app.json`
-  - `runtimeVersion.policy = appVersion`
+  - `runtimeVersion` is set manually (bare workflow requirement)
   - `updates.url` points to your EAS project
 - `apps/mobile/eas.json`
   - channels: `development`, `preview`, `production`
@@ -40,6 +40,11 @@ For testing to internal users:
 cd /Users/junglelabs/Documents/New\ project/clb-french-trainer
 npm run update:mobile:preview
 ```
+
+Important:
+- Always run OTA from the mobile workspace scripts above.
+- Do not run `eas update` from monorepo root directly, otherwise Expo may pick the desktop Electron entry.
+- When you make native changes (or publish a new store build), bump `expo.runtimeVersion` manually in `apps/mobile/app.json`.
 
 ## Desktop (Electron auto-update)
 

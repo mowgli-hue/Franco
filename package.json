@@ -22,14 +22,15 @@
     "desktop": "electron .",
     "desktop:dev": "FRANCO_DESKTOP_URL=http://localhost:8081 electron .",
     "build:desktop": "electron-builder",
-    "update:mobile:preview": "eas update --channel preview --message \"Preview OTA update\"",
-    "update:mobile:production": "eas update --channel production --message \"Production OTA update\""
+    "update:mobile:preview": "npm run update:preview --workspace @clb/mobile",
+    "update:mobile:production": "npm run update:production --workspace @clb/mobile"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "expo": "~54.0.33",
+    "expo-updates": "~29.0.16",
     "react": "19.2.4",
     "react-native": "0.81.5"
   },
