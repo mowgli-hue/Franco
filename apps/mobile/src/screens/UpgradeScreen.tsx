@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { useAuth } from '../context/AuthContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { env } from '../core/config/env';
 import type { MainStackParamList } from '../navigation/AppNavigator';
@@ -25,10 +27,26 @@ const FEATURES = [
 ];
 
 export function UpgradeScreen({ navigation }: Props) {
+  const { user } = useAuth();
   const { founderSeatsRemaining, refreshFounderSeats, refreshSubscriptionStatus, setActivePlan } = useSubscription();
   const [loading, setLoading] = useState(false);
+  const isGuest = !user?.uid;
+
+  const handleCreateAccount = async () => {
+    await AsyncStorage.removeItem('clb:guest-access');
+    if (Platform.OS === 'web') {
+      globalThis.location?.reload?.();
+      return;
+    }
+    Alert.alert('Create Account', 'Please restart the app and choose Login/Register from the welcome screen.');
+  };
 
   const handleSubscribe = async (planType: 'founder' | 'pro') => {
+    if (isGuest) {
+      await handleCreateAccount();
+      return;
+    }
+
     try {
       setLoading(true);
       const successUrl = `${env.webAppBaseUrl}/subscription/success`;
@@ -59,20 +77,32 @@ export function UpgradeScreen({ navigation }: Props) {
     <LinearGradient colors={['#F8FAFC', '#EEF4FF', '#FFFFFF']} style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerWrap}>
-          <Text style={styles.headline}>Continue Your Journey to CLB 5+</Text>
+          <Text style={styles.headline}>You&apos;re off to a great start.</Text>
           <Text style={styles.subtext}>
-            Foundation complete. Unlock full structured immigration performance training.
+            Unlock the full Franco course for your Canadian immigration French goals.
           </Text>
         </View>
 
         <Card>
           <Text style={styles.sectionTitle}>What you unlock</Text>
           <View style={styles.featureList}>
-            {FEATURES.map((feature) => (
+            {FEATURES.slice(0, 4).map((feature) => (
               <Text key={feature} style={styles.featureItem}>
-                • {feature}
+                ✔ {feature}
               </Text>
             ))}
+          </View>
+          <View style={styles.priceStrip}>
+            <Text style={styles.priceStripPrice}>$99 / month</Text>
+            <Text style={styles.priceStripMeta}>Cancel anytime</Text>
+          </View>
+          <Button
+            label={isGuest ? 'Create Account to Subscribe' : 'Unlock Full Access'}
+            onPress={() => void handleSubscribe('pro')}
+            loading={loading}
+          />
+          <View style={styles.actions}>
+            <Button label="Continue Free" variant="outline" onPress={() => navigation.goBack()} disabled={loading} />
           </View>
         </Card>
 
@@ -94,12 +124,12 @@ export function UpgradeScreen({ navigation }: Props) {
             <Text style={styles.planLabel}>FRANCO PRO</Text>
             <Text style={styles.planTitle}>Standard Pro</Text>
             <Text style={styles.price}>$99/month</Text>
-            <Text style={styles.priceMeta}>Full structured CLB 3-7 immigration training.</Text>
-            <Button label="Checkout Franco Pro" onPress={() => void handleSubscribe('pro')} loading={loading} />
-          </View>
-
-          <View style={styles.actions}>
-            <Button label="Stay on Free Plan" variant="outline" onPress={() => navigation.goBack()} disabled={loading} />
+            <Text style={styles.priceMeta}>120+ lessons, AI partner, CLB/TEF-focused training.</Text>
+            <Button
+              label={isGuest ? 'Create Account to Subscribe' : 'Checkout Franco Pro'}
+              onPress={() => void handleSubscribe('pro')}
+              loading={loading}
+            />
           </View>
         </Card>
       </ScrollView>
@@ -138,6 +168,24 @@ const styles = StyleSheet.create({
   featureItem: {
     ...typography.body,
     color: colors.textPrimary
+  },
+  priceStrip: {
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+    padding: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.md
+  },
+  priceStripPrice: {
+    ...typography.heading2,
+    color: colors.textPrimary
+  },
+  priceStripMeta: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs
   },
   planLabel: {
     ...typography.caption,

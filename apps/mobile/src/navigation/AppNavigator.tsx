@@ -42,6 +42,7 @@ import { SpeedRecallScreen } from '../screens/SpeedRecallScreen';
 import { StudyPlanIntroScreen } from '../screens/StudyPlanIntroScreen';
 import { TeacherScriptsScreen } from '../screens/TeacherScriptsScreen';
 import { A1Lesson3Screen } from '../screens/A1Lesson3Screen';
+import { AuthLandingScreen } from '../screens/auth/AuthLandingScreen';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import { WelcomeScreen } from '../screens/onboarding/WelcomeScreen';
@@ -59,6 +60,7 @@ import {
 } from './routePersistence';
 
 export type AuthStackParamList = {
+  AuthLandingScreen: undefined;
   LoginScreen:
     | {
         prefillEmail?: string;
@@ -188,10 +190,15 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const DEFAULT_MAIN_ROUTE: PersistedMainRoute = { tab: 'HomeTab', nested: { name: 'LearningHubScreen' } };
 const APP_SPLASH_MS = 2000;
+const GUEST_MODE_KEY = 'clb:guest-access';
 const TESTER_EMAIL_FOUNDATION4 = 'ztalentrecruitmentservices@gmail.com';
 const TESTER_FOUNDATION4_ROUTE: PersistedMainRoute = {
   tab: 'PathTab',
   nested: { name: 'FoundationLessonScreen', params: { lessonId: 'numbers-0-20' } }
+};
+const GUEST_START_ROUTE: PersistedMainRoute = {
+  tab: 'PathTab',
+  nested: { name: 'A1Lesson1Screen' }
 };
 
 function onboardingKey(userId: string) {
@@ -249,9 +256,15 @@ function OnboardingCompletionBridge() {
   return <AuthBootstrapScreen />;
 }
 
-function AuthStackNavigator() {
+function AuthStackNavigator({ onContinueGuest }: { onContinueGuest: () => void }) {
   return (
-    <AuthStack.Navigator initialRouteName="LoginScreen" screenOptions={screenOptions()}>
+    <AuthStack.Navigator initialRouteName="AuthLandingScreen" screenOptions={screenOptions()}>
+      <AuthStack.Screen
+        name="AuthLandingScreen"
+        options={{ headerShown: false }}
+      >
+        {(props) => <AuthLandingScreen {...props} onContinueGuest={onContinueGuest} />}
+      </AuthStack.Screen>
       <AuthStack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
       <AuthStack.Screen name="RegisterScreen" component={RegisterScreen} options={{ title: 'Register' }} />
     </AuthStack.Navigator>
@@ -724,14 +737,20 @@ export function AppNavigator() {
   const [mainRoute, setMainRoute] = useState<PersistedMainRoute>(DEFAULT_MAIN_ROUTE);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
+  const [guestAccess, setGuestAccess] = useState(false);
 
   useEffect(() => {
     if (!user) {
       setRestoreReady(true);
       setMainRoute(DEFAULT_MAIN_ROUTE);
       setOnboardingCompleted(false);
+      void AsyncStorage.getItem(GUEST_MODE_KEY)
+        .then((value) => setGuestAccess(value === 'true'))
+        .catch(() => setGuestAccess(false));
       return;
     }
+    setGuestAccess(false);
+    void AsyncStorage.removeItem(GUEST_MODE_KEY);
 
     if ((user.email ?? '').trim().toLowerCase() === TESTER_EMAIL_FOUNDATION4) {
       setMainRoute(TESTER_FOUNDATION4_ROUTE);
@@ -777,7 +796,19 @@ export function AppNavigator() {
   }
 
   if (!user) {
-    return <AuthStackNavigator />;
+    if (guestAccess) {
+      return <MainTabsNavigator userId="guest" initialRoute={mainRoute.tab === 'HomeTab' ? GUEST_START_ROUTE : mainRoute} />;
+    }
+
+    return (
+      <AuthStackNavigator
+        onContinueGuest={() => {
+          setMainRoute(GUEST_START_ROUTE);
+          setGuestAccess(true);
+          void AsyncStorage.setItem(GUEST_MODE_KEY, 'true');
+        }}
+      />
+    );
   }
 
   if (!onboardingCompleted) {
