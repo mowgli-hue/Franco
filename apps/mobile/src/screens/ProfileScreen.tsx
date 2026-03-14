@@ -10,6 +10,7 @@ import { SubscriptionStatusBadge } from '../components/SubscriptionStatusBadge';
 import { useAuth } from '../context/AuthContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import type { ProfileStackParamList } from '../navigation/AppNavigator';
+import { navigateToPathTab } from '../navigation/pathTabNavigation';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
@@ -103,7 +104,11 @@ export function ProfileScreen({ navigation }: Props) {
             </Pressable>
 
             <Pressable
-              onPress={() => (navigation.navigate as any)('SelfAssessmentScreen')}
+              onPress={() => {
+                if (!navigateToPathTab(navigation as any, 'SelfAssessmentScreen')) {
+                  (navigation.navigate as any)('ProfileScreen');
+                }
+              }}
               style={({ pressed }) => [styles.linkRow, pressed && styles.toggleRowPressed]}
             >
               <Text style={styles.linkText}>🧭 Re-take Self Assessment</Text>

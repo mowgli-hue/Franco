@@ -134,6 +134,23 @@ export type PathStackParamList = {
   LearningHubScreen: undefined;
   SelfAssessmentScreen: undefined;
   DiagnosticFlowScreen: { goalType: OnboardingGoalType; initialDifficulty?: 'A1' | 'A2' | 'B1' | 'B2' };
+  DiagnosticResultScreen: {
+    goalType: OnboardingGoalType;
+    selfLevel: OnboardingSelfLevel;
+    diagnosticReport?: {
+      scorePercent: number;
+      correctCount: number;
+      totalQuestions: number;
+      cefrRecommendation: 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
+      strongestDomain?: 'grammar' | 'vocabulary' | 'reading' | 'listening';
+      weakestDomain?: 'grammar' | 'vocabulary' | 'reading' | 'listening';
+      initialDifficulty?: 'A1' | 'A2' | 'B1' | 'B2';
+    };
+  };
+  PathPreparationScreen: {
+    nextRoute: keyof MainStackParamList;
+    nextParams?: Record<string, unknown>;
+  };
   BeginnerFoundationScreen: undefined;
   A1FoundationScreen: undefined;
   A1Lesson1Screen: undefined;
@@ -490,6 +507,16 @@ function PathStackNavigator() {
         name="DiagnosticFlowScreen"
         component={DiagnosticFlowScreen as React.ComponentType<any>}
         options={{ title: 'Assessment' }}
+      />
+      <PathStack.Screen
+        name="DiagnosticResultScreen"
+        component={DiagnosticResultScreen as React.ComponentType<any>}
+        options={{ title: 'Assessment Result' }}
+      />
+      <PathStack.Screen
+        name="PathPreparationScreen"
+        component={PathPreparationScreen as React.ComponentType<any>}
+        options={{ title: 'Preparing Path' }}
       />
       <PathStack.Screen
         name="LearningHubScreen"
