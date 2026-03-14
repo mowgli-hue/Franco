@@ -29,16 +29,15 @@ function determineStartingRoute(
     return { name: 'FoundationLessonScreen', params: { lessonId: 'numbers-0-20' } };
   }
 
-  if (level === 'none') return { name: 'BeginnerFoundationScreen' };
-  if (level === 'basic') return { name: 'A1FoundationScreen' };
-  if (level === 'simple') return { name: 'A1Lesson1Screen' };
-  if (level === 'conversation') return { name: 'DiagnosticFlowScreen', params: { goalType, initialDifficulty: 'A2' } };
-  return { name: 'DiagnosticFlowScreen', params: { goalType, initialDifficulty: 'B1' } };
+  // Unified beginner-first journey: everyone starts in Foundation and unlocks A1 after completion.
+  void level;
+  void goalType;
+  return { name: 'BeginnerFoundationScreen' };
 }
 
 function mapSelfLevelToCurriculum(level: OnboardingSelfLevel): LevelId {
-  if (level === 'none') return 'foundation';
-  return 'a1';
+  void level;
+  return 'foundation';
 }
 
 function deriveTargetClb(goalType: Props['route']['params']['goalType']): 5 | 7 {

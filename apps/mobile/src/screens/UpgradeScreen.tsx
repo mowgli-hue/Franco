@@ -3,6 +3,7 @@ import { Alert, Linking, Platform, ScrollView, StyleSheet, Text, View } from 're
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Updates from 'expo-updates';
 
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -34,11 +35,16 @@ export function UpgradeScreen({ navigation }: Props) {
 
   const handleCreateAccount = async () => {
     await AsyncStorage.removeItem('clb:guest-access');
+    await AsyncStorage.removeItem('clb:guest-onboarding-completed');
     if (Platform.OS === 'web') {
       globalThis.location?.reload?.();
       return;
     }
-    Alert.alert('Create Account', 'Please restart the app and choose Login/Register from the welcome screen.');
+    try {
+      await Updates.reloadAsync();
+    } catch {
+      Alert.alert('Create Account', 'Please restart the app and choose Login/Register from the welcome screen.');
+    }
   };
 
   const handleSubscribe = async (planType: 'founder' | 'pro') => {

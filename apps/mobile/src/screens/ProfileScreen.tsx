@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Updates from 'expo-updates';
 
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -18,6 +20,7 @@ export function ProfileScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
   const { subscriptionProfile } = useSubscription();
   const [loading, setLoading] = useState(false);
+  const isGuest = !user?.uid;
 
   const emailVerificationStatus = useMemo(() => {
     if (!user) return 'Not available';
@@ -30,6 +33,20 @@ export function ProfileScreen({ navigation }: Props) {
       await logout();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateAccount = async () => {
+    await AsyncStorage.removeItem('clb:guest-access');
+    await AsyncStorage.removeItem('clb:guest-onboarding-completed');
+    if (Platform.OS === 'web') {
+      globalThis.location?.reload?.();
+      return;
+    }
+    try {
+      await Updates.reloadAsync();
+    } catch {
+      Alert.alert('Create Account', 'Please restart the app, then choose Login or Register.');
     }
   };
 
@@ -47,7 +64,7 @@ export function ProfileScreen({ navigation }: Props) {
           <Text style={styles.title}>Profile</Text>
           <View style={styles.row}>
             <Text style={styles.label}>Email</Text>
-            <Text style={styles.value}>{user?.email ?? 'Not available'}</Text>
+            <Text style={styles.value}>{isGuest ? 'Guest mode' : user?.email ?? 'Not available'}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Email verification</Text>
@@ -93,7 +110,11 @@ export function ProfileScreen({ navigation }: Props) {
               <Text style={styles.linkArrow}>›</Text>
             </Pressable>
           </View>
-          <Button label="Logout" onPress={handleLogout} loading={loading} />
+          {isGuest ? (
+            <Button label="Create Account / Login" onPress={() => void handleCreateAccount()} />
+          ) : (
+            <Button label="Logout" onPress={handleLogout} loading={loading} />
+          )}
           <Text style={styles.poweredBy}>Powered by Jungle Labs</Text>
         </Card>
       </View>

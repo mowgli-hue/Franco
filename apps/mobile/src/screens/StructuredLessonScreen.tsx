@@ -190,6 +190,36 @@ function rotateArray<T>(items: T[], offset: number): T[] {
   return [...items.slice(normalized), ...items.slice(0, normalized)];
 }
 
+function hashText(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+function distributeQuizQuestionOptions(questions: QuizQuestion[], seedKey: string): QuizQuestion[] {
+  return questions.map((question) => {
+    if (question.options.length <= 1) return question;
+    const seed = hashText(`${seedKey}:${question.id}`);
+    const offset = seed % question.options.length;
+    if (offset === 0) return question;
+
+    const meta = question.options.map((option, index) => ({
+      option,
+      isCorrect: index === question.correctIndex
+    }));
+    const rotated = rotateArray(meta, offset);
+    const nextCorrectIndex = rotated.findIndex((item) => item.isCorrect);
+
+    return {
+      ...question,
+      options: rotated.map((item) => item.option),
+      correctIndex: nextCorrectIndex >= 0 ? nextCorrectIndex : question.correctIndex
+    };
+  });
+}
+
 function inferRetryCategory(exercise: Exercise, lesson: StructuredLessonContent): RetryCategory {
   const lowerPrompt = exercise.prompt.toLowerCase();
   const lowerGrammar = lesson.grammarTargets.join(' ').toLowerCase();
@@ -345,10 +375,12 @@ function buildActivationQuestions(lesson: StructuredLessonContent): QuizQuestion
   const vocabB = lesson.vocabularyTargets[1] ?? 'merci';
   const grammarA = lesson.grammarTargets[0] ?? 'je suis';
 
+  let questions: QuizQuestion[];
+
   if (lesson.levelId === 'foundation') {
     const foundationKey = lesson.curriculumLessonId ?? lesson.id;
     if (foundationKey.includes('alphabet')) {
-      return [
+      questions = [
         {
           id: 'activation-1',
           prompt: 'Choose the French greeting word.',
@@ -368,9 +400,10 @@ function buildActivationQuestions(lesson: StructuredLessonContent): QuizQuestion
           correctIndex: 0
         }
       ];
+      return distributeQuizQuestionOptions(questions, `${lesson.id}:activation`);
     }
     if (foundationKey.includes('greetings')) {
-      return [
+      questions = [
         {
           id: 'activation-1',
           prompt: 'You meet someone in daytime. Choose the best greeting.',
@@ -390,9 +423,10 @@ function buildActivationQuestions(lesson: StructuredLessonContent): QuizQuestion
           correctIndex: 0
         }
       ];
+      return distributeQuizQuestionOptions(questions, `${lesson.id}:activation`);
     }
     if (foundationKey.includes('introducing')) {
-      return [
+      questions = [
         {
           id: 'activation-1',
           prompt: 'Choose the phrase to say your name.',
@@ -412,9 +446,10 @@ function buildActivationQuestions(lesson: StructuredLessonContent): QuizQuestion
           correctIndex: 0
         }
       ];
+      return distributeQuizQuestionOptions(questions, `${lesson.id}:activation`);
     }
     if (foundationKey.includes('numbers')) {
-      return [
+      questions = [
         {
           id: 'activation-1',
           prompt: 'Choose the French word for 10.',
@@ -434,9 +469,10 @@ function buildActivationQuestions(lesson: StructuredLessonContent): QuizQuestion
           correctIndex: 0
         }
       ];
+      return distributeQuizQuestionOptions(questions, `${lesson.id}:activation`);
     }
 
-    return [
+    questions = [
       {
         id: 'activation-1',
         prompt: 'Warm-up: choose the French word.',
@@ -456,9 +492,10 @@ function buildActivationQuestions(lesson: StructuredLessonContent): QuizQuestion
         correctIndex: 0
       }
     ];
+    return distributeQuizQuestionOptions(questions, `${lesson.id}:activation`);
   }
 
-  return [
+  questions = [
     {
       id: 'activation-1',
       prompt: 'Warm-up: pick a French expression from this lesson.',
@@ -478,6 +515,7 @@ function buildActivationQuestions(lesson: StructuredLessonContent): QuizQuestion
       correctIndex: 0
     }
   ];
+  return distributeQuizQuestionOptions(questions, `${lesson.id}:activation`);
 }
 
 function buildMasteryQuestions(lesson: StructuredLessonContent): QuizQuestion[] {
@@ -486,10 +524,12 @@ function buildMasteryQuestions(lesson: StructuredLessonContent): QuizQuestion[] 
   const grammar = lesson.grammarTargets.slice(0, 3);
   while (grammar.length < 3) grammar.push('je suis');
 
+  let questions: QuizQuestion[];
+
   if (lesson.levelId === 'foundation') {
     const foundationKey = lesson.curriculumLessonId ?? lesson.id;
     if (foundationKey.includes('alphabet')) {
-      return [
+      questions = [
         {
           id: 'mastery-1',
           prompt: 'Choose the French greeting.',
@@ -521,9 +561,10 @@ function buildMasteryQuestions(lesson: StructuredLessonContent): QuizQuestion[] 
           correctIndex: 0
         }
       ];
+      return distributeQuizQuestionOptions(questions, `${lesson.id}:mastery`);
     }
     if (foundationKey.includes('greetings')) {
-      return [
+      questions = [
         {
           id: 'mastery-1',
           prompt: 'Choose the daytime greeting.',
@@ -555,9 +596,10 @@ function buildMasteryQuestions(lesson: StructuredLessonContent): QuizQuestion[] 
           correctIndex: 0
         }
       ];
+      return distributeQuizQuestionOptions(questions, `${lesson.id}:mastery`);
     }
     if (foundationKey.includes('introducing')) {
-      return [
+      questions = [
         {
           id: 'mastery-1',
           prompt: 'Choose the phrase for "My name is...".',
@@ -589,9 +631,10 @@ function buildMasteryQuestions(lesson: StructuredLessonContent): QuizQuestion[] 
           correctIndex: 0
         }
       ];
+      return distributeQuizQuestionOptions(questions, `${lesson.id}:mastery`);
     }
     if (foundationKey.includes('numbers')) {
-      return [
+      questions = [
         {
           id: 'mastery-1',
           prompt: 'Choose the French word for 10.',
@@ -623,9 +666,10 @@ function buildMasteryQuestions(lesson: StructuredLessonContent): QuizQuestion[] 
           correctIndex: 0
         }
       ];
+      return distributeQuizQuestionOptions(questions, `${lesson.id}:mastery`);
     }
 
-    return [
+    questions = [
       {
         id: 'mastery-1',
         prompt: 'Choose the French word.',
@@ -657,9 +701,10 @@ function buildMasteryQuestions(lesson: StructuredLessonContent): QuizQuestion[] 
         correctIndex: 0
       }
     ];
+    return distributeQuizQuestionOptions(questions, `${lesson.id}:mastery`);
   }
 
-  return [
+  questions = [
     {
       id: 'mastery-1',
       prompt: 'Select a valid lesson expression.',
@@ -691,6 +736,7 @@ function buildMasteryQuestions(lesson: StructuredLessonContent): QuizQuestion[] 
       correctIndex: 0
     }
   ];
+  return distributeQuizQuestionOptions(questions, `${lesson.id}:mastery`);
 }
 
 function buildRetryMasteryQuestions(
@@ -737,20 +783,25 @@ function derivePreviousLessonId(lesson: StructuredLessonContent): string | null 
 }
 
 function createSteps(lesson: StructuredLessonContent): RuntimeStep[] {
+  const isFoundation = lesson.levelId === 'foundation';
   const steps: RuntimeStep[] = [
     {
       id: `${lesson.id}-activation`,
       kind: 'activation',
       phase: 'review',
-      title: 'Phase 1 - Activation (3 min)',
-      subtitle: 'Quick recall from your previous learning.'
+      title: isFoundation ? 'Phase 1 - Activation (3 min)' : 'Phase 1 - Teacher Warm-up (3 min)',
+      subtitle: isFoundation
+        ? 'Quick recall from your previous learning.'
+        : 'Interactive warm-up: quick checks before the core lesson.'
     },
     {
       id: `${lesson.id}-intro`,
       kind: 'intro',
       phase: 'learn',
-      title: 'Phase 2 - Core Teaching (6 min)',
-      subtitle: 'One rule, clear examples, immediate listening and speaking.'
+      title: isFoundation ? 'Phase 2 - Core Teaching (6 min)' : 'Phase 2 - Guided Teaching (6 min)',
+      subtitle: isFoundation
+        ? 'One rule, clear examples, immediate listening and speaking.'
+        : 'Teacher-style explanation: model, breakdown, then immediate practice.'
     }
   ];
 

@@ -199,7 +199,7 @@ const TESTER_FOUNDATION4_ROUTE: PersistedMainRoute = {
 };
 const GUEST_START_ROUTE: PersistedMainRoute = {
   tab: 'PathTab',
-  nested: { name: 'A1Lesson1Screen' }
+  nested: { name: 'BeginnerFoundationScreen' }
 };
 
 function onboardingKey(userId: string) {
