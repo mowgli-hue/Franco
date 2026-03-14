@@ -6,8 +6,9 @@ type PlanType = 'founder' | 'pro';
 
 export type SubscriptionStatusResponse = {
   userId: string;
+  status?: 'pro' | 'free';
   planType: 'free' | 'founder' | 'pro';
-  subscriptionStatus: 'free' | 'active' | 'canceled' | 'past_due' | 'incomplete';
+  subscriptionStatus: 'free' | 'active' | 'canceled' | 'past_due' | 'incomplete' | 'expired';
 };
 
 export async function fetchFounderSeatsRemaining(): Promise<number> {

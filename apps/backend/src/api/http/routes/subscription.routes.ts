@@ -116,7 +116,12 @@ function verifyStripeWebhookSignature(rawBody: Buffer, signatureHeader?: string)
   if (!parsed) return false;
   const payload = `${parsed.t}.${rawBody.toString('utf8')}`;
   const expected = crypto.createHmac('sha256', config.stripeWebhookSecret).update(payload).digest('hex');
-  return parsed.v1.some((sig) => crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected)));
+  const expectedBuffer = Buffer.from(expected, 'utf8');
+  return parsed.v1.some((sig) => {
+    const candidate = Buffer.from(sig, 'utf8');
+    if (candidate.length !== expectedBuffer.length) return false;
+    return crypto.timingSafeEqual(candidate, expectedBuffer);
+  });
 }
 
 function mapPriceToPlanType(priceId?: string): 'founder' | 'pro' {
@@ -209,7 +214,10 @@ subscriptionRouter.get('/status', async (req, res) => {
   try {
     const { userId } = statusSchema.parse(req.query ?? {});
     const profile = await getSubscriptionProfile(userId);
-    return res.json(profile);
+    return res.json({
+      ...profile,
+      status: profile.subscriptionStatus === 'active' ? 'pro' : 'free'
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected error';
     return res.status(400).json({ ok: false, message });
@@ -239,7 +247,7 @@ subscriptionRouter.post('/activate-founder', async (req, res) => {
   }
 });
 
-subscriptionRouter.post('/checkout-session', async (req, res) => {
+async function handleCreateCheckoutSession(req: Request, res: Response) {
   try {
     const input = checkoutSchema.parse(req.body ?? {});
     const priceId = getStripePriceId(input.planType);
@@ -268,8 +276,12 @@ subscriptionRouter.post('/checkout-session', async (req, res) => {
       customer_email: input.email,
       client_reference_id: input.userId,
       'metadata[userId]': input.userId,
+      'metadata[email]': input.email,
       'metadata[planType]': input.planType,
-      'metadata[priceId]': priceId
+      'metadata[priceId]': priceId,
+      'subscription_data[metadata][userId]': input.userId,
+      'subscription_data[metadata][email]': input.email,
+      'subscription_data[metadata][planType]': input.planType
     });
 
     return res.json({ ok: true, checkoutUrl: session.url });
@@ -277,7 +289,10 @@ subscriptionRouter.post('/checkout-session', async (req, res) => {
     const message = error instanceof Error ? error.message : 'Unexpected error';
     return res.status(400).json({ ok: false, message });
   }
-});
+}
+
+subscriptionRouter.post('/checkout-session', handleCreateCheckoutSession);
+subscriptionRouter.post('/create-checkout-session', handleCreateCheckoutSession);
 
 subscriptionRouter.post('/customer-portal', async (req, res) => {
   try {

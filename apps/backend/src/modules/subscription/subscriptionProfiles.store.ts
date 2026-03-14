@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 type PlanType = 'free' | 'founder' | 'pro';
-type SubscriptionStatus = 'free' | 'active' | 'canceled' | 'past_due' | 'incomplete';
+type SubscriptionStatus = 'free' | 'active' | 'canceled' | 'past_due' | 'incomplete' | 'expired';
 
 type SubscriptionProfileRecord = {
   userId: string;
@@ -30,9 +30,11 @@ function nowIso(): string {
 
 function normalizeStatus(raw?: string): SubscriptionStatus {
   if (raw === 'active') return 'active';
+  if (raw === 'trialing') return 'active';
   if (raw === 'canceled') return 'canceled';
   if (raw === 'past_due') return 'past_due';
   if (raw === 'incomplete') return 'incomplete';
+  if (raw === 'incomplete_expired' || raw === 'unpaid') return 'expired';
   return 'free';
 }
 
