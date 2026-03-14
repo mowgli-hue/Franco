@@ -56,7 +56,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'a1-g3',
       tier: 'A1',
       domain: 'grammar',
-      prompt: 'Choose the correct sentence.',
+      prompt: 'Choose the grammatically correct sentence (present tense, être).',
       options: ['Nous est ici.', 'Tu es à la maison.', 'Je est étudiant.', 'Elles est prêtes.'],
       correctOption: 1
     },
