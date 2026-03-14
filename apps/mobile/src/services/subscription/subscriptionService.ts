@@ -68,14 +68,26 @@ export async function createCheckoutSession(input: {
   });
 
   if (response.status === 409) {
-    const soldOut = (await response.json()) as { reason?: string };
-    const err = new Error(soldOut.reason ?? 'sold_out');
+    const soldOut = (await response.json()) as { reason?: string; message?: string };
+    const err = new Error(soldOut.message ?? soldOut.reason ?? 'sold_out');
     (err as Error & { code?: string }).code = 'sold_out';
     throw err;
   }
 
   if (!response.ok) {
-    throw new Error(`Checkout session failed: ${response.status}`);
+    const text = await response.text().catch(() => '');
+    let details = `Checkout session failed: ${response.status}`;
+    try {
+      const parsed = JSON.parse(text) as { message?: string };
+      if (parsed.message) {
+        details = `Checkout session failed: ${parsed.message}`;
+      }
+    } catch {
+      if (text.trim()) {
+        details = `Checkout session failed: ${text.trim()}`;
+      }
+    }
+    throw new Error(details);
   }
 
   const data = (await response.json()) as { checkoutUrl?: string };

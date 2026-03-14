@@ -22,7 +22,7 @@ type SubscriptionContextValue = {
   setActivePlan: (
     planType: 'founder' | 'pro',
     options?: { successUrl?: string; cancelUrl?: string }
-  ) => Promise<{ ok: boolean; reason?: string; checkoutUrl?: string }>;
+  ) => Promise<{ ok: boolean; reason?: string; checkoutUrl?: string; message?: string }>;
   openBillingPortal: (options?: { returnUrl?: string }) => Promise<{ ok: boolean; portalUrl?: string; reason?: string }>;
   refreshSubscriptionStatus: () => Promise<void>;
   refreshFounderSeats: () => Promise<void>;
@@ -117,7 +117,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const setActivePlan = useCallback(
     async (planType: 'founder' | 'pro', options?: { successUrl?: string; cancelUrl?: string }) => {
       if (!user?.uid || !user?.email) {
-        return { ok: false, reason: 'auth_required' };
+        return { ok: false, reason: 'auth_required', message: 'Please login before checkout.' };
       }
 
       try {
@@ -131,12 +131,13 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         await refreshFounderSeats();
         return { ok: true, checkoutUrl: checkout.checkoutUrl };
       } catch (error) {
-        const code = (error as Error & { code?: string }).code;
+        const err = error as Error & { code?: string };
+        const code = err.code;
         if (code === 'sold_out') {
           await refreshFounderSeats();
-          return { ok: false, reason: 'sold_out' };
+          return { ok: false, reason: 'sold_out', message: err.message };
         }
-        return { ok: false, reason: 'failed' };
+        return { ok: false, reason: 'failed', message: err.message || 'Checkout failed.' };
       }
     },
     [refreshFounderSeats, user?.email, user?.uid]

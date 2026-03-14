@@ -64,7 +64,7 @@ export function UpgradeScreen({ navigation }: Props) {
         } else if (result.reason === 'auth_required') {
           Alert.alert('Login Required', 'Please login again to start checkout.');
         } else {
-          Alert.alert('Subscription', 'Could not start checkout right now. Please try again.');
+          Alert.alert('Subscription', result.message ?? 'Could not start checkout right now. Please try again.');
         }
         await refreshFounderSeats();
         return;
