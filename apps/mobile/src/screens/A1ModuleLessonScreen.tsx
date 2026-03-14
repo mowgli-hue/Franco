@@ -48,16 +48,21 @@ export function A1ModuleLessonScreen({ route, navigation }: Props) {
       return;
     }
 
+    if (lessonNumber + 1 === 3) {
+      (navigation.navigate as any)('A1Lesson3Screen');
+      return;
+    }
+
     (navigation.navigate as any)('A1ModuleLessonScreen', { lessonId: nextLessonId });
   };
 
-  if (!lessonNumber || lessonNumber < 4 || lessonNumber > 40) {
+  if (!lessonNumber || lessonNumber < 2 || lessonNumber > 40) {
     return (
       <View style={styles.root}>
         <View style={styles.container}>
           <Card>
             <Text style={styles.title}>A1 Lesson Route Error</Text>
-            <Text style={styles.subtitle}>This screen is intended for A1 lessons 4 to 40.</Text>
+            <Text style={styles.subtitle}>This screen is intended for A1 lessons 2 to 40.</Text>
             <Button label="Back to Learning Hub" onPress={() => (navigation.navigate as any)('LearningHubScreen')} />
           </Card>
         </View>
