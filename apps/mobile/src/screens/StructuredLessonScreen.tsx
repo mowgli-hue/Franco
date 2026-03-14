@@ -1406,10 +1406,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     setAiSummaryByExercise((prev) => ({ ...prev, [exerciseId]: 'Recording captured. Press Check Answer for AI speaking analysis.' }));
   };
 
-  const onContinueAfterExercise = () => {
+  const onContinueAfterExercise = (ignoreAiNote = false) => {
     if (currentExercise?.id) {
       const note = aiCorrectionByExercise[currentExercise.id];
-      if (note) {
+      if (note && !ignoreAiNote) {
         setActiveAiCorrection(note);
         return;
       }
@@ -2375,7 +2375,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         return next;
       });
       setActiveAiCorrection(null);
-      advanceStep();
+      onContinueAfterExercise(true);
       return;
     }
 
