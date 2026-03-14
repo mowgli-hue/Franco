@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Keyboard, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { File } from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,
@@ -63,6 +64,40 @@ type QuizQuestion = {
   prompt: string;
   options: string[];
   correctIndex: number;
+};
+
+type LessonDraftSnapshot = {
+  version: 1;
+  savedAt: number;
+  stepIndex: number;
+  session: ReturnType<typeof createLessonSessionState> | null;
+  choiceSelections: Record<string, number>;
+  textInputs: Record<string, string>;
+  matchingPairMaps: Record<string, Record<string, string>>;
+  sentenceOrderedTokens: Record<string, string[]>;
+  sentenceUsedIndexes: Record<string, number[]>;
+  quickAssignments: Record<string, Record<string, string>>;
+  memoryCompletedPairs: Record<string, Array<{ leftId: string; rightId: string }>>;
+  submittedSteps: Record<string, boolean>;
+  interactedSteps: Record<string, boolean>;
+  aiSummaryByExercise: Record<string, string>;
+  activationSelections: Record<string, number>;
+  activationChecked: boolean;
+  activationQuestionIndex: number;
+  masterySelections: Record<string, number>;
+  masteryChecked: boolean;
+  masteryScore: number;
+  masteryQuestionIndex: number;
+  reviewMode: 'mastery' | 'retry';
+  reviewAttemptRound: number;
+  retryQuestions: QuizQuestion[];
+  retrySelections: Record<string, number>;
+  retryChecked: boolean;
+  retryQuestionIndex: number;
+  retryExerciseVariants: Record<string, Exercise>;
+  practiceRecoveryQueue: string[];
+  practiceRecoveryCursor: number;
+  practiceRecoveryActive: boolean;
 };
 
 type MemoryCard = {
@@ -927,6 +962,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const [practiceRecoveryCursor, setPracticeRecoveryCursor] = useState(0);
   const [practiceRecoveryActive, setPracticeRecoveryActive] = useState(false);
   const [showSessionSummary, setShowSessionSummary] = useState(false);
+  const [draftHydrated, setDraftHydrated] = useState(false);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 200);
   const webMediaRecorderRef = useRef<any>(null);
@@ -937,6 +973,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const coachPulse = useRef(new Animated.Value(1)).current;
 
   const steps = useMemo(() => (lesson ? createSteps(lesson) : []), [lesson]);
+  const lessonDraftKey = useMemo(() => `clb:lesson-draft:${user?.uid ?? 'guest'}:${lessonId}`, [lessonId, user?.uid]);
   const canadaTemplate = useMemo(() => (lesson ? resolveCanadianPhaseTemplate(lesson) : null), [lesson]);
   const currentStep = steps[Math.min(stepIndex, Math.max(0, steps.length - 1))];
   const exerciseStepIndexByExerciseId = useMemo(() => {
@@ -996,6 +1033,136 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     loop.start();
     return () => loop.stop();
   }, [coachPulse]);
+
+  useEffect(() => {
+    let mounted = true;
+    setDraftHydrated(false);
+
+    void (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(lessonDraftKey);
+        if (!mounted) return;
+        if (!raw) {
+          setDraftHydrated(true);
+          return;
+        }
+
+        const draft = JSON.parse(raw) as Partial<LessonDraftSnapshot>;
+        if (draft.session) setSession(draft.session as ReturnType<typeof createLessonSessionState>);
+        if (typeof draft.stepIndex === 'number') setStepIndex(draft.stepIndex);
+        if (draft.choiceSelections) setChoiceSelections(draft.choiceSelections);
+        if (draft.textInputs) setTextInputs(draft.textInputs);
+        if (draft.matchingPairMaps) setMatchingPairMaps(draft.matchingPairMaps);
+        if (draft.sentenceOrderedTokens) setSentenceOrderedTokens(draft.sentenceOrderedTokens);
+        if (draft.sentenceUsedIndexes) setSentenceUsedIndexes(draft.sentenceUsedIndexes);
+        if (draft.quickAssignments) setQuickAssignments(draft.quickAssignments);
+        if (draft.memoryCompletedPairs) setMemoryCompletedPairs(draft.memoryCompletedPairs);
+        if (draft.submittedSteps) setSubmittedSteps(draft.submittedSteps);
+        if (draft.interactedSteps) setInteractedSteps(draft.interactedSteps);
+        if (draft.aiSummaryByExercise) setAiSummaryByExercise(draft.aiSummaryByExercise);
+        if (draft.activationSelections) setActivationSelections(draft.activationSelections);
+        if (typeof draft.activationChecked === 'boolean') setActivationChecked(draft.activationChecked);
+        if (typeof draft.activationQuestionIndex === 'number') setActivationQuestionIndex(draft.activationQuestionIndex);
+        if (draft.masterySelections) setMasterySelections(draft.masterySelections);
+        if (typeof draft.masteryChecked === 'boolean') setMasteryChecked(draft.masteryChecked);
+        if (typeof draft.masteryScore === 'number') setMasteryScore(draft.masteryScore);
+        if (typeof draft.masteryQuestionIndex === 'number') setMasteryQuestionIndex(draft.masteryQuestionIndex);
+        if (draft.reviewMode === 'mastery' || draft.reviewMode === 'retry') setReviewMode(draft.reviewMode);
+        if (typeof draft.reviewAttemptRound === 'number') setReviewAttemptRound(draft.reviewAttemptRound);
+        if (Array.isArray(draft.retryQuestions)) setRetryQuestions(draft.retryQuestions as QuizQuestion[]);
+        if (draft.retrySelections) setRetrySelections(draft.retrySelections);
+        if (typeof draft.retryChecked === 'boolean') setRetryChecked(draft.retryChecked);
+        if (typeof draft.retryQuestionIndex === 'number') setRetryQuestionIndex(draft.retryQuestionIndex);
+        if (draft.retryExerciseVariants) setRetryExerciseVariants(draft.retryExerciseVariants);
+        if (Array.isArray(draft.practiceRecoveryQueue)) setPracticeRecoveryQueue(draft.practiceRecoveryQueue);
+        if (typeof draft.practiceRecoveryCursor === 'number') setPracticeRecoveryCursor(draft.practiceRecoveryCursor);
+        if (typeof draft.practiceRecoveryActive === 'boolean') setPracticeRecoveryActive(draft.practiceRecoveryActive);
+      } catch {
+        // Ignore malformed draft snapshots.
+      } finally {
+        if (mounted) setDraftHydrated(true);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [lessonDraftKey]);
+
+  useEffect(() => {
+    if (!draftHydrated || !lesson || !session) return;
+    const timer = setTimeout(() => {
+      const payload: LessonDraftSnapshot = {
+        version: 1,
+        savedAt: Date.now(),
+        stepIndex,
+        session,
+        choiceSelections,
+        textInputs,
+        matchingPairMaps,
+        sentenceOrderedTokens,
+        sentenceUsedIndexes,
+        quickAssignments,
+        memoryCompletedPairs,
+        submittedSteps,
+        interactedSteps,
+        aiSummaryByExercise,
+        activationSelections,
+        activationChecked,
+        activationQuestionIndex,
+        masterySelections,
+        masteryChecked,
+        masteryScore,
+        masteryQuestionIndex,
+        reviewMode,
+        reviewAttemptRound,
+        retryQuestions,
+        retrySelections,
+        retryChecked,
+        retryQuestionIndex,
+        retryExerciseVariants,
+        practiceRecoveryQueue,
+        practiceRecoveryCursor,
+        practiceRecoveryActive
+      };
+      void AsyncStorage.setItem(lessonDraftKey, JSON.stringify(payload));
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [
+    draftHydrated,
+    lesson,
+    session,
+    stepIndex,
+    choiceSelections,
+    textInputs,
+    matchingPairMaps,
+    sentenceOrderedTokens,
+    sentenceUsedIndexes,
+    quickAssignments,
+    memoryCompletedPairs,
+    submittedSteps,
+    interactedSteps,
+    aiSummaryByExercise,
+    activationSelections,
+    activationChecked,
+    activationQuestionIndex,
+    masterySelections,
+    masteryChecked,
+    masteryScore,
+    masteryQuestionIndex,
+    reviewMode,
+    reviewAttemptRound,
+    retryQuestions,
+    retrySelections,
+    retryChecked,
+    retryQuestionIndex,
+    retryExerciseVariants,
+    practiceRecoveryQueue,
+    practiceRecoveryCursor,
+    practiceRecoveryActive,
+    lessonDraftKey
+  ]);
 
   if (!lesson || !session || !currentStep) {
     return (
@@ -1356,6 +1523,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       markLessonComplete({ lessonId: lesson.id });
     }
 
+    void AsyncStorage.removeItem(lessonDraftKey);
     onComplete?.({ passed, scorePercent: blended, lesson, minorCorrection });
   };
 
