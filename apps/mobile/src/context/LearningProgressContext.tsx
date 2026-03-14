@@ -38,7 +38,21 @@ export function LearningProgressProvider({ children }: { children: React.ReactNo
       }
 
       setLoading(true);
-      const existing = await loadLearningProgress(user.uid);
+      let existing = await loadLearningProgress(user.uid);
+
+      // Migrate guest progress to authenticated user on first login.
+      if (!existing) {
+        const guestProgress = await loadLearningProgress('guest');
+        if (guestProgress) {
+          const migrated = {
+            ...guestProgress,
+            userId: user.uid
+          };
+          await saveLearningProgress(migrated);
+          existing = migrated;
+        }
+      }
+
       const initial = existing ?? createInitialProgress(user.uid);
 
       if (mounted) {

@@ -77,6 +77,7 @@ type CurriculumProgressContextValue = {
 const CurriculumProgressContext = createContext<CurriculumProgressContextValue | undefined>(undefined);
 const CURRICULUM_PROGRESS_STORAGE_KEY = 'clb:curriculum-progress:v1';
 const CERTIFICATES_STORAGE_KEY = 'clb:level-certificates:v1';
+const GUEST_USER_ID = 'guest';
 
 function defaultSessionFocusForCurrentLevel(state: UserCurriculumState): SkillFocus {
   const currentLevelProgress = state.levels[state.currentLevelId];
@@ -123,10 +124,31 @@ export function CurriculumProgressProvider({ children }: { children: React.React
           return;
         }
 
-        const [rawProgress, rawCertificates] = await Promise.all([
+        let [rawProgress, rawCertificates] = await Promise.all([
           AsyncStorage.getItem(progressStorageKey),
           AsyncStorage.getItem(certificatesStorageKey)
         ]);
+
+        // If user started as guest, migrate guest curriculum/performance into their account on first login.
+        if (user?.uid && !rawProgress) {
+          const guestProgressKey = `${CURRICULUM_PROGRESS_STORAGE_KEY}:${GUEST_USER_ID}`;
+          const guestCertificatesKey = `${CERTIFICATES_STORAGE_KEY}:${GUEST_USER_ID}`;
+          const [rawGuestProgress, rawGuestCertificates] = await Promise.all([
+            AsyncStorage.getItem(guestProgressKey),
+            AsyncStorage.getItem(guestCertificatesKey)
+          ]);
+
+          if (rawGuestProgress) {
+            rawProgress = rawGuestProgress;
+            if (rawGuestCertificates) {
+              rawCertificates = rawGuestCertificates;
+            }
+            await Promise.all([
+              AsyncStorage.setItem(progressStorageKey, rawGuestProgress),
+              rawGuestCertificates ? AsyncStorage.setItem(certificatesStorageKey, rawGuestCertificates) : Promise.resolve()
+            ]);
+          }
+        }
 
         if (rawProgress && mounted) {
           const parsed = JSON.parse(rawProgress) as UserCurriculumState;

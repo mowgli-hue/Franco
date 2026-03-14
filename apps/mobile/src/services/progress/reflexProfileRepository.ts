@@ -40,7 +40,21 @@ export async function loadReflexPerformanceProfile(userId: string): Promise<Refl
   }
 
   const raw = await AsyncStorage.getItem(storageKey(userId));
-  if (!raw) return DEFAULT_PROFILE;
+  if (!raw) {
+    if (userId !== 'guest') {
+      const rawGuest = await AsyncStorage.getItem(storageKey('guest'));
+      if (rawGuest) {
+        try {
+          const migrated = normalizeProfile(JSON.parse(rawGuest) as unknown);
+          await AsyncStorage.setItem(storageKey(userId), JSON.stringify(migrated));
+          return migrated;
+        } catch {
+          return DEFAULT_PROFILE;
+        }
+      }
+    }
+    return DEFAULT_PROFILE;
+  }
 
   try {
     return normalizeProfile(JSON.parse(raw) as unknown);

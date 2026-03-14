@@ -492,7 +492,7 @@ function HomeStackNavigator() {
 
 function PathStackNavigator() {
   return (
-    <PathStack.Navigator screenOptions={screenOptions()}>
+    <PathStack.Navigator initialRouteName="PathMapScreen" screenOptions={screenOptions()}>
       <PathStack.Screen
         name="SelfAssessmentScreen"
         component={SelfAssessmentScreen}
