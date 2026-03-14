@@ -130,6 +130,12 @@ export function PathMapScreen({ navigation, route }: Props) {
     () => (completionSummary?.nextLessonId ? formatLessonTitle(completionSummary.nextLessonId) : null),
     [completionSummary?.nextLessonId]
   );
+  const comingNextLessons = useMemo(() => {
+    if (!currentModuleLessons.length) return [];
+    const currentIndex = currentModuleLessons.findIndex((item) => item.isCurrent && !item.passed);
+    const startIndex = currentIndex >= 0 ? currentIndex : 0;
+    return currentModuleLessons.slice(startIndex, startIndex + 4);
+  }, [currentModuleLessons]);
 
   const handleLessonPress = (lessonId: string) => {
     if (isProLessonId(lessonId)) {
@@ -228,6 +234,23 @@ export function PathMapScreen({ navigation, route }: Props) {
               highlightUnlocked={completionSummary?.nextLessonId === item.lesson.id}
               onPress={item.locked ? undefined : () => handleLessonPress(item.lesson.id)}
             />
+          );
+        })}
+      </Card>
+
+      <Card>
+        <Text style={styles.summaryTitle}>Coming Next</Text>
+        {comingNextLessons.map((item) => {
+          const lockedLabel = item.locked ? 'Locked' : item.passed ? 'Completed' : item.isCurrent ? 'Current' : 'Up next';
+          const proLabel = isProLessonId(item.lesson.id) ? ' • Pro lesson' : '';
+          return (
+            <View key={`coming-${item.lesson.id}`} style={styles.comingRow}>
+              <Text style={styles.comingTitle}>{formatLessonTitle(item.lesson.id)}</Text>
+              <Text style={styles.comingMeta}>
+                {lockedLabel}
+                {proLabel}
+              </Text>
+            </View>
           );
         })}
       </Card>
@@ -401,5 +424,20 @@ const styles = StyleSheet.create({
   mysteryIcon: { fontSize: 20 },
   mysteryTextWrap: { flex: 1 },
   mysteryTitle: { ...typography.bodyStrong, color: colors.textPrimary },
-  mysteryMeta: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs }
+  mysteryMeta: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs },
+  comingRow: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0'
+  },
+  comingTitle: {
+    ...typography.body,
+    color: '#0F172A',
+    fontWeight: '600'
+  },
+  comingMeta: {
+    ...typography.caption,
+    color: '#64748B',
+    marginTop: 2
+  }
 });
