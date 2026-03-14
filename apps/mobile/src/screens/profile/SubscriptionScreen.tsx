@@ -3,6 +3,7 @@ import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
+import { useAuth } from '../../context/AuthContext';
 import { useSubscription } from '../../context/SubscriptionContext';
 import { env } from '../../core/config/env';
 import { colors } from '../../theme/colors';
@@ -17,14 +18,24 @@ function formatCurrentPlanLabel(planType: 'free' | 'founder' | 'pro', status: 'f
 }
 
 export function SubscriptionScreen() {
-  const { loading, subscriptionProfile, openBillingPortal, refreshSubscriptionStatus } = useSubscription();
+  const { user } = useAuth();
+  const {
+    loading,
+    founderSeatsRemaining,
+    subscriptionProfile,
+    openBillingPortal,
+    refreshSubscriptionStatus,
+    setActivePlan
+  } = useSubscription();
   const [portalLoading, setPortalLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<'founder' | 'pro' | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const currentPlanLabel = useMemo(
     () => formatCurrentPlanLabel(subscriptionProfile.planType, subscriptionProfile.subscriptionStatus),
     [subscriptionProfile.planType, subscriptionProfile.subscriptionStatus]
   );
+  const isActive = subscriptionProfile.subscriptionStatus === 'active';
 
   const handleOpenPortal = async () => {
     try {
@@ -42,6 +53,25 @@ export function SubscriptionScreen() {
     }
   };
 
+  const handleCheckout = async (planType: 'founder' | 'pro') => {
+    try {
+      setCheckoutLoading(planType);
+      setStatusMessage(null);
+      const result = await setActivePlan(planType, {
+        successUrl: `${env.webAppBaseUrl}/subscription/success`,
+        cancelUrl: `${env.webAppBaseUrl}/subscription/cancel`
+      });
+      if (!result.ok || !result.checkoutUrl) {
+        setStatusMessage(result.message ?? 'Checkout unavailable right now. Try again in 1 minute.');
+        return;
+      }
+      await Linking.openURL(result.checkoutUrl);
+      setStatusMessage('Checkout opened in browser.');
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
+
   return (
     <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -53,20 +83,27 @@ export function SubscriptionScreen() {
             <Text style={styles.planTitle}>Current Plan</Text>
             <Text style={styles.planName}>{currentPlanLabel}</Text>
             <Text style={styles.planMeta}>
-              Status: {subscriptionProfile.subscriptionStatus === 'active' ? 'Active' : 'Free'}
+              Status: {isActive ? 'Active' : 'Free'}
+            </Text>
+            <Text style={styles.planMeta}>Account: {user?.email ?? 'Not logged in'}</Text>
+            <Text style={styles.planMeta}>
+              Pro Preview Used: {subscriptionProfile.proPreviewUsed ? 'Yes' : 'No'}
             </Text>
           </View>
 
           <View style={styles.planCard}>
-            <Text style={styles.planTitle}>Pro Monthly</Text>
-            <Text style={styles.planName}>Unlock full 8-month path</Text>
-            <Text style={styles.planMeta}>A1 to CLB7 roadmap, AI checks, reports, and benchmarks</Text>
+            <Text style={styles.planTitle}>Franco Pro</Text>
+            <Text style={styles.planName}>$99/month</Text>
+            <Text style={styles.planMeta}>Full A1 to CLB7 path</Text>
+            <Text style={styles.planMeta}>AI speaking and writing evaluations</Text>
+            <Text style={styles.planMeta}>Progress insights and structured roadmap</Text>
           </View>
 
           <View style={styles.planCard}>
-            <Text style={styles.planTitle}>Founder Monthly</Text>
-            <Text style={styles.planName}>Discounted legacy pricing</Text>
-            <Text style={styles.planMeta}>Same premium features at founder pricing while seats last</Text>
+            <Text style={styles.planTitle}>Founder Plan</Text>
+            <Text style={styles.planName}>Limited seats</Text>
+            <Text style={styles.planMeta}>Discounted legacy pricing (same premium features)</Text>
+            <Text style={styles.planMeta}>Seats remaining: {founderSeatsRemaining}</Text>
           </View>
 
           <View style={styles.securityCard}>
@@ -83,10 +120,27 @@ export function SubscriptionScreen() {
               label="Refresh Subscription Status"
               variant="outline"
               onPress={() => void refreshSubscriptionStatus()}
-              disabled={loading || portalLoading}
+              disabled={loading || portalLoading || checkoutLoading !== null}
             />
+            {!isActive ? (
+              <>
+                <Button
+                  label="Subscribe Pro ($99/mo)"
+                  onPress={() => void handleCheckout('pro')}
+                  disabled={loading || portalLoading || checkoutLoading !== null}
+                  loading={checkoutLoading === 'pro'}
+                />
+                <Button
+                  label="Get Founder Plan"
+                  variant="outline"
+                  onPress={() => void handleCheckout('founder')}
+                  disabled={loading || portalLoading || checkoutLoading !== null || founderSeatsRemaining <= 0}
+                  loading={checkoutLoading === 'founder'}
+                />
+              </>
+            ) : null}
             <Button
-              label="Open Billing Portal"
+              label={isActive ? 'Manage Billing in Stripe' : 'Open Billing Portal'}
               onPress={() => void handleOpenPortal()}
               disabled={loading || portalLoading || subscriptionProfile.subscriptionStatus !== 'active'}
               loading={portalLoading}
