@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import type { AuthStackParamList } from '../../navigation/AppNavigator';
@@ -12,11 +12,15 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'AuthLandingScreen'> & {
 };
 
 export function AuthLandingScreen({ navigation, onContinueGuest }: Props) {
+  const [hoveredFeature, setHoveredFeature] = useState<string | null>(null);
+  const [startHovered, setStartHovered] = useState(false);
+  const [guestHovered, setGuestHovered] = useState(false);
   const heroOpacity = useRef(new Animated.Value(0)).current;
   const heroTranslateY = useRef(new Animated.Value(16)).current;
   const featureOpacity = useRef(new Animated.Value(0)).current;
   const featureTranslateY = useRef(new Animated.Value(16)).current;
   const wave = useRef(new Animated.Value(0)).current;
+  const floatY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.stagger(110, [
@@ -37,31 +41,33 @@ export function AuthLandingScreen({ navigation, onContinueGuest }: Props) {
         Animated.timing(wave, { toValue: 0, duration: 420, useNativeDriver: true })
       ])
     );
+    const floatLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatY, { toValue: -5, duration: 560, useNativeDriver: true }),
+        Animated.timing(floatY, { toValue: 0, duration: 560, useNativeDriver: true })
+      ])
+    );
     loop.start();
-    return () => loop.stop();
-  }, [featureOpacity, featureTranslateY, heroOpacity, heroTranslateY, wave]);
+    floatLoop.start();
+    return () => {
+      loop.stop();
+      floatLoop.stop();
+    };
+  }, [featureOpacity, featureTranslateY, floatY, heroOpacity, heroTranslateY, wave]);
 
   const handRotate = wave.interpolate({
     inputRange: [-1, 0, 1],
     outputRange: ['-10deg', '0deg', '10deg']
   });
 
-  const openDemo = async () => {
-    try {
-      await Linking.openURL('https://franco.app');
-    } catch {
-      // non-blocking
-    }
-  };
-
   return (
     <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Animated.View style={[styles.heroWrap, { opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }]}>
-          <View style={styles.avatarCircle}>
+          <Animated.View style={[styles.avatarCircle, { transform: [{ translateY: floatY }] }]}>
             <Text style={styles.avatarEmoji}>👩‍🏫</Text>
             <Animated.Text style={[styles.waveHand, { transform: [{ rotate: handRotate }] }]}>👋</Animated.Text>
-          </View>
+          </Animated.View>
           <View style={styles.bubble}>
             <Text style={styles.bubbleText}>
               Bonjour! I&apos;m your AI French teacher. Let&apos;s practice French for Canada.
@@ -69,40 +75,70 @@ export function AuthLandingScreen({ navigation, onContinueGuest }: Props) {
           </View>
 
           <Text style={styles.title}>Learn French for Canadian Immigration with AI</Text>
-          <Text style={styles.subtitle}>Improve your CLB score with daily AI-powered French practice.</Text>
+          <Text style={styles.subtitle}>Improve your CLB score with daily AI-powered French speaking practice.</Text>
 
           <View style={styles.ctaRow}>
-            <Pressable style={[styles.cta, styles.ctaPrimary]} onPress={onContinueGuest}>
+            <Pressable
+              onHoverIn={() => setStartHovered(true)}
+              onHoverOut={() => setStartHovered(false)}
+              style={({ pressed }) => [
+                styles.cta,
+                styles.ctaPrimary,
+                (pressed || startHovered) && styles.ctaHoverPrimary
+              ]}
+              onPress={() => navigation.navigate('LoginScreen')}
+            >
               <Text style={styles.ctaPrimaryText}>Start Learning</Text>
-            </Pressable>
-            <Pressable style={[styles.cta, styles.ctaSecondary]} onPress={() => void openDemo()}>
-              <Text style={styles.ctaSecondaryText}>Watch Demo</Text>
             </Pressable>
           </View>
 
-          <Pressable style={styles.guestButton} onPress={onContinueGuest}>
+          <Pressable
+            onHoverIn={() => setGuestHovered(true)}
+            onHoverOut={() => setGuestHovered(false)}
+            style={({ pressed }) => [styles.guestButton, (pressed || guestHovered) && styles.guestButtonHover]}
+            onPress={onContinueGuest}
+          >
             <Text style={styles.guestButtonText}>Continue as Guest</Text>
           </Pressable>
           <Pressable onPress={() => navigation.navigate('LoginScreen')}>
             <Text style={styles.registerLink}>Already have an account? Login</Text>
           </Pressable>
+          <Text style={styles.socialProof}>⭐ Trusted by learners preparing for Canadian immigration</Text>
         </Animated.View>
 
-        <Animated.View style={{ opacity: featureOpacity, transform: [{ translateY: featureTranslateY }] }}>
-          <View style={styles.featureCard}>
+        <Animated.View style={[styles.featuresWrap, { opacity: featureOpacity, transform: [{ translateY: featureTranslateY }] }]}>
+          <Pressable
+            onPress={() => undefined}
+            onHoverIn={() => setHoveredFeature('speaking')}
+            onHoverOut={() => setHoveredFeature((prev) => (prev === 'speaking' ? null : prev))}
+            style={[styles.featureCard, hoveredFeature === 'speaking' && styles.featureCardHover]}
+          >
             <Text style={styles.featureIcon}>🗣️</Text>
             <Text style={styles.featureText}>AI French Speaking Practice</Text>
-          </View>
-          <View style={styles.featureCard}>
+          </Pressable>
+          <Pressable
+            onPress={() => undefined}
+            onHoverIn={() => setHoveredFeature('clb')}
+            onHoverOut={() => setHoveredFeature((prev) => (prev === 'clb' ? null : prev))}
+            style={[styles.featureCard, hoveredFeature === 'clb' && styles.featureCardHover]}
+          >
             <Text style={styles.featureIcon}>🎯</Text>
             <Text style={styles.featureText}>CLB & TEF Focused Training</Text>
-          </View>
-          <View style={styles.featureCard}>
+          </Pressable>
+          <Pressable
+            onPress={() => undefined}
+            onHoverIn={() => setHoveredFeature('canada')}
+            onHoverOut={() => setHoveredFeature((prev) => (prev === 'canada' ? null : prev))}
+            style={[styles.featureCard, hoveredFeature === 'canada' && styles.featureCardHover]}
+          >
             <Text style={styles.featureIcon}>🍁</Text>
             <Text style={styles.featureText}>Designed for Canada Immigration</Text>
-          </View>
+          </Pressable>
 
-          <Text style={styles.trustText}>Powered by Newton Immigration</Text>
+          <View style={styles.trustBlock}>
+            <Text style={styles.trustText}>🇨🇦 Powered by Newton Immigration</Text>
+            <Text style={styles.trustSubText}>Built by licensed Canadian immigration professionals.</Text>
+          </View>
         </Animated.View>
       </ScrollView>
     </View>
@@ -116,15 +152,18 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.xl,
-    gap: spacing.lg
-  },
-  heroWrap: {
+    gap: spacing.xxl,
     alignItems: 'center'
   },
+  heroWrap: {
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 760
+  },
   avatarCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 102,
+    height: 102,
+    borderRadius: 51,
     backgroundColor: '#EAF2FF',
     borderWidth: 1,
     borderColor: '#BFDBFE',
@@ -133,7 +172,7 @@ const styles = StyleSheet.create({
     position: 'relative'
   },
   avatarEmoji: {
-    fontSize: 40
+    fontSize: 46
   },
   waveHand: {
     position: 'absolute',
@@ -160,7 +199,7 @@ const styles = StyleSheet.create({
     ...typography.heading1,
     color: '#0B1220',
     textAlign: 'center',
-    marginTop: spacing.lg,
+    marginTop: spacing.xl,
     maxWidth: 760
   },
   subtitle: {
@@ -171,10 +210,10 @@ const styles = StyleSheet.create({
     maxWidth: 620
   },
   ctaRow: {
-    marginTop: spacing.lg,
+    marginTop: spacing.xl,
     width: '100%',
     maxWidth: 460,
-    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
+    flexDirection: 'column',
     gap: spacing.sm
   },
   cta: {
@@ -188,18 +227,13 @@ const styles = StyleSheet.create({
   ctaPrimary: {
     backgroundColor: colors.primary
   },
-  ctaSecondary: {
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.primary
+  ctaHoverPrimary: {
+    opacity: 0.95,
+    transform: [{ scale: 0.99 }]
   },
   ctaPrimaryText: {
     ...typography.bodyStrong,
     color: colors.white
-  },
-  ctaSecondaryText: {
-    ...typography.bodyStrong,
-    color: colors.primary
   },
   guestButton: {
     marginTop: spacing.md,
@@ -212,6 +246,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
+  guestButtonHover: {
+    backgroundColor: '#E2ECFF'
+  },
   guestButtonText: {
     ...typography.bodyStrong,
     color: colors.primary
@@ -221,16 +258,30 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.sm
   },
+  socialProof: {
+    ...typography.caption,
+    color: '#94A3B8',
+    textAlign: 'center',
+    marginTop: spacing.md
+  },
+  featuresWrap: {
+    width: '100%',
+    maxWidth: 760
+  },
   featureCard: {
     borderWidth: 1,
     borderColor: '#D7E3F8',
     borderRadius: 14,
     backgroundColor: colors.white,
-    padding: spacing.md,
+    padding: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing.sm
+  },
+  featureCardHover: {
+    backgroundColor: '#F6FAFF',
+    borderColor: '#BFDBFE'
   },
   featureIcon: {
     fontSize: 20
@@ -239,11 +290,20 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     color: colors.textPrimary
   },
+  trustBlock: {
+    alignItems: 'center',
+    marginTop: spacing.lg
+  },
   trustText: {
     ...typography.caption,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: spacing.sm,
     fontWeight: '600'
+  },
+  trustSubText: {
+    ...typography.caption,
+    color: '#94A3B8',
+    textAlign: 'center',
+    marginTop: spacing.xs
   }
 });

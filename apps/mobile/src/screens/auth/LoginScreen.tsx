@@ -136,6 +136,7 @@ export function LoginScreen({ navigation, route }: Props) {
 
           <View style={styles.actions}>
             <Button label="Login" onPress={handleLogin} disabled={!canSubmit} loading={loading} />
+            <Button label="Register" onPress={() => navigation.navigate('RegisterScreen')} variant="outline" disabled={loading} />
             <Button
               label="Resend Verification Email"
               onPress={handleResendVerification}
@@ -143,7 +144,7 @@ export function LoginScreen({ navigation, route }: Props) {
               disabled={loading || resending}
               loading={resending}
             />
-            <Button label="Create Account" onPress={() => navigation.navigate('RegisterScreen')} variant="outline" disabled={loading} />
+            <Button label="Back" onPress={() => navigation.navigate('AuthLandingScreen')} variant="text" disabled={loading} />
           </View>
         </Card>
       </ScrollView>

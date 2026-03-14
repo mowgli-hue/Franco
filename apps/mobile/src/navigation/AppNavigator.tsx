@@ -191,6 +191,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const DEFAULT_MAIN_ROUTE: PersistedMainRoute = { tab: 'HomeTab', nested: { name: 'LearningHubScreen' } };
 const APP_SPLASH_MS = 2000;
 const GUEST_MODE_KEY = 'clb:guest-access';
+const GUEST_ONBOARDING_COMPLETED_KEY = 'clb:guest-onboarding-completed';
 const TESTER_EMAIL_FOUNDATION4 = 'ztalentrecruitmentservices@gmail.com';
 const TESTER_FOUNDATION4_ROUTE: PersistedMainRoute = {
   tab: 'PathTab',
@@ -736,6 +737,7 @@ export function AppNavigator() {
   const [restoreReady, setRestoreReady] = useState(false);
   const [mainRoute, setMainRoute] = useState<PersistedMainRoute>(DEFAULT_MAIN_ROUTE);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [guestOnboardingCompleted, setGuestOnboardingCompleted] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
   const [guestAccess, setGuestAccess] = useState(false);
 
@@ -744,12 +746,27 @@ export function AppNavigator() {
       setRestoreReady(true);
       setMainRoute(DEFAULT_MAIN_ROUTE);
       setOnboardingCompleted(false);
-      void AsyncStorage.getItem(GUEST_MODE_KEY)
-        .then((value) => setGuestAccess(value === 'true'))
-        .catch(() => setGuestAccess(false));
+      void Promise.all([
+        AsyncStorage.getItem(GUEST_MODE_KEY),
+        AsyncStorage.getItem(GUEST_ONBOARDING_COMPLETED_KEY),
+        loadLastMainRoute('guest')
+      ])
+        .then(([guestValue, guestOnboardingValue, guestRoute]) => {
+          const guestEnabled = guestValue === 'true';
+          setGuestAccess(guestEnabled);
+          setGuestOnboardingCompleted(guestOnboardingValue === 'true');
+          if (guestEnabled && guestRoute) {
+            setMainRoute(guestRoute);
+          }
+        })
+        .catch(() => {
+          setGuestAccess(false);
+          setGuestOnboardingCompleted(false);
+        });
       return;
     }
     setGuestAccess(false);
+    setGuestOnboardingCompleted(false);
     void AsyncStorage.removeItem(GUEST_MODE_KEY);
 
     if ((user.email ?? '').trim().toLowerCase() === TESTER_EMAIL_FOUNDATION4) {
@@ -797,15 +814,30 @@ export function AppNavigator() {
 
   if (!user) {
     if (guestAccess) {
+      if (!guestOnboardingCompleted) {
+        return (
+          <OnboardingStackNavigator
+            userId="guest"
+            onCompleted={(nextRoute) => {
+              setMainRoute(nextRoute);
+              setGuestOnboardingCompleted(true);
+              void AsyncStorage.setItem(GUEST_ONBOARDING_COMPLETED_KEY, 'true');
+            }}
+          />
+        );
+      }
+
       return <MainTabsNavigator userId="guest" initialRoute={mainRoute.tab === 'HomeTab' ? GUEST_START_ROUTE : mainRoute} />;
     }
 
     return (
       <AuthStackNavigator
         onContinueGuest={() => {
-          setMainRoute(GUEST_START_ROUTE);
+          setMainRoute(DEFAULT_MAIN_ROUTE);
           setGuestAccess(true);
+          setGuestOnboardingCompleted(false);
           void AsyncStorage.setItem(GUEST_MODE_KEY, 'true');
+          void AsyncStorage.removeItem(GUEST_ONBOARDING_COMPLETED_KEY);
         }}
       />
     );

@@ -143,7 +143,8 @@ export function RegisterScreen({ navigation }: Props) {
 
           <View style={styles.actions}>
             <Button label="Register" onPress={handleRegister} disabled={!canSubmit} loading={loading} />
-            <Button label="Back to Login" onPress={() => navigation.navigate('LoginScreen')} variant="text" disabled={loading} />
+            <Button label="Login" onPress={() => navigation.navigate('LoginScreen')} variant="outline" disabled={loading} />
+            <Button label="Back" onPress={() => navigation.navigate('AuthLandingScreen')} variant="text" disabled={loading} />
           </View>
         </Card>
       </ScrollView>
