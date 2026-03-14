@@ -37,6 +37,44 @@ const levelOptions: LevelOption[] = [
 
 const MAX_DIAGNOSTIC_QUESTIONS = 15;
 
+function mapScoreToSelfLevel(scorePercent: number): OnboardingSelfLevel {
+  if (scorePercent < 45) return 'none';
+  if (scorePercent < 60) return 'basic';
+  if (scorePercent < 72) return 'simple';
+  if (scorePercent < 86) return 'conversation';
+  return 'comfortable';
+}
+
+function computeDomainPerformance(
+  attempts: Array<{ questionId: string; isCorrect: boolean }>
+): { strongestDomain?: 'grammar' | 'vocabulary' | 'reading' | 'listening'; weakestDomain?: 'grammar' | 'vocabulary' | 'reading' | 'listening' } {
+  const questionById = new Map(
+    Object.values(diagnosticQuestionsByDifficulty)
+      .flat()
+      .map((question) => [question.id, question])
+  );
+  const stats = new Map<'grammar' | 'vocabulary' | 'reading' | 'listening', { correct: number; total: number }>();
+
+  attempts.forEach((attempt) => {
+    const question = questionById.get(attempt.questionId);
+    if (!question) return;
+    const current = stats.get(question.domain) ?? { correct: 0, total: 0 };
+    stats.set(question.domain, {
+      correct: current.correct + (attempt.isCorrect ? 1 : 0),
+      total: current.total + 1
+    });
+  });
+
+  const ranked = Array.from(stats.entries())
+    .map(([domain, value]) => ({ domain, ratio: value.total > 0 ? value.correct / value.total : 0 }))
+    .sort((a, b) => b.ratio - a.ratio);
+
+  return {
+    strongestDomain: ranked[0]?.domain,
+    weakestDomain: ranked[ranked.length - 1]?.domain
+  };
+}
+
 function totalQuestionsForInitialTier(initialTier: 'A1' | 'A2' | 'B1' | 'B2'): number {
   const maxTierIndex = difficultyOrder.indexOf(initialTier);
   const available = difficultyOrder
@@ -103,6 +141,15 @@ export function DiagnosticFlowScreen({ navigation, route }: Props) {
               disabled={!selectedLevel}
               onPress={() => {
                 if (!selectedLevel) return;
+                if (selectedLevel === 'simple' || selectedLevel === 'conversation' || selectedLevel === 'comfortable') {
+                  const initialDifficulty =
+                    selectedLevel === 'simple' ? 'A2' : selectedLevel === 'conversation' ? 'B1' : 'B2';
+                  navigation.navigate('DiagnosticFlowScreen', {
+                    goalType: route.params.goalType,
+                    initialDifficulty
+                  });
+                  return;
+                }
                 navigation.navigate('StudyPlanIntroScreen', {
                   goalType: route.params.goalType,
                   selfLevel: selectedLevel
@@ -130,8 +177,18 @@ export function DiagnosticFlowScreen({ navigation, route }: Props) {
     setSelectedOption(null);
 
     if (isDiagnosticComplete(nextState)) {
-      finalizeDiagnostic(nextState);
-      navigation.replace('PathMapScreen');
+      const result = finalizeDiagnostic(nextState);
+      const selfLevel = mapScoreToSelfLevel(result.scorePercent);
+      const domainPerformance = computeDomainPerformance(nextState.attempts);
+      navigation.replace('DiagnosticResultScreen', {
+        goalType: route.params.goalType,
+        selfLevel,
+        diagnosticReport: {
+          ...result,
+          ...domainPerformance,
+          initialDifficulty: route.params.initialDifficulty
+        }
+      });
       return;
     }
 

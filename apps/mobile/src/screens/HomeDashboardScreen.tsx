@@ -206,6 +206,9 @@ export function HomeDashboardScreen({ navigation }: Props) {
         <Pressable onPress={openCurrentLesson} style={styles.primaryButton}>
           <Text style={styles.buttonText}>Continue Lesson</Text>
         </Pressable>
+        <Pressable onPress={() => navigateToPathTab(navigation as any, 'PathMapScreen')} style={styles.secondaryButton}>
+          <Text style={styles.secondaryButtonText}>View Full Path</Text>
+        </Pressable>
       </View>
 
       <AIReviewCard
@@ -323,10 +326,24 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center'
   },
+  secondaryButton: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF',
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: 'center'
+  },
   buttonText: {
     color: '#FFFFFF',
     fontWeight: '600',
     fontSize: 16
+  },
+  secondaryButtonText: {
+    color: '#1E40AF',
+    fontWeight: '600',
+    fontSize: 14
   },
   goalCard: {
     backgroundColor: '#EFF6FF',

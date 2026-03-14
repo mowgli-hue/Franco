@@ -18,15 +18,45 @@ type Props = NativeStackScreenProps<MainStackParamList, 'DiagnosticResultScreen'
 const reminderTimes = ['07:00', '08:00', '12:00', '18:00', '20:00'];
 
 type StartingRoute = { name: keyof MainStackParamList; params?: Record<string, unknown> };
+type DiagnosticReport = NonNullable<Props['route']['params']['diagnosticReport']>;
+
+function mapDomainLabel(domain?: DiagnosticReport['strongestDomain']): string {
+  if (!domain) return 'balanced';
+  if (domain === 'grammar') return 'grammar';
+  if (domain === 'vocabulary') return 'vocabulary range';
+  if (domain === 'reading') return 'reading comprehension';
+  return 'listening accuracy';
+}
+
+function mapDiagnosticToStartingRoute(report: DiagnosticReport): StartingRoute {
+  if (report.scorePercent < 45) {
+    return { name: 'BeginnerFoundationScreen' };
+  }
+  if (report.scorePercent < 70) {
+    return { name: 'A1FoundationScreen' };
+  }
+  return { name: 'UpgradeScreen' };
+}
+
+function mapDiagnosticToLevel(report: DiagnosticReport): LevelId {
+  if (report.scorePercent < 45) return 'foundation';
+  if (report.scorePercent < 70) return 'a1';
+  return 'a2';
+}
 
 function determineStartingRoute(
   level: OnboardingSelfLevel,
   goalType: Props['route']['params']['goalType'],
-  userEmail?: string | null
+  userEmail?: string | null,
+  diagnosticReport?: DiagnosticReport
 ): StartingRoute {
   // Temporary QA shortcut: route this tester account directly to Foundation Lesson 4.
   if ((userEmail ?? '').trim().toLowerCase() === 'ztalentrecruitmentservices@gmail.com') {
     return { name: 'FoundationLessonScreen', params: { lessonId: 'numbers-0-20' } };
+  }
+
+  if (diagnosticReport) {
+    return mapDiagnosticToStartingRoute(diagnosticReport);
   }
 
   // Unified beginner-first journey: everyone starts in Foundation and unlocks A1 after completion.
@@ -35,7 +65,10 @@ function determineStartingRoute(
   return { name: 'BeginnerFoundationScreen' };
 }
 
-function mapSelfLevelToCurriculum(level: OnboardingSelfLevel): LevelId {
+function mapSelfLevelToCurriculum(level: OnboardingSelfLevel, diagnosticReport?: DiagnosticReport): LevelId {
+  if (diagnosticReport) {
+    return mapDiagnosticToLevel(diagnosticReport);
+  }
   void level;
   return 'foundation';
 }
@@ -76,8 +109,9 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [selectedTime, setSelectedTime] = useState('18:00');
   const [saving, setSaving] = useState(false);
-  const [stage, setStage] = useState<'preparing' | 'ready'>('preparing');
+  const [stage, setStage] = useState<'preparing' | 'review' | 'thinking' | 'ready'>('preparing');
   const isWeb = Platform.OS === 'web';
+  const diagnosticReport = route.params.diagnosticReport;
 
   const progressAnim = useRef(new Animated.Value(0)).current;
   const targetClb = deriveTargetClb(route.params.goalType);
@@ -86,6 +120,18 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
     [route.params.selfLevel, targetClb]
   );
   const projectedDate = useMemo(() => addDays(new Date(), daysToGoal), [daysToGoal]);
+  const [visibleInsightCount, setVisibleInsightCount] = useState(0);
+  const aiPulse = useRef(new Animated.Value(1)).current;
+
+  const diagnosticInsights = useMemo(() => {
+    if (!diagnosticReport) return [];
+    return [
+      `Accuracy today: ${diagnosticReport.correctCount}/${diagnosticReport.totalQuestions} (${diagnosticReport.scorePercent}%).`,
+      `Strongest area: ${mapDomainLabel(diagnosticReport.strongestDomain)}.`,
+      `Needs improvement: ${mapDomainLabel(diagnosticReport.weakestDomain)}.`,
+      `Estimated working level: ${diagnosticReport.cefrRecommendation}.`
+    ];
+  }, [diagnosticReport]);
 
   useEffect(() => {
     progressAnim.setValue(0);
@@ -95,12 +141,47 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
       useNativeDriver: false
     }).start();
 
-    const timer = setTimeout(() => setStage('ready'), 1450);
-    return () => clearTimeout(timer);
+    if (!diagnosticReport) {
+      const timer = setTimeout(() => setStage('ready'), 1450);
+      return () => clearTimeout(timer);
+    }
+
+    const t1 = setTimeout(() => setStage('review'), 650);
+    const t2 = setTimeout(() => setStage('thinking'), 1700);
+    const t3 = setTimeout(() => setStage('ready'), 2900);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
   }, [progressAnim]);
 
+  useEffect(() => {
+    if (stage !== 'thinking') return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(aiPulse, { toValue: 1.08, duration: 520, useNativeDriver: true }),
+        Animated.timing(aiPulse, { toValue: 1, duration: 520, useNativeDriver: true })
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [aiPulse, stage]);
+
+  useEffect(() => {
+    if (stage !== 'ready' || !diagnosticReport) return;
+    setVisibleInsightCount(0);
+    const timer = setInterval(() => {
+      setVisibleInsightCount((prev) => {
+        if (prev >= diagnosticInsights.length) return prev;
+        return prev + 1;
+      });
+    }, 300);
+    return () => clearInterval(timer);
+  }, [diagnosticInsights.length, diagnosticReport, stage]);
+
   const handleStartTraining = async () => {
-    const nextRoute = determineStartingRoute(route.params.selfLevel, route.params.goalType, user?.email);
+    const nextRoute = determineStartingRoute(route.params.selfLevel, route.params.goalType, user?.email, diagnosticReport);
     try {
       setSaving(true);
       if (user?.uid) {
@@ -116,7 +197,7 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
       }
 
       if (canChooseStartingLevel) {
-        setStartingLevel(mapSelfLevelToCurriculum(route.params.selfLevel));
+        setStartingLevel(mapSelfLevelToCurriculum(route.params.selfLevel, diagnosticReport));
       }
 
       navigation.navigate('PathPreparationScreen', {
@@ -134,6 +215,8 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
   });
 
   const calendarDays = Array.from({ length: 7 }, (_, i) => i + 1);
+  const recommendedCta =
+    diagnosticReport && diagnosticReport.scorePercent >= 70 ? 'Continue to Billing' : "Start Recommended Path";
 
   return (
     <View style={styles.root}>
@@ -142,9 +225,11 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
           {stage === 'preparing' ? (
             <>
               <Text style={styles.step}>Step 5 of 5</Text>
-              <Text style={styles.title}>Preparing your journey...</Text>
+              <Text style={styles.title}>{diagnosticReport ? "Reviewing today's answers..." : 'Preparing your journey...'}</Text>
               <Text style={styles.subtitle}>
-                Building your personalized roadmap based on your current level and goal.
+                {diagnosticReport
+                  ? 'Analyzing your performance across each tested level.'
+                  : 'Building your personalized roadmap based on your current level and goal.'}
               </Text>
               <View style={styles.progressTrack}>
                 <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
@@ -152,13 +237,40 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
             </>
           ) : null}
 
+          {stage === 'review' && diagnosticReport ? (
+            <>
+              <Text style={styles.step}>AI Review</Text>
+              <Text style={styles.title}>Today&apos;s Answers Review</Text>
+              <Text style={styles.subtitle}>
+                You answered {diagnosticReport.correctCount} out of {diagnosticReport.totalQuestions} correctly.
+              </Text>
+            </>
+          ) : null}
+
+          {stage === 'thinking' && diagnosticReport ? (
+            <View style={styles.aiThinkingWrap}>
+              <Animated.Text style={[styles.aiEmoji, { transform: [{ scale: aiPulse }] }]}>🤖</Animated.Text>
+              <Text style={styles.title}>AI is thinking...</Text>
+              <Text style={styles.subtitle}>Building a true recommendation based on your actual performance.</Text>
+            </View>
+          ) : null}
+
           {stage === 'ready' ? (
             <>
               <Text style={styles.step}>Step 5 of 5</Text>
               <Text style={styles.title}>Your plan is ready</Text>
-              <Text style={styles.subtitle}>
-                Complete {daysToGoal} focused days to target CLB {targetClb}. Projected finish: {formatDate(projectedDate)}.
-              </Text>
+              {diagnosticReport ? (
+                <View style={styles.aiSummaryCard}>
+                  <Text style={styles.aiSummaryTitle}>AI Placement Summary</Text>
+                  {diagnosticInsights.slice(0, visibleInsightCount).map((line) => (
+                    <Text key={line} style={styles.aiSummaryLine}>• {line}</Text>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.subtitle}>
+                  Complete {daysToGoal} focused days to target CLB {targetClb}. Projected finish: {formatDate(projectedDate)}.
+                </Text>
+              )}
 
               <View style={styles.calendarCard}>
                 <Text style={styles.calendarTitle}>Week 1 roadmap</Text>
@@ -214,7 +326,12 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
                 </View>
               ) : null}
 
-              <Button label="Let's Start" onPress={handleStartTraining} loading={saving} />
+              <Button label={recommendedCta} onPress={handleStartTraining} loading={saving} />
+              <View style={styles.secondaryActions}>
+                <Pressable onPress={() => navigation.navigate('PathMapScreen')}>
+                  <Text style={styles.secondaryActionText}>View Full Path</Text>
+                </Pressable>
+              </View>
             </>
           ) : null}
         </Card>
@@ -249,6 +366,32 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textSecondary,
     marginBottom: spacing.lg
+  },
+  aiThinkingWrap: {
+    alignItems: 'center',
+    marginBottom: spacing.lg
+  },
+  aiEmoji: {
+    fontSize: 34,
+    marginBottom: spacing.sm
+  },
+  aiSummaryCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    backgroundColor: '#F8FBFF',
+    padding: spacing.md,
+    marginBottom: spacing.lg
+  },
+  aiSummaryTitle: {
+    ...typography.bodyStrong,
+    color: colors.primary,
+    marginBottom: spacing.sm
+  },
+  aiSummaryLine: {
+    ...typography.body,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs
   },
   progressTrack: {
     height: 8,
@@ -372,5 +515,14 @@ const styles = StyleSheet.create({
   webInfoText: {
     ...typography.caption,
     color: colors.textSecondary
+  },
+  secondaryActions: {
+    alignItems: 'center',
+    marginTop: spacing.sm
+  },
+  secondaryActionText: {
+    ...typography.caption,
+    color: colors.secondary,
+    fontWeight: '700'
   }
 });

@@ -82,7 +82,19 @@ export type OnboardingStackParamList = {
   SelfAssessmentScreen: undefined;
   StudyPlanIntroScreen: { goalType: OnboardingGoalType; selfLevel: OnboardingSelfLevel };
   DiagnosticFlowScreen: { goalType: OnboardingGoalType; initialDifficulty?: 'A1' | 'A2' | 'B1' | 'B2' };
-  DiagnosticResultScreen: { goalType: OnboardingGoalType; selfLevel: OnboardingSelfLevel };
+  DiagnosticResultScreen: {
+    goalType: OnboardingGoalType;
+    selfLevel: OnboardingSelfLevel;
+    diagnosticReport?: {
+      scorePercent: number;
+      correctCount: number;
+      totalQuestions: number;
+      cefrRecommendation: 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
+      strongestDomain?: 'grammar' | 'vocabulary' | 'reading' | 'listening';
+      weakestDomain?: 'grammar' | 'vocabulary' | 'reading' | 'listening';
+      initialDifficulty?: 'A1' | 'A2' | 'B1' | 'B2';
+    };
+  };
   PathPreparationScreen: {
     nextRoute: keyof MainStackParamList;
     nextParams?: Record<string, unknown>;
