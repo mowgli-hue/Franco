@@ -79,6 +79,25 @@ const CURRICULUM_PROGRESS_STORAGE_KEY = 'clb:curriculum-progress:v1';
 const CERTIFICATES_STORAGE_KEY = 'clb:level-certificates:v1';
 const GUEST_USER_ID = 'guest';
 
+function normalizeCurriculumState(parsed: UserCurriculumState): UserCurriculumState {
+  const fallback = createInitialCurriculumState();
+  return {
+    ...parsed,
+    journeyStartedAt: typeof parsed.journeyStartedAt === 'number' ? parsed.journeyStartedAt : fallback.journeyStartedAt,
+    performanceCoach: parsed.performanceCoach ?? fallback.performanceCoach
+  };
+}
+
+function getPerformanceUpdatedAt(state: UserCurriculumState | null): number {
+  const value = state?.performanceCoach?.updatedAt;
+  return typeof value === 'number' ? value : 0;
+}
+
+function getLessonRecordCount(state: UserCurriculumState | null): number {
+  if (!state) return 0;
+  return Object.values(state.levels).reduce((sum, level) => sum + Object.keys(level.lessonRecords).length, 0);
+}
+
 function defaultSessionFocusForCurrentLevel(state: UserCurriculumState): SkillFocus {
   const currentLevelProgress = state.levels[state.currentLevelId];
   const weakest = getWeakestSkill(currentLevelProgress.skillProgress);
@@ -103,27 +122,6 @@ export function CurriculumProgressProvider({ children }: { children: React.React
 
     (async () => {
       try {
-        const cloud = user?.uid
-          ? await loadCloudCurriculumState<UserCurriculumState, LevelCertificate[]>(user.uid)
-          : null;
-
-        if (cloud && mounted) {
-          const parsed = cloud.curriculumState;
-          const fallback = createInitialCurriculumState();
-          setCurriculumState({
-            ...parsed,
-            journeyStartedAt: typeof parsed.journeyStartedAt === 'number' ? parsed.journeyStartedAt : fallback.journeyStartedAt,
-            performanceCoach: parsed.performanceCoach ?? createInitialCurriculumState().performanceCoach
-          });
-          setEarnedCertificates(cloud.earnedCertificates ?? []);
-          await Promise.all([
-            AsyncStorage.setItem(progressStorageKey, JSON.stringify(parsed)),
-            AsyncStorage.setItem(certificatesStorageKey, JSON.stringify(cloud.earnedCertificates ?? []))
-          ]);
-          if (mounted) setHydrated(true);
-          return;
-        }
-
         let [rawProgress, rawCertificates] = await Promise.all([
           AsyncStorage.getItem(progressStorageKey),
           AsyncStorage.getItem(certificatesStorageKey)
@@ -150,18 +148,41 @@ export function CurriculumProgressProvider({ children }: { children: React.React
           }
         }
 
-        if (rawProgress && mounted) {
-          const parsed = JSON.parse(rawProgress) as UserCurriculumState;
-          const fallback = createInitialCurriculumState();
-          setCurriculumState({
-            ...parsed,
-            journeyStartedAt: typeof parsed.journeyStartedAt === 'number' ? parsed.journeyStartedAt : fallback.journeyStartedAt,
-            performanceCoach: parsed.performanceCoach ?? createInitialCurriculumState().performanceCoach
-          });
+        const localState = rawProgress ? normalizeCurriculumState(JSON.parse(rawProgress) as UserCurriculumState) : null;
+        const localCertificates = rawCertificates ? (JSON.parse(rawCertificates) as LevelCertificate[]) : [];
+
+        const cloud = user?.uid
+          ? await loadCloudCurriculumState<UserCurriculumState, LevelCertificate[]>(user.uid)
+          : null;
+        const cloudState = cloud?.curriculumState ? normalizeCurriculumState(cloud.curriculumState) : null;
+        const cloudCertificates = cloud?.earnedCertificates ?? [];
+
+        let selectedState = localState ?? cloudState ?? createInitialCurriculumState();
+        let selectedCertificates = localCertificates.length ? localCertificates : cloudCertificates;
+
+        if (localState && cloudState) {
+          const localUpdatedAt = getPerformanceUpdatedAt(localState);
+          const cloudUpdatedAt = getPerformanceUpdatedAt(cloudState);
+          const localLessonCount = getLessonRecordCount(localState);
+          const cloudLessonCount = getLessonRecordCount(cloudState);
+          const preferLocal =
+            localUpdatedAt > cloudUpdatedAt ||
+            (localUpdatedAt === cloudUpdatedAt && localLessonCount >= cloudLessonCount);
+
+          selectedState = preferLocal ? localState : cloudState;
+          selectedCertificates = preferLocal
+            ? (localCertificates.length ? localCertificates : cloudCertificates)
+            : (cloudCertificates.length ? cloudCertificates : localCertificates);
         }
 
-        if (rawCertificates && mounted) {
-          setEarnedCertificates(JSON.parse(rawCertificates) as LevelCertificate[]);
+        await Promise.all([
+          AsyncStorage.setItem(progressStorageKey, JSON.stringify(selectedState)),
+          AsyncStorage.setItem(certificatesStorageKey, JSON.stringify(selectedCertificates))
+        ]);
+
+        if (mounted) {
+          setCurriculumState(selectedState);
+          setEarnedCertificates(selectedCertificates);
         }
 
         if (mounted) setHydrated(true);
