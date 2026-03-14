@@ -24,6 +24,9 @@ export type PronunciationAssessmentResult = {
   };
   meta?: {
     attempt?: string;
+    unavailableReason?: string;
+    unavailableStatus?: number;
+    unavailableHint?: string;
   };
 };
 
@@ -41,22 +44,41 @@ export async function assessPronunciation(input: PronunciationAssessmentInput): 
 
   if (!response.ok) {
     const text = await response.text();
-    let details = text;
+    let message = `Pronunciation service unavailable (${response.status}).`;
+    let hint = '';
+    let attempt = '';
     try {
       const parsed = JSON.parse(text) as {
         message?: string;
         details?: string;
         attempt?: string;
         hint?: string;
+        azureStatus?: number;
       };
-      details =
-        [parsed.message, parsed.details, parsed.attempt ? `attempt=${parsed.attempt}` : '', parsed.hint]
-          .filter(Boolean)
-          .join(' | ') || text;
+      if (response.status === 401 || parsed.azureStatus === 401) {
+        message = 'Pronunciation service unavailable (Azure auth failed).';
+      } else if (parsed.message) {
+        message = parsed.message;
+      }
+      hint = parsed.hint ?? '';
+      attempt = parsed.attempt ?? '';
     } catch {
-      // keep raw text
+      // keep default message
     }
-    throw new Error(`Pronunciation assessment failed (${response.status}). ${details}`);
+
+    // Keep lessons unblocked if pronunciation provider is down/misconfigured.
+    return {
+      transcriptText: '',
+      lexicalText: '',
+      confidence: null,
+      pronunciation: null,
+      meta: {
+        attempt,
+        unavailableReason: message,
+        unavailableStatus: response.status,
+        unavailableHint: hint
+      }
+    };
   }
 
   return (await response.json()) as PronunciationAssessmentResult;

@@ -2251,7 +2251,12 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
                   setTextInputs((prev) => ({ ...prev, [currentExercise.id]: transcript }));
                 }
                 const pScore = pronunciation.pronunciation?.pronunciationScore;
-                pronunciationSummary = pScore != null ? `Pronunciation score: ${Math.round(pScore)}.` : 'Pronunciation analyzed.';
+                pronunciationSummary =
+                  pScore != null
+                    ? `Pronunciation score: ${Math.round(pScore)}.`
+                    : pronunciation.meta?.unavailableReason
+                      ? 'Pronunciation check is temporarily unavailable. Continuing with speaking analysis.'
+                      : 'Pronunciation analyzed.';
               } catch (error) {
                 pronunciationSummary = `Pronunciation analysis failed: ${error instanceof Error ? error.message : 'unknown error'}`;
               }
