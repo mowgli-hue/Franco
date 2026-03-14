@@ -34,6 +34,7 @@ import {
 } from '../engine/LessonRuntimeEngine';
 import { assessPronunciation } from '../services/ai/PronunciationAssessmentService';
 import { assessSpeakingResponse } from '../services/ai/SpeakingAssessmentService';
+import { askAITutor } from '../services/ai/AITutorChatService';
 import { assessWritingResponse } from '../services/ai/WritingCorrectionService';
 import { playCorrectAnswerSound } from '../services/audio/answerFeedbackAudio';
 import { playPronunciation } from '../services/audio/pronunciationAudio';
@@ -119,6 +120,13 @@ type CLBPerformanceFeedback = {
   correctedSentence: string;
   improvedVersion: string;
   weaknesses: PerformanceWeaknessKey[];
+};
+
+type AiCorrectionNote = {
+  exerciseId: string;
+  prompt: string;
+  status: 'loading' | 'ready';
+  text: string;
 };
 
 type RetryCategory = 'articles' | 'verbTense' | 'wordOrder' | 'listening' | 'vocabulary';
@@ -962,6 +970,8 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const [practiceRecoveryCursor, setPracticeRecoveryCursor] = useState(0);
   const [practiceRecoveryActive, setPracticeRecoveryActive] = useState(false);
   const [showSessionSummary, setShowSessionSummary] = useState(false);
+  const [aiCorrectionByExercise, setAiCorrectionByExercise] = useState<Record<string, AiCorrectionNote>>({});
+  const [activeAiCorrection, setActiveAiCorrection] = useState<AiCorrectionNote | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 200);
@@ -1260,6 +1270,45 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       const category = inferRetryCategory(currentExercise, lesson);
       const variant = buildAdaptiveRetryVariant(currentExercise, lesson, category, attempts + 1);
       setRetryExerciseVariants((prev) => ({ ...prev, [currentStep.exercise!.id]: variant }));
+    } else if (!result.evaluation.correct && attempts >= 2 && currentExercise?.id) {
+      const exerciseId = currentExercise.id;
+      const note: AiCorrectionNote = {
+        exerciseId,
+        prompt: currentExercise.prompt,
+        status: 'loading',
+        text: 'AI is preparing a short correction note...'
+      };
+      setAiCorrectionByExercise((prev) => ({ ...prev, [exerciseId]: note }));
+
+      void (async () => {
+        try {
+          const response = await askAITutor({
+            question: `Learner got this exercise wrong twice. Explain clearly and briefly.\nPrompt: ${currentExercise.prompt}\nFeedback: ${result.evaluation.feedback}`,
+            routeName: 'StructuredLessonScreen',
+            companionName: selectedCompanion.name,
+            hintText: currentExercise.hint?.message
+          });
+          setAiCorrectionByExercise((prev) => ({
+            ...prev,
+            [exerciseId]: {
+              exerciseId,
+              prompt: currentExercise.prompt,
+              status: 'ready',
+              text: response.reply || 'Review the correction model and repeat the same pattern once more.'
+            }
+          }));
+        } catch {
+          setAiCorrectionByExercise((prev) => ({
+            ...prev,
+            [exerciseId]: {
+              exerciseId,
+              prompt: currentExercise.prompt,
+              status: 'ready',
+              text: 'You missed this twice. Focus on the key grammar pattern, compare your answer with the model, then continue.'
+            }
+          }));
+        }
+      })();
     }
   };
 
@@ -1358,6 +1407,14 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   };
 
   const onContinueAfterExercise = () => {
+    if (currentExercise?.id) {
+      const note = aiCorrectionByExercise[currentExercise.id];
+      if (note) {
+        setActiveAiCorrection(note);
+        return;
+      }
+    }
+
     if (practiceRecoveryActive && currentExercise?.id) {
       const currentCorrect = session.exerciseStates[currentExercise.id]?.correct === true;
       if (!currentCorrect) {
@@ -1553,6 +1610,22 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   };
 
   const renderStepContent = () => {
+    if (activeAiCorrection) {
+      return (
+        <View style={styles.centeredStep}>
+          <Text style={styles.bigTitle}>AI Correction Note</Text>
+          <Text style={styles.bodyText}>{activeAiCorrection.prompt}</Text>
+          <View style={styles.contextCard}>
+            <Text style={styles.contextTitle}>
+              {activeAiCorrection.status === 'loading' ? 'Thinking...' : `${selectedCompanion.emoji} Explanation`}
+            </Text>
+            <Text style={styles.contextLine}>{activeAiCorrection.text}</Text>
+          </View>
+          <Text style={styles.hintText}>Read this once, then continue to the next step.</Text>
+        </View>
+      );
+    }
+
     if (currentStep.kind === 'activation') {
       const currentQuestion = activationQuestions[activationQuestionIndex];
       if (!currentQuestion) return null;
@@ -2228,6 +2301,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const canGoBack = stepIndex > 0;
 
   const ctaLabel = (() => {
+    if (activeAiCorrection) return 'Continue';
     if (currentStep.kind === 'activation') return activationChecked ? 'Continue' : 'Check Warm-up';
     if (currentStep.kind === 'intro') return 'Continue';
     if (currentStep.kind === 'learn_segment') return 'Continue';
@@ -2240,6 +2314,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   })();
 
   const ctaDisabled = (() => {
+    if (activeAiCorrection) return false;
     if (currentStep.kind === 'activation') {
       if (activationChecked) return false;
       return activationQuestions.some((q) => activationSelections[q.id] == null);
@@ -2292,6 +2367,17 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const onPrimaryPress = () => {
     Keyboard.dismiss();
     setFeedback(null);
+
+    if (activeAiCorrection) {
+      setAiCorrectionByExercise((prev) => {
+        const next = { ...prev };
+        delete next[activeAiCorrection.exerciseId];
+        return next;
+      });
+      setActiveAiCorrection(null);
+      advanceStep();
+      return;
+    }
 
     if (currentStep.kind === 'activation') {
       if (!activationChecked) {
