@@ -24,7 +24,7 @@ export function BeginnerFoundationScreen({ navigation }: Props) {
 
           <View style={styles.actions}>
             <Button label="Start Foundation" onPress={() => navigation.navigate('A1FoundationScreen')} />
-            <Button label="Re-take Self Assessment" variant="outline" onPress={() => navigation.replace('SelfAssessmentScreen')} />
+            <Button label="Re-take Self Assessment" variant="outline" onPress={() => navigation.navigate('SelfAssessmentScreen')} />
           </View>
         </Card>
       </View>

@@ -103,6 +103,14 @@ export function ProfileScreen({ navigation }: Props) {
             </Pressable>
 
             <Pressable
+              onPress={() => (navigation.navigate as any)('SelfAssessmentScreen')}
+              style={({ pressed }) => [styles.linkRow, pressed && styles.toggleRowPressed]}
+            >
+              <Text style={styles.linkText}>🧭 Re-take Self Assessment</Text>
+              <Text style={styles.linkArrow}>›</Text>
+            </Pressable>
+
+            <Pressable
               onPress={() => navigation.navigate('PrivacyPolicyScreen')}
               style={({ pressed }) => [styles.linkRow, pressed && styles.toggleRowPressed]}
             >

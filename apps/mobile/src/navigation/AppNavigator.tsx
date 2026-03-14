@@ -132,6 +132,7 @@ export type OnboardingStackParamList = {
 
 export type PathStackParamList = {
   LearningHubScreen: undefined;
+  SelfAssessmentScreen: undefined;
   DiagnosticFlowScreen: { goalType: OnboardingGoalType; initialDifficulty?: 'A1' | 'A2' | 'B1' | 'B2' };
   BeginnerFoundationScreen: undefined;
   A1FoundationScreen: undefined;
@@ -475,6 +476,11 @@ function HomeStackNavigator() {
 function PathStackNavigator() {
   return (
     <PathStack.Navigator screenOptions={screenOptions()}>
+      <PathStack.Screen
+        name="SelfAssessmentScreen"
+        component={SelfAssessmentScreen}
+        options={{ title: 'Goal' }}
+      />
       <PathStack.Screen
         name="PathMapScreen"
         component={PathMapScreen as React.ComponentType<any>}
