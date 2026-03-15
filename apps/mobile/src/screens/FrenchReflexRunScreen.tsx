@@ -124,9 +124,12 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
   const panelPulse = useRef(new Animated.Value(1)).current;
   const successBurst = useRef(new Animated.Value(0)).current;
   const streakDrift = useRef(new Animated.Value(0)).current;
+  const shotFlash = useRef(new Animated.Value(0)).current;
   const roundRef = useRef<Round | null>(null);
   const laneRef = useRef<0 | 1 | 2>(1);
   const livesRef = useRef<number>(MAX_LIVES);
+  const scoreRef = useRef(score);
+  const roundCountRef = useRef(roundCount);
   const laneWidthRef = useRef((Dimensions.get('window').width - HORIZONTAL_PADDING * 2) / 3);
   const hitLineYRef = useRef(420);
   const fallingAnimRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -138,6 +141,14 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
   useEffect(() => {
     livesRef.current = lives;
   }, [lives]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    roundCountRef.current = roundCount;
+  }, [roundCount]);
 
   useEffect(() => {
     const bob = Animated.loop(
@@ -217,6 +228,14 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
     }).start();
   };
 
+  const triggerShotFlash = () => {
+    shotFlash.setValue(0);
+    Animated.sequence([
+      Animated.timing(shotFlash, { toValue: 1, duration: 90, useNativeDriver: true }),
+      Animated.timing(shotFlash, { toValue: 0, duration: 140, useNativeDriver: true })
+    ]).start();
+  };
+
   const stopFalling = () => {
     fallingAnimRef.current?.stop?.();
     fallingAnimRef.current = null;
@@ -254,6 +273,68 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
     }
   };
 
+  const processRoundOutcome = (
+    correct: boolean,
+    currentRound: Round,
+    reaction: number,
+    source: 'timeout' | 'shot'
+  ) => {
+    roundRef.current = null;
+    setRound(null);
+    setReactionMs((prev) => [...prev, reaction].slice(-120));
+
+    const previousScore = scoreRef.current;
+    const nextStreak = correct ? previousScore.streak + 1 : Math.max(0, previousScore.streak - 1);
+    const nextLongest = Math.max(previousScore.longestStreak, nextStreak);
+    const nextScore = {
+      streak: nextStreak,
+      longestStreak: nextLongest,
+      correct: previousScore.correct + (correct ? 1 : 0),
+      total: previousScore.total + 1
+    };
+    scoreRef.current = nextScore;
+    setScore(nextScore);
+
+    const nextRoundCount = roundCountRef.current + 1;
+    roundCountRef.current = nextRoundCount;
+    setRoundCount(nextRoundCount);
+
+    const level = getReflexLevel(levelId);
+    if (correct) {
+      setSpeed((prev) => Math.min(level.maxSpeed, prev + level.speedStep));
+      triggerOverlay(source === 'shot' ? 'Direct hit' : 'Correct');
+      pulsePanels();
+      triggerSuccessBurst();
+      if (nextStreak > 0 && nextStreak % 10 === 0) {
+        glowMilestone();
+        triggerOverlay(`Streak ${nextStreak}`);
+      }
+    } else {
+      setSpeed((prev) => Math.max(level.minSpeed, prev - Math.max(4, level.speedStep - 3)));
+      shakeOnMiss();
+      const nextLives = Math.max(0, livesRef.current - 1);
+      livesRef.current = nextLives;
+      setLives(nextLives);
+      setWeakAreaCounts((prev) => ({
+        ...prev,
+        [currentRound.weakArea]: (prev[currentRound.weakArea] ?? 0) + 1
+      }));
+      triggerOverlay(source === 'shot' ? `Miss: ${currentRound.answer}` : `Too late: ${currentRound.answer}`, 850);
+      if (nextLives <= 0) {
+        triggerOverlay('Game Over', 900);
+        void finalizeSession('game_over');
+        return;
+      }
+    }
+
+    if (nextRoundCount >= MAX_ROUNDS_PER_SESSION) {
+      void finalizeSession('completed');
+      return;
+    }
+
+    setTimeout(spawnNextRound, 120);
+  };
+
   const spawnNextRound = () => {
     const level = getReflexLevel(levelId);
     const nextRound = buildRound(levelId);
@@ -281,54 +362,19 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
       if (!currentRound) return;
       const reaction = Date.now() - currentRound.startedAt;
       const correct = laneRef.current === currentRound.correctLane;
-
-      setScore((prev) => {
-        const nextStreak = correct ? prev.streak + 1 : Math.max(0, prev.streak - 1);
-        const nextLongest = Math.max(prev.longestStreak, nextStreak);
-        return {
-          streak: nextStreak,
-          longestStreak: nextLongest,
-          correct: prev.correct + (correct ? 1 : 0),
-          total: prev.total + 1
-        };
-      });
-
-      setRoundCount((prev) => prev + 1);
-      setReactionMs((prev) => [...prev, reaction].slice(-120));
-
-      if (correct) {
-        setSpeed((prev) => Math.min(level.maxSpeed, prev + level.speedStep));
-        triggerOverlay('Correct');
-        pulsePanels();
-        triggerSuccessBurst();
-        if ((score.streak + 1) % 10 === 0) {
-          glowMilestone();
-          triggerOverlay(`Streak ${score.streak + 1}`);
-        }
-      } else {
-        setSpeed((prev) => Math.max(level.minSpeed, prev - Math.max(4, level.speedStep - 3)));
-        shakeOnMiss();
-        const nextLives = Math.max(0, livesRef.current - 1);
-        livesRef.current = nextLives;
-        setLives(nextLives);
-        setWeakAreaCounts((prev) => ({
-          ...prev,
-          [currentRound.weakArea]: (prev[currentRound.weakArea] ?? 0) + 1
-        }));
-        triggerOverlay(`Correction: ${currentRound.answer}`, 850);
-        if (nextLives <= 0) {
-          triggerOverlay('Game Over', 900);
-          void finalizeSession('game_over');
-          return;
-        }
-      }
-
-      if (roundCount + 1 >= MAX_ROUNDS_PER_SESSION) {
-        void finalizeSession('completed');
-      } else {
-        setTimeout(spawnNextRound, 120);
-      }
+      processRoundOutcome(correct, currentRound, reaction, 'timeout');
     });
+  };
+
+  const handleShoot = () => {
+    if (status !== 'playing') return;
+    const currentRound = roundRef.current;
+    if (!currentRound) return;
+    triggerShotFlash();
+    stopFalling();
+    const reaction = Date.now() - currentRound.startedAt;
+    const correct = laneRef.current === currentRound.correctLane;
+    processRoundOutcome(correct, currentRound, reaction, 'shot');
   };
 
   const startGame = () => {
@@ -533,6 +579,17 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
           ) : null}
 
           <View style={[styles.hitLine, { top: hitLineYRef.current + 26 }]} />
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.shotBeam,
+              {
+                top: hitLineYRef.current - 140,
+                transform: [{ translateX: runnerX }],
+                opacity: shotFlash
+              }
+            ]}
+          />
 
           <Animated.View
             style={[
@@ -546,8 +603,8 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
                   }
                 ]
               }
-            ]}
-          >
+                ]}
+              >
             <Animated.View style={[styles.runnerGlow, { opacity: runnerGlow }]} />
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <Animated.View
@@ -583,10 +640,12 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
                 ]}
               />
             ))}
-            <View style={styles.runnerHead} />
-            <View style={styles.runnerBody} />
-            <View style={styles.runnerLegs} />
+            <Text style={styles.runnerHand}>🤚</Text>
+            <View style={styles.runnerBarrel} />
           </Animated.View>
+          <Pressable style={styles.shootBtn} onPress={handleShoot}>
+            <Text style={styles.shootBtnText}>Shoot</Text>
+          </Pressable>
         </View>
 
         {overlay ? (
@@ -738,6 +797,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#38BDF8',
     opacity: 0.55
   },
+  shotBeam: {
+    position: 'absolute',
+    left: '33.33%',
+    marginLeft: -1,
+    width: 3,
+    height: 130,
+    borderRadius: 2,
+    backgroundColor: '#7DD3FC'
+  },
   runnerWrap: {
     position: 'absolute',
     left: '33.33%',
@@ -761,29 +829,31 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: '#7DD3FC'
   },
-  runnerHead: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#C7D2FE',
-    marginBottom: 2
+  runnerHand: {
+    fontSize: 22
   },
-  runnerBody: {
-    width: 6,
-    height: 20,
-    borderRadius: 3,
-    backgroundColor: '#E2E8F0'
-  },
-  runnerLegs: {
-    marginTop: 2,
+  runnerBarrel: {
+    marginTop: 4,
     width: 18,
-    height: 12,
-    borderBottomWidth: 3,
-    borderBottomColor: '#E2E8F0',
-    borderLeftWidth: 3,
-    borderLeftColor: 'transparent',
-    borderRightWidth: 3,
-    borderRightColor: 'transparent'
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#93C5FD'
+  },
+  shootBtn: {
+    position: 'absolute',
+    right: 14,
+    bottom: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#38BDF8',
+    backgroundColor: '#0C4A6E',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    zIndex: 5
+  },
+  shootBtnText: {
+    ...typography.bodyStrong,
+    color: '#E0F2FE'
   },
   overlayWrap: {
     position: 'absolute',
