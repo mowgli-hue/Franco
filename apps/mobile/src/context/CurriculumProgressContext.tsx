@@ -150,6 +150,14 @@ export function CurriculumProgressProvider({ children }: { children: React.React
 
         const localState = rawProgress ? normalizeCurriculumState(JSON.parse(rawProgress) as UserCurriculumState) : null;
         const localCertificates = rawCertificates ? (JSON.parse(rawCertificates) as LevelCertificate[]) : [];
+        const [rawGuestProgress, rawGuestCertificates] = await Promise.all([
+          user?.uid ? AsyncStorage.getItem(`${CURRICULUM_PROGRESS_STORAGE_KEY}:${GUEST_USER_ID}`) : Promise.resolve(null),
+          user?.uid ? AsyncStorage.getItem(`${CERTIFICATES_STORAGE_KEY}:${GUEST_USER_ID}`) : Promise.resolve(null)
+        ]);
+        const guestState = rawGuestProgress
+          ? normalizeCurriculumState(JSON.parse(rawGuestProgress) as UserCurriculumState)
+          : null;
+        const guestCertificates = rawGuestCertificates ? (JSON.parse(rawGuestCertificates) as LevelCertificate[]) : [];
 
         const cloud = user?.uid
           ? await loadCloudCurriculumState<UserCurriculumState, LevelCertificate[]>(user.uid)
@@ -173,6 +181,21 @@ export function CurriculumProgressProvider({ children }: { children: React.React
           selectedCertificates = preferLocal
             ? (localCertificates.length ? localCertificates : cloudCertificates)
             : (cloudCertificates.length ? cloudCertificates : localCertificates);
+        }
+
+        if (user?.uid && guestState) {
+          const selectedPerformanceUpdatedAt = getPerformanceUpdatedAt(selectedState);
+          const guestPerformanceUpdatedAt = getPerformanceUpdatedAt(guestState);
+          const selectedLessonCount = getLessonRecordCount(selectedState);
+          const guestLessonCount = getLessonRecordCount(guestState);
+          const shouldUseGuest =
+            guestPerformanceUpdatedAt > selectedPerformanceUpdatedAt ||
+            (guestPerformanceUpdatedAt === selectedPerformanceUpdatedAt && guestLessonCount > selectedLessonCount);
+
+          if (shouldUseGuest) {
+            selectedState = guestState;
+            selectedCertificates = guestCertificates.length ? guestCertificates : selectedCertificates;
+          }
         }
 
         await Promise.all([

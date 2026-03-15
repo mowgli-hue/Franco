@@ -27,11 +27,28 @@ export function FoundationProgressProvider({ children }: { children: React.React
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(storageKey);
-        if (raw && mounted) {
-          const parsed = JSON.parse(raw) as unknown;
-          if (Array.isArray(parsed)) {
-            setCompletedLessonIds(parsed.filter((v): v is string => typeof v === 'string'));
+        const parsedLocal =
+          raw && Array.isArray(JSON.parse(raw) as unknown)
+            ? (JSON.parse(raw) as unknown[]).filter((v): v is string => typeof v === 'string')
+            : [];
+
+        if (user?.uid) {
+          const guestKey = `${FOUNDATION_PROGRESS_STORAGE_KEY}:guest`;
+          const rawGuest = await AsyncStorage.getItem(guestKey);
+          const parsedGuest =
+            rawGuest && Array.isArray(JSON.parse(rawGuest) as unknown)
+              ? (JSON.parse(rawGuest) as unknown[]).filter((v): v is string => typeof v === 'string')
+              : [];
+
+          const merged = Array.from(new Set([...parsedLocal, ...parsedGuest]));
+          if (mounted) {
+            setCompletedLessonIds(merged);
           }
+          if (merged.length) {
+            await AsyncStorage.setItem(storageKey, JSON.stringify(merged));
+          }
+        } else if (mounted) {
+          setCompletedLessonIds(parsedLocal);
         }
       } catch {
         // ignore load errors

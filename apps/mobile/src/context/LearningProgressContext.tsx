@@ -20,6 +20,54 @@ type LearningProgressContextValue = {
 
 const LearningProgressContext = createContext<LearningProgressContextValue | undefined>(undefined);
 
+function mergeLearningProgress(
+  userId: string,
+  primary: UserLearningProgress | null,
+  secondary: UserLearningProgress | null
+): UserLearningProgress | null {
+  if (!primary && !secondary) return null;
+  if (!primary) return secondary ? { ...secondary, userId } : null;
+  if (!secondary) return { ...primary, userId };
+
+  const completedLessons = { ...primary.completedLessons };
+  Object.entries(secondary.completedLessons).forEach(([lessonId, record]) => {
+    const existing = completedLessons[lessonId];
+    if (!existing || (record.completedAt ?? 0) > (existing.completedAt ?? 0)) {
+      completedLessons[lessonId] = record;
+    }
+  });
+
+  const unlockedLessons = Array.from(new Set([...primary.unlockedLessons, ...secondary.unlockedLessons]));
+
+  const dailyRecords = { ...primary.dailyRecords };
+  Object.entries(secondary.dailyRecords).forEach(([dateKey, record]) => {
+    const existing = dailyRecords[dateKey];
+    if (!existing) {
+      dailyRecords[dateKey] = record;
+      return;
+    }
+    dailyRecords[dateKey] = {
+      dateKey,
+      sessionsCompleted: Math.max(existing.sessionsCompleted, record.sessionsCompleted),
+      strictSessionsCompleted: Math.max(existing.strictSessionsCompleted, record.strictSessionsCompleted)
+    };
+  });
+
+  const primaryLessonCount = Object.keys(primary.completedLessons).length;
+  const secondaryLessonCount = Object.keys(secondary.completedLessons).length;
+  const chooseSecondaryLevel = secondaryLessonCount > primaryLessonCount || secondary.updatedAt > primary.updatedAt;
+
+  return {
+    userId,
+    currentLevel: chooseSecondaryLevel ? secondary.currentLevel : primary.currentLevel,
+    completedLessons,
+    unlockedLessons,
+    dailyRecords,
+    lastLessonId: secondary.updatedAt > primary.updatedAt ? secondary.lastLessonId : primary.lastLessonId,
+    updatedAt: Math.max(primary.updatedAt, secondary.updatedAt)
+  };
+}
+
 export function LearningProgressProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [progress, setProgress] = useState<UserLearningProgress | null>(null);
@@ -38,22 +86,14 @@ export function LearningProgressProvider({ children }: { children: React.ReactNo
       }
 
       setLoading(true);
-      let existing = await loadLearningProgress(user.uid);
-
-      // Migrate guest progress to authenticated user on first login.
-      if (!existing) {
-        const guestProgress = await loadLearningProgress('guest');
-        if (guestProgress) {
-          const migrated = {
-            ...guestProgress,
-            userId: user.uid
-          };
-          await saveLearningProgress(migrated);
-          existing = migrated;
-        }
+      const existing = await loadLearningProgress(user.uid);
+      const guestProgress = await loadLearningProgress('guest');
+      const merged = mergeLearningProgress(user.uid, existing, guestProgress);
+      if (merged) {
+        await saveLearningProgress(merged);
       }
 
-      const initial = existing ?? createInitialProgress(user.uid);
+      const initial = merged ?? createInitialProgress(user.uid);
 
       if (mounted) {
         setProgress(initial);
