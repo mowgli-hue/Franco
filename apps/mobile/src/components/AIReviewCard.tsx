@@ -7,6 +7,9 @@ type Props = {
   strongestSkill: string;
   weakestSkill: string;
   insight: string;
+  coachTitle?: string;
+  nextActions?: string[];
+  reviewUpdatedAt?: number | null;
 };
 
 export function AIReviewCard({
@@ -14,11 +17,14 @@ export function AIReviewCard({
   targetClb,
   strongestSkill,
   weakestSkill,
-  insight
+  insight,
+  coachTitle,
+  nextActions = [],
+  reviewUpdatedAt
 }: Props) {
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Your AI Performance Review</Text>
+      <Text style={styles.title}>{coachTitle ?? 'Your AI Performance Review'}</Text>
 
       {estimatedClb == null ? (
         <Text style={styles.emptyText}>
@@ -46,6 +52,17 @@ export function AIReviewCard({
             <Text style={styles.insightLabel}>AI Insight</Text>
             <Text style={styles.insightText}>{insight}</Text>
           </View>
+          {nextActions.length ? (
+            <View style={styles.actionWrap}>
+              <Text style={styles.insightLabel}>Personalized Next Actions</Text>
+              {nextActions.slice(0, 3).map((action) => (
+                <Text key={action} style={styles.actionLine}>• {action}</Text>
+              ))}
+            </View>
+          ) : null}
+          {reviewUpdatedAt ? (
+            <Text style={styles.metaText}>Last AI review: {new Date(reviewUpdatedAt).toLocaleDateString()}</Text>
+          ) : null}
         </>
       )}
     </View>
@@ -104,6 +121,24 @@ const styles = StyleSheet.create({
   insightText: {
     fontSize: 13,
     color: '#334155'
+  },
+  actionWrap: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+    backgroundColor: '#EEF2FF',
+    padding: 10
+  },
+  actionLine: {
+    fontSize: 13,
+    color: '#334155',
+    marginTop: 3
+  },
+  metaText: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 8
   },
   emptyText: {
     fontSize: 13,

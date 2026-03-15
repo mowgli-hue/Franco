@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -10,13 +11,24 @@ import {
 } from '../content/program/sessionRoadmap';
 import { useAuth } from '../context/AuthContext';
 import { useCurriculumProgress } from '../context/CurriculumProgressContext';
+import { useLearningTelemetry } from '../context/LearningTelemetryContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import type { MainStackParamList } from '../navigation/AppNavigator';
 import { navigateToPathTab } from '../navigation/pathTabNavigation';
+import { analyzePerformance } from '../engine/PerformanceAnalyzer';
+import type { AICoachGuidance } from '../services/ai/AICoachService';
+import { buildAICoachGuidance } from '../services/ai/AICoachService';
+import { fetchAICoachGuidance } from '../services/ai/AICoachRemoteService';
 import { isProLessonId, shouldAllowSinglePreview, shouldRouteToUpgrade } from '../services/subscription/subscriptionGate';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'LearningHubScreen'>;
 type LessonUiState = ReturnType<typeof useCurriculumProgress>['currentModuleLessons'][number];
+type WeeklyCoachSnapshot = {
+  guidance: AICoachGuidance;
+  updatedAt: number;
+};
+const WEEKLY_COACH_KEY = 'clb:weekly-ai-review:v1';
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function formatLessonTitle(lessonId: string): string {
   const a1 = lessonId.match(/^a1-lesson-(\d+)$/);
@@ -72,9 +84,11 @@ function formatSkillLabel(skill: 'listening' | 'speaking' | 'writing' | 'reading
 
 export function HomeDashboardScreen({ navigation }: Props) {
   const { user } = useAuth();
+  const { events } = useLearningTelemetry();
   const { curriculumState, currentLevel, currentModule, currentModuleLessons, todaySessionPlan } = useCurriculumProgress();
   const { subscriptionProfile, markProPreviewUsed } = useSubscription();
   const testerRedirectedRef = useRef(false);
+  const [weeklyCoach, setWeeklyCoach] = useState<WeeklyCoachSnapshot | null>(null);
 
   useEffect(() => {
     const email = (user?.email ?? '').trim().toLowerCase();
@@ -86,6 +100,28 @@ export function HomeDashboardScreen({ navigation }: Props) {
       (navigation.navigate as any)('LearningHubScreen');
     }
   }, [navigation, user?.email]);
+
+  useEffect(() => {
+    const key = `${WEEKLY_COACH_KEY}:${user?.uid ?? 'guest'}`;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(key);
+        if (!raw) return;
+        const parsed = JSON.parse(raw) as WeeklyCoachSnapshot;
+        if (!cancelled) {
+          setWeeklyCoach(parsed);
+        }
+      } catch {
+        // ignore corrupted cache
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid]);
 
   const levelProgress = curriculumState.levels[curriculumState.currentLevelId];
   const currentLessonUi: LessonUiState | null =
@@ -114,10 +150,64 @@ export function HomeDashboardScreen({ navigation }: Props) {
   const strongestSkill = skillEntries.reduce((prev, curr) => (curr.value > prev.value ? curr : prev), skillEntries[0]);
   const weakestSkill = skillEntries.reduce((prev, curr) => (curr.value < prev.value ? curr : prev), skillEntries[0]);
   const reviewInsight =
+    weeklyCoach?.guidance.coachingMessage ??
     coach.lastAdvice ??
     (coach.lastEstimatedClb != null
       ? 'Keep building clarity and consistency across speaking and writing tasks.'
-      : 'No AI insight yet.');
+      : 'Complete exercises to unlock personalized AI review.');
+
+  useEffect(() => {
+    const key = `${WEEKLY_COACH_KEY}:${user?.uid ?? 'guest'}`;
+    let cancelled = false;
+    const now = Date.now();
+    const isStale = !weeklyCoach || now - weeklyCoach.updatedAt >= WEEK_MS;
+    if (!isStale) return;
+
+    const analysis = analyzePerformance(events);
+    if (analysis.activity.eventsLast7Days === 0) return;
+
+    const weakestSkillKey =
+      weakestSkill.key === 'listening' || weakestSkill.key === 'speaking' || weakestSkill.key === 'reading' || weakestSkill.key === 'writing'
+        ? weakestSkill.key
+        : 'listening';
+
+    (async () => {
+      let guidance: AICoachGuidance;
+      try {
+        guidance = await fetchAICoachGuidance({
+          currentLevelTitle: currentLevel.title,
+          currentModuleTitle: currentModule?.title,
+          roadmapDay: roadmapProgress.currentDay,
+          weakestSkill: weakestSkillKey,
+          performance: analysis
+        });
+      } catch {
+        guidance = buildAICoachGuidance(analysis);
+      }
+
+      const payload: WeeklyCoachSnapshot = {
+        guidance,
+        updatedAt: Date.now()
+      };
+
+      if (!cancelled) {
+        setWeeklyCoach(payload);
+      }
+      await AsyncStorage.setItem(key, JSON.stringify(payload));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    currentLevel.title,
+    currentModule?.title,
+    events,
+    roadmapProgress.currentDay,
+    user?.uid,
+    weakestSkill.key,
+    weeklyCoach
+  ]);
 
   const openCurrentLesson = () => {
     if (!currentLessonUi) return;
@@ -217,6 +307,9 @@ export function HomeDashboardScreen({ navigation }: Props) {
         strongestSkill={formatSkillLabel(strongestSkill.key)}
         weakestSkill={formatSkillLabel(weakestSkill.key)}
         insight={reviewInsight}
+        coachTitle={weeklyCoach?.guidance.title}
+        nextActions={weeklyCoach?.guidance.nextActions}
+        reviewUpdatedAt={weeklyCoach?.updatedAt ?? null}
       />
 
       <View style={styles.goalCard}>
