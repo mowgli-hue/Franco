@@ -262,6 +262,10 @@ export function HomeDashboardScreen({ navigation }: Props) {
     (navigation.navigate as any)('LearningHubScreen');
   };
 
+  const openAICoachPath = () => {
+    (navigation.navigate as any)('PracticeTab', { screen: 'AICoachScreen' });
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.topStrip}>
@@ -298,6 +302,9 @@ export function HomeDashboardScreen({ navigation }: Props) {
         </Pressable>
         <Pressable onPress={() => navigateToPathTab(navigation as any, 'PathMapScreen')} style={styles.secondaryButton}>
           <Text style={styles.secondaryButtonText}>View Full Path</Text>
+        </Pressable>
+        <Pressable onPress={openAICoachPath} style={styles.tertiaryButton}>
+          <Text style={styles.tertiaryButtonText}>Open AI Coach Path</Text>
         </Pressable>
       </View>
 
@@ -436,6 +443,20 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: '#1E40AF',
     fontWeight: '600',
+    fontSize: 14
+  },
+  tertiaryButton: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#99F6E4',
+    backgroundColor: '#ECFEFF',
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: 'center'
+  },
+  tertiaryButtonText: {
+    color: '#0F766E',
+    fontWeight: '700',
     fontSize: 14
   },
   goalCard: {

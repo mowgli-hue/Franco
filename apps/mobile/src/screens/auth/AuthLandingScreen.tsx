@@ -134,6 +134,15 @@ export function AuthLandingScreen({ navigation, onContinueGuest }: Props) {
             <Text style={styles.featureIcon}>🍁</Text>
             <Text style={styles.featureText}>Designed for Canada Immigration</Text>
           </Pressable>
+          <Pressable
+            onPress={() => undefined}
+            onHoverIn={() => setHoveredFeature('agents')}
+            onHoverOut={() => setHoveredFeature((prev) => (prev === 'agents' ? null : prev))}
+            style={[styles.featureCard, hoveredFeature === 'agents' && styles.featureCardHover]}
+          >
+            <Text style={styles.featureIcon}>🤖</Text>
+            <Text style={styles.featureText}>AI Automation Agents for Personalized Learning Journeys</Text>
+          </Pressable>
 
           <View style={styles.trustBlock}>
             <Text style={styles.trustText}>🇨🇦 Powered by Newton Immigration</Text>
