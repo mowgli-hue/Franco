@@ -13,7 +13,7 @@ import type {
 } from '../types/LessonContentTypes';
 
 type ExerciseSubmission =
-  | { kind: 'choice'; selectedIndex: number }
+  | { kind: 'choice'; selectedIndex: number; selectedOption?: string }
   | { kind: 'shortText'; text: string }
   | { kind: 'matching'; pairs: Array<{ leftId: string; rightId: string }> }
   | { kind: 'memoryMatch'; pairs: Array<{ leftId: string; rightId: string }> }
@@ -151,7 +151,12 @@ function evaluateMultipleChoice(exercise: MultipleChoiceExercise, submission: Ex
     };
   }
 
-  const correct = submission.selectedIndex === exercise.correctOptionIndex;
+  const correctOptionText = exercise.options[exercise.correctOptionIndex] ?? '';
+  const selectedByIndex = exercise.options[submission.selectedIndex];
+  const selectedText = submission.selectedOption ?? selectedByIndex ?? '';
+  const correct =
+    submission.selectedIndex === exercise.correctOptionIndex ||
+    (Boolean(selectedText) && normalizeText(selectedText) === normalizeText(correctOptionText));
   return {
     correct,
     earnedPoints: correct ? exercise.points : 0,

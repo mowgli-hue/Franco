@@ -2415,7 +2415,12 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         currentExercise.kind === 'listeningPrompt' ||
         currentExercise.kind === 'readingComprehension'
       ) {
-        submitExercise({ kind: 'choice', selectedIndex: choiceSelections[currentExercise.id] ?? -1 });
+        const selectedIndex = choiceSelections[currentExercise.id] ?? -1;
+        submitExercise({
+          kind: 'choice',
+          selectedIndex,
+          selectedOption: selectedIndex >= 0 ? currentExercise.options[selectedIndex] : undefined
+        });
         return;
       }
 
