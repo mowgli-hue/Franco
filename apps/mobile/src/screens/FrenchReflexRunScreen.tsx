@@ -180,6 +180,8 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
 
   const moveToLane = (nextLane: 0 | 1 | 2) => {
     if (nextLane === laneRef.current) return;
+    // Update ref immediately so collision checks use the latest lane selection
+    laneRef.current = nextLane;
     setLane(nextLane);
     animateRunnerToLane(nextLane);
   };
