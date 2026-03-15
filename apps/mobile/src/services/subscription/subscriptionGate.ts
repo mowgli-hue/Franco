@@ -5,12 +5,10 @@ export function isProLessonId(lessonId: string): boolean {
 }
 
 export function shouldRouteToUpgrade(profile: UserSubscriptionProfile): boolean {
-  if (profile.subscriptionStatus === 'active') return false;
-  if (!profile.proPreviewUsed) return false;
-  return true;
+  return profile.subscriptionStatus !== 'active';
 }
 
 export function shouldAllowSinglePreview(profile: UserSubscriptionProfile): boolean {
-  if (profile.subscriptionStatus === 'active') return false;
-  return profile.proPreviewUsed === false;
+  void profile;
+  return false;
 }
