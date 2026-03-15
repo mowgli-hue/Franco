@@ -35,7 +35,10 @@ export const reflexRunLevels: ReflexRunLevelConfig[] = [
       { id: 'l1-2', targetPrompt: 'thank you', answer: 'merci', distractors: ['bonjour', 'salut'], weakArea: 'greetings' },
       { id: 'l1-3', targetPrompt: 'train', answer: 'train', distractors: ['voiture', 'maison'], weakArea: 'transport' },
       { id: 'l1-4', targetPrompt: 'bus', answer: 'bus', distractors: ['livre', 'bonjour'], weakArea: 'transport' },
-      { id: 'l1-5', targetPrompt: 'apple', answer: 'pomme', distractors: ['pain', 'fromage'], weakArea: 'food' }
+      { id: 'l1-5', targetPrompt: 'apple', answer: 'pomme', distractors: ['pain', 'fromage'], weakArea: 'food' },
+      { id: 'l1-6', targetPrompt: 'water', answer: 'eau', distractors: ['lait', 'jus'], weakArea: 'food' },
+      { id: 'l1-7', targetPrompt: 'ticket', answer: 'billet', distractors: ['table', 'ville'], weakArea: 'transport' },
+      { id: 'l1-8', targetPrompt: 'good evening', answer: 'bonsoir', distractors: ['bonjour', 'salut'], weakArea: 'greetings' }
     ]
   },
   {
@@ -51,7 +54,11 @@ export const reflexRunLevels: ReflexRunLevelConfig[] = [
       { id: 'l2-1', targetPrompt: 'the house', answer: 'la maison', distractors: ['le maison', 'les maison'], weakArea: 'gender' },
       { id: 'l2-2', targetPrompt: 'the book', answer: 'le livre', distractors: ['la livre', 'les livre'], weakArea: 'gender' },
       { id: 'l2-3', targetPrompt: 'an information', answer: 'une information', distractors: ['un information', 'des information'], weakArea: 'gender' },
-      { id: 'l2-4', targetPrompt: 'a car', answer: 'une voiture', distractors: ['un voiture', 'le voiture'], weakArea: 'gender' }
+      { id: 'l2-4', targetPrompt: 'a car', answer: 'une voiture', distractors: ['un voiture', 'le voiture'], weakArea: 'gender' },
+      { id: 'l2-5', targetPrompt: 'the office', answer: 'le bureau', distractors: ['la bureau', 'les bureau'], weakArea: 'workplace' },
+      { id: 'l2-6', targetPrompt: 'the station', answer: 'la gare', distractors: ['le gare', 'les gare'], weakArea: 'transport' },
+      { id: 'l2-7', targetPrompt: 'a pharmacy', answer: 'une pharmacie', distractors: ['un pharmacie', 'le pharmacie'], weakArea: 'food' },
+      { id: 'l2-8', targetPrompt: 'the form', answer: 'le formulaire', distractors: ['la formulaire', 'les formulaire'], weakArea: 'sentence_structure' }
     ]
   },
   {
@@ -67,7 +74,11 @@ export const reflexRunLevels: ReflexRunLevelConfig[] = [
       { id: 'l3-1', targetPrompt: 'I am', answer: 'je suis', distractors: ['je es', 'je sont'], weakArea: 'verbs' },
       { id: 'l3-2', targetPrompt: 'we are', answer: 'nous sommes', distractors: ['nous suis', 'nous est'], weakArea: 'verbs' },
       { id: 'l3-3', targetPrompt: 'they are', answer: 'ils sont', distractors: ['ils est', 'ils sommes'], weakArea: 'verbs' },
-      { id: 'l3-4', targetPrompt: 'you are (formal)', answer: 'vous êtes', distractors: ['vous est', 'vous suis'], weakArea: 'verbs' }
+      { id: 'l3-4', targetPrompt: 'you are (formal)', answer: 'vous êtes', distractors: ['vous est', 'vous suis'], weakArea: 'verbs' },
+      { id: 'l3-5', targetPrompt: 'I work', answer: 'je travaille', distractors: ['je travailles', 'je travaillons'], weakArea: 'workplace' },
+      { id: 'l3-6', targetPrompt: 'we live', answer: 'nous habitons', distractors: ['nous habite', 'nous habitez'], weakArea: 'sentence_structure' },
+      { id: 'l3-7', targetPrompt: 'you take (formal)', answer: 'vous prenez', distractors: ['vous prend', 'vous prenons'], weakArea: 'verbs' },
+      { id: 'l3-8', targetPrompt: 'they go', answer: 'ils vont', distractors: ['ils va', 'ils allez'], weakArea: 'verbs' }
     ]
   },
   {
@@ -83,7 +94,11 @@ export const reflexRunLevels: ReflexRunLevelConfig[] = [
       { id: 'l4-1', targetPrompt: 'bonjour', answer: 'bonjour', distractors: ['bonsoir', 'merci'], weakArea: 'greetings' },
       { id: 'l4-2', targetPrompt: 'merci', answer: 'merci', distractors: ['bonjour', 'salut'], weakArea: 'greetings' },
       { id: 'l4-3', targetPrompt: 'train', answer: 'train', distractors: ['tram', 'bus'], weakArea: 'transport' },
-      { id: 'l4-4', targetPrompt: 'pomme', answer: 'pomme', distractors: ['poire', 'pain'], weakArea: 'food' }
+      { id: 'l4-4', targetPrompt: 'pomme', answer: 'pomme', distractors: ['poire', 'pain'], weakArea: 'food' },
+      { id: 'l4-5', targetPrompt: 'billet', answer: 'billet', distractors: ['bureau', 'boulot'], weakArea: 'transport' },
+      { id: 'l4-6', targetPrompt: 'hôpital', answer: 'hôpital', distractors: ['hôtel', 'honneur'], weakArea: 'workplace' },
+      { id: 'l4-7', targetPrompt: 'formulaire', answer: 'formulaire', distractors: ['famille', 'fermeture'], weakArea: 'sentence_structure' },
+      { id: 'l4-8', targetPrompt: 'au revoir', answer: 'au revoir', distractors: ['bonjour', 'merci'], weakArea: 'greetings' }
     ]
   },
   {
@@ -123,6 +138,34 @@ export const reflexRunLevels: ReflexRunLevelConfig[] = [
         answer: 'le',
         distractors: ['la', 'les'],
         weakArea: 'transport'
+      },
+      {
+        id: 'l5-5',
+        targetPrompt: 'Je dois ____ un rendez-vous.',
+        answer: 'prendre',
+        distractors: ['prend', 'prenons'],
+        weakArea: 'sentence_structure'
+      },
+      {
+        id: 'l5-6',
+        targetPrompt: 'Nous allons ____ bureau.',
+        answer: 'au',
+        distractors: ['à la', 'aux'],
+        weakArea: 'workplace'
+      },
+      {
+        id: 'l5-7',
+        targetPrompt: 'Vous ____ à Toronto.',
+        answer: 'travaillez',
+        distractors: ['travaille', 'travaillons'],
+        weakArea: 'verbs'
+      },
+      {
+        id: 'l5-8',
+        targetPrompt: 'Il faut ____ formulaire.',
+        answer: 'ce',
+        distractors: ['cette', 'ces'],
+        weakArea: 'sentence_structure'
       }
     ]
   }

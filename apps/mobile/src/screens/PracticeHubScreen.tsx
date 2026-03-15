@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -24,7 +24,7 @@ export function PracticeHubScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.duration(260)}>
           <Text style={styles.title}>Practice</Text>
-          <Text style={styles.subtitle}>Daily tools for speaking and review.</Text>
+          <Text style={styles.subtitle}>Wanna challenge? Pick a game and level up your French reflex.</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(80).duration(260)}>
@@ -39,12 +39,23 @@ export function PracticeHubScreen({ navigation }: Props) {
         <Animated.View entering={FadeInDown.delay(100).duration(260)}>
           <Card>
             <Text style={styles.sectionTitle}>Practice Lab</Text>
-            <Text style={styles.sectionSubtitle}>Optional performance drills. Core lesson progression remains unchanged.</Text>
-            <View style={styles.quickButtons}>
-              <AnimatedButton label="Speed Recall (60s)" onPress={() => navigation.navigate('SpeedRecallScreen')} />
-              <AnimatedButton label="Error Hunter" variant="outline" onPress={() => navigation.navigate('ErrorHunterScreen')} />
-              <AnimatedButton label="French Reflex Run" variant="outline" onPress={() => navigation.navigate('FrenchReflexRunScreen')} />
-              <AnimatedButton label="A1 Scripts" variant="outline" onPress={() => navigation.navigate('TeacherScriptsScreen')} />
+            <Text style={styles.sectionSubtitle}>Choose your challenge mode:</Text>
+            <View style={styles.challengeGrid}>
+              <Pressable style={[styles.challengeCard, styles.challengeCardBlue]} onPress={() => navigation.navigate('SpeedRecallScreen')}>
+                <Text style={styles.challengeEmoji}>⚡</Text>
+                <Text style={styles.challengeTitle}>Speed Recall</Text>
+                <Text style={styles.challengeMeta}>60-second fast memory race</Text>
+              </Pressable>
+              <Pressable style={[styles.challengeCard, styles.challengeCardMint]} onPress={() => navigation.navigate('ErrorHunterScreen')}>
+                <Text style={styles.challengeEmoji}>🧩</Text>
+                <Text style={styles.challengeTitle}>Error Hunter</Text>
+                <Text style={styles.challengeMeta}>Catch grammar and vocab mistakes</Text>
+              </Pressable>
+              <Pressable style={[styles.challengeCard, styles.challengeCardPurple]} onPress={() => navigation.navigate('FrenchReflexRunScreen')}>
+                <Text style={styles.challengeEmoji}>🏃</Text>
+                <Text style={styles.challengeTitle}>French Reflex Run</Text>
+                <Text style={styles.challengeMeta}>Swipe lanes before collision</Text>
+              </Pressable>
             </View>
           </Card>
         </Animated.View>
@@ -132,6 +143,39 @@ const styles = StyleSheet.create({
   },
   quickButtons: {
     gap: spacing.sm
+  },
+  challengeGrid: {
+    gap: spacing.sm
+  },
+  challengeCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: spacing.md
+  },
+  challengeCardBlue: {
+    backgroundColor: '#E8F1FF',
+    borderColor: '#BFDBFE'
+  },
+  challengeCardMint: {
+    backgroundColor: '#E9FFF6',
+    borderColor: '#A7F3D0'
+  },
+  challengeCardPurple: {
+    backgroundColor: '#F1ECFF',
+    borderColor: '#C4B5FD'
+  },
+  challengeEmoji: {
+    fontSize: 20,
+    marginBottom: spacing.xs
+  },
+  challengeTitle: {
+    ...typography.bodyStrong,
+    color: '#0F172A'
+  },
+  challengeMeta: {
+    ...typography.caption,
+    color: '#475569',
+    marginTop: 2
   },
   reviewCard: {
     borderWidth: 1,

@@ -27,6 +27,7 @@ import { typography } from '../theme/typography';
 type Props = NativeStackScreenProps<MainStackParamList, 'FrenchReflexRunScreen'>;
 
 type GameStatus = 'menu' | 'playing' | 'summary';
+type SessionOutcome = 'completed' | 'game_over';
 
 type Round = {
   id: string;
@@ -42,6 +43,7 @@ const PANEL_HEIGHT = 68;
 const HORIZONTAL_PADDING = 22;
 const SWIPE_THRESHOLD = 20;
 const MAX_ROUNDS_PER_SESSION = 26;
+const MAX_LIVES = 3;
 
 function randomItem<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
@@ -111,6 +113,8 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
   const [weakAreaCounts, setWeakAreaCounts] = useState<Partial<Record<ReflexWeakArea, number>>>({});
   const [reactionMs, setReactionMs] = useState<number[]>([]);
   const [sessionMetrics, setSessionMetrics] = useState<ReflexSessionMetrics | null>(null);
+  const [lives, setLives] = useState(MAX_LIVES);
+  const [sessionOutcome, setSessionOutcome] = useState<SessionOutcome>('completed');
 
   const runnerX = useRef(new Animated.Value(0)).current;
   const obstacleY = useRef(new Animated.Value(-PANEL_HEIGHT)).current;
@@ -122,6 +126,7 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
   const streakDrift = useRef(new Animated.Value(0)).current;
   const roundRef = useRef<Round | null>(null);
   const laneRef = useRef<0 | 1 | 2>(1);
+  const livesRef = useRef<number>(MAX_LIVES);
   const laneWidthRef = useRef((Dimensions.get('window').width - HORIZONTAL_PADDING * 2) / 3);
   const hitLineYRef = useRef(420);
   const fallingAnimRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -129,6 +134,10 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
   useEffect(() => {
     laneRef.current = lane;
   }, [lane]);
+
+  useEffect(() => {
+    livesRef.current = lives;
+  }, [lives]);
 
   useEffect(() => {
     const bob = Animated.loop(
@@ -211,7 +220,7 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
     fallingAnimRef.current = null;
   };
 
-  const finalizeSession = async () => {
+  const finalizeSession = async (outcome: SessionOutcome = 'completed') => {
     stopFalling();
     const accuracy = score.total ? Math.round((score.correct / score.total) * 100) : 0;
     const avgReaction = reactionMs.length ? Math.round(reactionMs.reduce((a, b) => a + b, 0) / reactionMs.length) : 0;
@@ -222,6 +231,7 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
       weakAreaCounts
     };
     setSessionMetrics(metrics);
+    setSessionOutcome(outcome);
     setStatus('summary');
 
     trackEvent({
@@ -296,15 +306,23 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
       } else {
         setSpeed((prev) => Math.max(level.minSpeed, prev - Math.max(4, level.speedStep - 3)));
         shakeOnMiss();
+        const nextLives = Math.max(0, livesRef.current - 1);
+        livesRef.current = nextLives;
+        setLives(nextLives);
         setWeakAreaCounts((prev) => ({
           ...prev,
           [currentRound.weakArea]: (prev[currentRound.weakArea] ?? 0) + 1
         }));
         triggerOverlay(`Correction: ${currentRound.answer}`, 850);
+        if (nextLives <= 0) {
+          triggerOverlay('Game Over', 900);
+          void finalizeSession('game_over');
+          return;
+        }
       }
 
       if (roundCount + 1 >= MAX_ROUNDS_PER_SESSION) {
-        void finalizeSession();
+        void finalizeSession('completed');
       } else {
         setTimeout(spawnNextRound, 120);
       }
@@ -321,6 +339,9 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
     setWeakAreaCounts({});
     setReactionMs([]);
     setSessionMetrics(null);
+    setLives(MAX_LIVES);
+    livesRef.current = MAX_LIVES;
+    setSessionOutcome('completed');
     setSpeed(getReflexLevel(levelId).startSpeed);
     triggerOverlay('Go', 450);
     setTimeout(spawnNextRound, 180);
@@ -328,7 +349,7 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
 
   const handleLeave = () => {
     if (status === 'playing') {
-      void finalizeSession();
+      void finalizeSession('game_over');
       return;
     }
     navigation.goBack();
@@ -374,7 +395,7 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
         <Card>
           <Text style={styles.menuTitle}>French Reflex Run</Text>
           <Text style={styles.menuSubtitle}>
-            Swipe lanes fast. Lock the correct French answer before collision.
+            Swipe lanes fast. Lock the correct French answer before collision. You have 3 lives.
           </Text>
           <View style={styles.levelGrid}>
             {reflexRunLevels.map((level) => {
@@ -405,7 +426,12 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
     return (
       <LinearGradient colors={['#070B18', '#0A1226', '#111A33']} style={styles.root}>
         <Card>
-          <Text style={styles.menuTitle}>Reflex Training Complete</Text>
+          <Text style={styles.menuTitle}>{sessionOutcome === 'game_over' ? 'Game Over' : 'Reflex Training Complete'}</Text>
+          <Text style={styles.menuSubtitle}>
+            {sessionOutcome === 'game_over'
+              ? 'You used all lives. Review the correction patterns and challenge again.'
+              : 'Session complete. Great pace and focus.'}
+          </Text>
           <Text style={styles.summaryLine}>Accuracy: {sessionMetrics.accuracyPercent}%</Text>
           <Text style={styles.summaryLine}>Longest Streak: {sessionMetrics.longestStreak}</Text>
           <Text style={styles.summaryLine}>Average Reaction: {sessionMetrics.averageReactionMs} ms</Text>
@@ -427,9 +453,12 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
             <Text style={styles.exitText}>Exit</Text>
           </Pressable>
           <View style={styles.scoreBox}>
+            <Text style={styles.scoreLine}>Level {levelId}</Text>
             <Text style={styles.scoreLine}>Streak {score.streak}</Text>
             <Text style={styles.scoreLine}>Accuracy {accuracy}%</Text>
             <Text style={styles.scoreLine}>Speed L{speedLevel}</Text>
+            <Text style={styles.scoreLine}>Rounds {score.total}/{MAX_ROUNDS_PER_SESSION}</Text>
+            <Text style={styles.scoreLine}>Lives {'❤️'.repeat(lives)}</Text>
           </View>
         </View>
 
@@ -441,7 +470,7 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
             hitLineYRef.current = event.nativeEvent.layout.height - 134;
           }}
         >
-          <Text style={styles.targetLabel}>Target</Text>
+          <Text style={styles.targetLabel}>Challenge Prompt</Text>
           {round ? (
             <>
               {getReflexLevel(levelId).mode === 'audio' ? (
