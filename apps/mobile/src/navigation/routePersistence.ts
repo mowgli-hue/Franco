@@ -25,6 +25,7 @@ export type PathStackRouteName =
   | 'FoundationLessonScreen';
 export type PracticeStackRouteName =
   | 'PracticeHubScreen'
+  | 'AICoachScreen'
   | 'TeacherScriptsScreen'
   | 'SpeedRecallScreen'
   | 'ErrorHunterScreen'
@@ -105,6 +106,7 @@ const ALLOWED_NESTED = [
   'FrenchReflexRunScreen',
   'FocusSessionScreen',
   'PracticeHubScreen',
+  'AICoachScreen',
   'AITeacherSessionScreen',
   'ProfileScreen',
   'PrivacyPolicyScreen',

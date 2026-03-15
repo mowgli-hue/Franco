@@ -31,6 +31,7 @@ export function PracticeHubScreen({ navigation }: Props) {
           <Card>
             <Text style={styles.sectionTitle}>Session Tools</Text>
             <View style={styles.quickButtons}>
+              <AnimatedButton label="Open AI Coach" onPress={() => navigation.navigate('AICoachScreen')} />
               <AnimatedButton label="Open AI Teacher" variant="primary" onPress={() => navigation.navigate('AITeacherSessionScreen')} />
             </View>
           </Card>

@@ -37,6 +37,7 @@ import { ImmigrationServicesScreen } from '../screens/profile/ImmigrationService
 import { PrivacyPolicyScreen } from '../screens/profile/PrivacyPolicyScreen';
 import { SubscriptionScreen } from '../screens/profile/SubscriptionScreen';
 import { PracticeHubScreen } from '../screens/PracticeHubScreen';
+import { AICoachScreen } from '../screens/AICoachScreen';
 import { SelfAssessmentScreen } from '../screens/SelfAssessmentScreen';
 import { SpeedRecallScreen } from '../screens/SpeedRecallScreen';
 import { StudyPlanIntroScreen } from '../screens/StudyPlanIntroScreen';
@@ -172,6 +173,7 @@ export type PathStackParamList = {
 
 export type PracticeStackParamList = {
   PracticeHubScreen: undefined;
+  AICoachScreen: undefined;
   TeacherScriptsScreen: undefined;
   SpeedRecallScreen: undefined;
   ErrorHunterScreen: undefined;
@@ -578,6 +580,11 @@ function PracticeStackNavigator() {
         name="PracticeHubScreen"
         component={PracticeHubScreen as React.ComponentType<any>}
         options={{ title: 'Practice' }}
+      />
+      <PracticeStack.Screen
+        name="AICoachScreen"
+        component={AICoachScreen as React.ComponentType<any>}
+        options={{ title: 'AI Coach' }}
       />
       <PracticeStack.Screen
         name="TeacherScriptsScreen"
