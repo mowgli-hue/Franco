@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
@@ -36,6 +37,14 @@ export function SubscriptionScreen() {
     [subscriptionProfile.planType, subscriptionProfile.subscriptionStatus]
   );
   const isActive = subscriptionProfile.subscriptionStatus === 'active';
+  const statusChipLabel = isActive ? 'Active' : 'Free';
+  const statusChipStyle = isActive ? styles.statusChipActive : styles.statusChipFree;
+  const previewLine = subscriptionProfile.proPreviewUsed
+    ? 'Your one-time Pro preview is already used.'
+    : 'You still have one Pro lesson preview available.';
+  const nextStepLine = isActive
+    ? 'You have full access. Continue your path and manage billing any time.'
+    : 'Upgrade to unlock full A1 to CLB7 training and AI evaluations.';
 
   const handleOpenPortal = async () => {
     try {
@@ -80,29 +89,35 @@ export function SubscriptionScreen() {
           <Text style={styles.subtitle}>Manage billing, renewals, and your premium access.</Text>
 
           <View style={styles.planCardCurrent}>
-            <Text style={styles.planTitle}>Current Plan</Text>
+            <View style={styles.currentHeader}>
+              <Text style={styles.planTitle}>Current Plan</Text>
+              <View style={[styles.statusChip, statusChipStyle]}>
+                <Text style={styles.statusChipText}>{statusChipLabel}</Text>
+              </View>
+            </View>
             <Text style={styles.planName}>{currentPlanLabel}</Text>
-            <Text style={styles.planMeta}>
-              Status: {isActive ? 'Active' : 'Free'}
-            </Text>
             <Text style={styles.planMeta}>Account: {user?.email ?? 'Not logged in'}</Text>
-            <Text style={styles.planMeta}>
-              Pro Preview Used: {subscriptionProfile.proPreviewUsed ? 'Yes' : 'No'}
-            </Text>
+            <Text style={styles.planMeta}>{previewLine}</Text>
+          </View>
+
+          <View style={styles.nextStepCard}>
+            <MaterialCommunityIcons name={isActive ? 'check-decagram' : 'rocket-launch'} size={18} color="#1D4ED8" />
+            <Text style={styles.nextStepText}>{nextStepLine}</Text>
           </View>
 
           <View style={styles.planCard}>
             <Text style={styles.planTitle}>Franco Pro</Text>
             <Text style={styles.planName}>$99/month</Text>
-            <Text style={styles.planMeta}>Full A1 to CLB7 path</Text>
-            <Text style={styles.planMeta}>AI speaking and writing evaluations</Text>
-            <Text style={styles.planMeta}>Progress insights and structured roadmap</Text>
+            <Text style={styles.planMeta}>• Full A1 to CLB7 path</Text>
+            <Text style={styles.planMeta}>• AI speaking and writing evaluations</Text>
+            <Text style={styles.planMeta}>• Progress insights and structured roadmap</Text>
           </View>
 
           <View style={styles.planCard}>
             <Text style={styles.planTitle}>Founder Plan</Text>
             <Text style={styles.planName}>Limited seats</Text>
-            <Text style={styles.planMeta}>Discounted legacy pricing (same premium features)</Text>
+            <Text style={styles.planMeta}>• Discounted legacy pricing</Text>
+            <Text style={styles.planMeta}>• Same premium feature access</Text>
             <Text style={styles.planMeta}>Seats remaining: {founderSeatsRemaining}</Text>
           </View>
 
@@ -111,6 +126,14 @@ export function SubscriptionScreen() {
             <Text style={styles.securityLine}>• Billing is handled on Stripe-hosted encrypted checkout (PCI-compliant).</Text>
             <Text style={styles.securityLine}>• Card details are not stored in Franco app servers.</Text>
             <Text style={styles.securityLine}>• You can manage renewal/cancel from Stripe customer portal.</Text>
+          </View>
+
+          <View style={styles.supportCard}>
+            <Text style={styles.supportTitle}>Billing Support</Text>
+            <Text style={styles.supportLine}>Need help with payment, invoice, or cancellation?</Text>
+            <Text style={styles.supportLine}>Email: franco@newtonimmigration.org</Text>
+            <Text style={styles.supportLine}>Alt: admin@junglelabsworld.com</Text>
+            <Text style={styles.supportLine}>Phone: +1 604-902-8699</Text>
           </View>
 
           {statusMessage ? <Text style={styles.statusMessage}>{statusMessage}</Text> : null}
@@ -157,6 +180,27 @@ const styles = StyleSheet.create({
   content: { padding: spacing.xl, gap: spacing.md },
   title: { ...typography.heading2, color: colors.textPrimary, marginBottom: spacing.xs },
   subtitle: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.md },
+  currentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  statusChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999
+  },
+  statusChipActive: {
+    backgroundColor: '#DCFCE7'
+  },
+  statusChipFree: {
+    backgroundColor: '#E2E8F0'
+  },
+  statusChipText: {
+    ...typography.caption,
+    color: '#0F172A',
+    fontWeight: '700'
+  },
   planCardCurrent: {
     borderWidth: 1,
     borderColor: '#BFDBFE',
@@ -164,6 +208,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     padding: spacing.md,
     marginBottom: spacing.sm
+  },
+  nextStepCard: {
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 12,
+    backgroundColor: '#F8FAFF',
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'flex-start'
+  },
+  nextStepText: {
+    ...typography.caption,
+    color: '#1E293B',
+    flex: 1
   },
   planCard: {
     borderWidth: 1,
@@ -198,6 +258,24 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
     marginBottom: spacing.sm
+  },
+  supportCard: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    padding: spacing.md,
+    marginBottom: spacing.sm
+  },
+  supportTitle: {
+    ...typography.bodyStrong,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs
+  },
+  supportLine: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: 2
   },
   actions: {
     gap: spacing.sm
