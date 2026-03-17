@@ -104,6 +104,17 @@ function defaultSessionFocusForCurrentLevel(state: UserCurriculumState): SkillFo
   return weakest.skill;
 }
 
+function resolveLessonLevelId(lessonId: string): LevelId | null {
+  const levelIds: LevelId[] = ['foundation', 'a1', 'a2', 'b1', 'clb5', 'clb7', 'tef-simulation'];
+  for (const levelId of levelIds) {
+    const modules = curriculumModulesByLevel[levelId];
+    if (modules.some((module) => module.lessons.some((lesson) => lesson.id === lessonId))) {
+      return levelId;
+    }
+  }
+  return null;
+}
+
 export function CurriculumProgressProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [curriculumState, setCurriculumState] = useState<UserCurriculumState>(() => createInitialCurriculumState());
@@ -286,14 +297,14 @@ export function CurriculumProgressProvider({ children }: { children: React.React
 
   const completeLesson = useCallback((payload: CompleteLessonPayload) => {
     setCurriculumState((prev) => {
-      const levelId = prev.currentLevelId;
-      const levelProgress = prev.levels[levelId];
       const lesson = getCurriculumLessonById(payload.lessonId);
+      const levelId = resolveLessonLevelId(payload.lessonId);
 
-      if (!lesson || lesson.moduleId == null) {
+      if (!lesson || lesson.moduleId == null || !levelId) {
         return prev;
       }
 
+      const levelProgress = prev.levels[levelId];
       const levelModules = curriculumModulesByLevel[levelId];
       const lessonBelongsToCurrentLevel = levelModules.some((module) => module.lessons.some((item) => item.id === lesson.id));
 
@@ -306,8 +317,12 @@ export function CurriculumProgressProvider({ children }: { children: React.React
       }
 
       const updatedLevelProgress = applyLessonCompletion(levelProgress, lesson, payload);
+      const currentLevelHasRecords = Object.keys(prev.levels[prev.currentLevelId].lessonRecords).length > 0;
+      const shouldAdoptLessonLevel = prev.currentLevelId !== levelId && !currentLevelHasRecords;
+      const baseCurrentLevelId = shouldAdoptLessonLevel ? levelId : prev.currentLevelId;
       const nextState: UserCurriculumState = {
         ...prev,
+        currentLevelId: baseCurrentLevelId,
         levels: {
           ...prev.levels,
           [levelId]: updatedLevelProgress
@@ -336,7 +351,7 @@ export function CurriculumProgressProvider({ children }: { children: React.React
         });
         return {
           ...nextState,
-          currentLevelId: nextLevelId
+          currentLevelId: baseCurrentLevelId === levelId ? nextLevelId : baseCurrentLevelId
         };
       }
 
