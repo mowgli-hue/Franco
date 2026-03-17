@@ -83,9 +83,9 @@ export function UpgradeScreen({ navigation }: Props) {
     <LinearGradient colors={['#F8FAFC', '#EEF4FF', '#FFFFFF']} style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerWrap}>
-          <Text style={styles.headline}>You&apos;re off to a great start.</Text>
+          <Text style={styles.headline}>To continue, please choose your plan.</Text>
           <Text style={styles.subtext}>
-            Unlock the full Franco course for your Canadian immigration French goals.
+            Continue your structured path from A2 to CLB 7 with full training access.
           </Text>
         </View>
 
@@ -102,11 +102,7 @@ export function UpgradeScreen({ navigation }: Props) {
             <Text style={styles.priceStripPrice}>$99 / month</Text>
             <Text style={styles.priceStripMeta}>Cancel anytime</Text>
           </View>
-          <Button
-            label={isGuest ? 'Create Account to Subscribe' : 'Unlock Full Access'}
-            onPress={() => void handleSubscribe('pro')}
-            loading={loading}
-          />
+          <Button label={isGuest ? 'Create Account to Subscribe' : 'Choose Plan to Continue'} onPress={() => void handleSubscribe('pro')} loading={loading} />
           <View style={styles.actions}>
             <Button label="Continue Free" variant="outline" onPress={() => navigation.goBack()} disabled={loading} />
           </View>
