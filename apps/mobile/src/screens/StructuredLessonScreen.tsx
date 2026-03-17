@@ -2763,8 +2763,9 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     >
       <AnimatedSuccess visible={showSuccess} />
       <Animated.View style={[styles.coachBubble, { transform: [{ scale: coachPulse }] }]}>
-        <Text style={styles.coachTitle}>{selectedCompanion.emoji} AI Coach</Text>
-        <Text style={styles.coachText}>{coachMessage}</Text>
+        <Text style={styles.coachText} numberOfLines={1} ellipsizeMode="tail">
+          {selectedCompanion.emoji} {coachMessage}
+        </Text>
       </Animated.View>
       {renderStepContent()}
     </LessonStepEngine>
@@ -2786,41 +2787,37 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     paddingTop: spacing.xs,
-    gap: spacing.md
+    gap: spacing.sm
   },
   coachBubble: {
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#BFDBFE',
     backgroundColor: '#EFF6FF',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.sm
-  },
-  coachTitle: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '700'
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    marginBottom: spacing.xs
   },
   coachText: {
     ...typography.caption,
-    color: colors.textSecondary
+    color: colors.textSecondary,
+    fontSize: 12
   },
   interactiveStep: {
     flex: 1,
     justifyContent: 'flex-start',
-    paddingTop: spacing.sm,
-    gap: spacing.md
+    paddingTop: spacing.xs,
+    gap: spacing.sm
   },
   bigTitle: {
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: '700',
     color: '#0F172A'
   },
   bodyText: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 14,
+    lineHeight: 20,
     color: '#334155'
   },
   targetsWrap: {
@@ -2991,13 +2988,13 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   tipText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#334155',
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 12,
-    padding: 10
+    borderRadius: 10,
+    padding: 8
   },
   hintText: {
     fontSize: 13,
@@ -3009,15 +3006,15 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   optionsWrap: {
-    gap: 10
+    gap: 8
   },
   promptCard: {
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#BFDBFE',
     backgroundColor: '#EFF6FF',
-    padding: spacing.md,
-    gap: spacing.xs
+    padding: spacing.sm,
+    gap: 4
   },
   promptCardText: {
     ...typography.bodyStrong,
@@ -3204,6 +3201,6 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   footerWrap: {
-    gap: 10
+    gap: 8
   }
 });

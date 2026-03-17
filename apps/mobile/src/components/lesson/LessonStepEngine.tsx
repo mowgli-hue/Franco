@@ -53,22 +53,24 @@ export function LessonStepEngine({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    paddingBottom: 10,
     backgroundColor: '#F8FAFC'
   },
   topArea: {
-    marginBottom: 10
+    marginBottom: 6
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10
+    marginBottom: 6
   },
   backBtn: {
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderWidth: 1,
     borderColor: '#CBD5E1',
     backgroundColor: '#FFFFFF'
@@ -79,17 +81,17 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   title: {
-    fontSize: 24,
-    lineHeight: 30,
+    fontSize: 19,
+    lineHeight: 24,
     color: '#0F172A',
     fontWeight: '700'
   },
   subtitle: {
-    marginTop: 4,
-    fontSize: 14,
+    marginTop: 2,
+    fontSize: 12,
     color: '#475569'
   },
   footer: {
-    marginTop: 10
+    marginTop: 6
   }
 });

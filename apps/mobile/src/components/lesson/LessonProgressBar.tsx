@@ -32,12 +32,12 @@ export function LessonProgressBar({ current, total }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { width: '100%', marginBottom: 12 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  meta: { fontSize: 12, color: '#475569' },
+  wrap: { width: '100%', marginBottom: 8 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  meta: { fontSize: 11, color: '#475569' },
   metaStrong: { fontSize: 12, color: '#0F172A', fontWeight: '700' },
   track: {
-    height: 10,
+    height: 6,
     backgroundColor: '#E2E8F0',
     borderRadius: 999,
     overflow: 'hidden'

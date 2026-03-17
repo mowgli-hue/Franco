@@ -18,12 +18,12 @@ export function MicroFeedback({ message, tone = 'neutral' }: Props) {
 
 const styles = StyleSheet.create({
   box: {
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#CBD5E1',
     backgroundColor: '#F8FAFC',
-    paddingHorizontal: 12,
-    paddingVertical: 10
+    paddingHorizontal: 10,
+    paddingVertical: 8
   },
   success: {
     borderColor: '#86EFAC',
@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#334155',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500'
   },
   successText: {
