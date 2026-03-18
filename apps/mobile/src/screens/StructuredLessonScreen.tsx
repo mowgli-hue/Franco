@@ -2728,8 +2728,12 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     finishLesson();
   };
 
-  const title = currentStep.kind === 'exercise' ? currentStep.exercise?.prompt : currentStep.title;
-  const subtitle = currentStep.subtitle;
+  const isQuestionStep =
+    currentStep.kind === 'exercise' ||
+    currentStep.kind === 'review_block' ||
+    currentStep.kind === 'activation';
+  const title = isQuestionStep ? undefined : currentStep.title;
+  const subtitle = isQuestionStep ? undefined : currentStep.subtitle;
   const coachMessage =
     currentStep.kind === 'learn_segment'
       ? 'Listen once, repeat once, then continue.'
@@ -2746,6 +2750,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       totalSteps={steps.length}
       title={title}
       subtitle={subtitle}
+      hidePhaseBadge={isQuestionStep}
       onBack={canGoBack ? () => {
         Keyboard.dismiss();
         setStepIndex((prev) => Math.max(0, prev - 1));
@@ -2762,11 +2767,13 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       }
     >
       <AnimatedSuccess visible={showSuccess} />
-      <Animated.View style={[styles.coachBubble, { transform: [{ scale: coachPulse }] }]}>
-        <Text style={styles.coachText} numberOfLines={1} ellipsizeMode="tail">
-          {selectedCompanion.emoji} {coachMessage}
-        </Text>
-      </Animated.View>
+      {!isQuestionStep ? (
+        <Animated.View style={[styles.coachBubble, { transform: [{ scale: coachPulse }] }]}>
+          <Text style={styles.coachText} numberOfLines={1} ellipsizeMode="tail">
+            {selectedCompanion.emoji} {coachMessage}
+          </Text>
+        </Animated.View>
+      ) : null}
       {renderStepContent()}
     </LessonStepEngine>
   );

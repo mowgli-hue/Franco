@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 
 import { colors } from '../../theme/colors';
 
@@ -10,9 +10,15 @@ type Props = {
 export function StepContainer({ children }: Props) {
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        onScrollBeginDrag={Keyboard.dismiss}
+      >
         {children}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -32,6 +38,7 @@ const styles = StyleSheet.create({
     elevation: 2
   },
   content: {
-    flex: 1
+    flexGrow: 1,
+    paddingBottom: 6
   }
 });

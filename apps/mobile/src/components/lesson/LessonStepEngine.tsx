@@ -13,6 +13,7 @@ type Props = {
   title?: string;
   subtitle?: string;
   onBack?: () => void;
+  hidePhaseBadge?: boolean;
   children: React.ReactNode;
   footer?: React.ReactNode;
 };
@@ -24,6 +25,7 @@ export function LessonStepEngine({
   title,
   subtitle,
   onBack,
+  hidePhaseBadge = false,
   children,
   footer
 }: Props) {
@@ -32,7 +34,7 @@ export function LessonStepEngine({
       <View style={styles.topArea}>
         <LessonProgressBar current={stepIndex + 1} total={totalSteps} />
         <View style={styles.row}>
-          <PhaseBadge phase={step.phase} />
+          {!hidePhaseBadge ? <PhaseBadge phase={step.phase} /> : <View />}
           {onBack ? (
             <Pressable onPress={onBack} style={styles.backBtn}>
               <Text style={styles.backText}>Back</Text>
