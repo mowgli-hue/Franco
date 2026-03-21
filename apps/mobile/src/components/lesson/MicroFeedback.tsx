@@ -11,7 +11,13 @@ type Props = {
 export function MicroFeedback({ message, tone = 'neutral' }: Props) {
   return (
     <View style={[styles.box, tone === 'success' && styles.success, tone === 'warning' && styles.warning]}>
-      <Text style={[styles.text, tone === 'success' && styles.successText, tone === 'warning' && styles.warningText]}>{message}</Text>
+      <Text
+        numberOfLines={2}
+        ellipsizeMode="tail"
+        style={[styles.text, tone === 'success' && styles.successText, tone === 'warning' && styles.warningText]}
+      >
+        {message}
+      </Text>
     </View>
   );
 }

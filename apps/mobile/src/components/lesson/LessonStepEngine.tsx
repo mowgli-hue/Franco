@@ -33,7 +33,7 @@ export function LessonStepEngine({
     <View style={styles.root}>
       <View style={styles.topArea}>
         <LessonProgressBar current={stepIndex + 1} total={totalSteps} />
-        <View style={styles.row}>
+        <View style={[styles.row, hidePhaseBadge && styles.rowCompact]}>
           {!hidePhaseBadge ? <PhaseBadge phase={step.phase} /> : <View />}
           {onBack ? (
             <Pressable onPress={onBack} style={styles.backBtn}>
@@ -68,6 +68,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 6
+  },
+  rowCompact: {
+    marginBottom: 2
   },
   backBtn: {
     borderRadius: 999,

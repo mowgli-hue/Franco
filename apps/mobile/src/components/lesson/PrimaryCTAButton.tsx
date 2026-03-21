@@ -21,7 +21,7 @@ export function PrimaryCTAButton({ label, disabled = false, onPress }: Props) {
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 46,
+    minHeight: 44,
     borderRadius: 12,
     backgroundColor: '#2563EB',
     alignItems: 'center',

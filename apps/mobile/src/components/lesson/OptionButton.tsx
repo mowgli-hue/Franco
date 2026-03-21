@@ -31,12 +31,13 @@ export function OptionButton({ label, selected = false, disabled = false, correc
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 48,
+    minHeight: 54,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#CBD5E1',
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 10,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8
@@ -68,7 +69,8 @@ const styles = StyleSheet.create({
   label: {
     flex: 1,
     color: '#0F172A',
-    fontSize: 14,
+    fontSize: 15,
+    lineHeight: 20,
     fontWeight: '500'
   }
 });
