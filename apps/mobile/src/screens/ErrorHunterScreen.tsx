@@ -6,6 +6,7 @@ import { AnimatedButton } from '../components/AnimatedButton';
 import { Card } from '../components/Card';
 import { errorHunterPrompts } from '../data/practiceLabDrills';
 import type { MainStackParamList } from '../navigation/AppNavigator';
+import { playCorrectAnswerSound, playWrongAnswerSound } from '../services/audio/answerFeedbackAudio';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
@@ -50,7 +51,10 @@ export function ErrorHunterScreen({ navigation }: Props) {
     }
     const isCorrect = selectedIndex === current.correctIndex;
     if (isCorrect) {
+      void playCorrectAnswerSound();
       setCorrectCount((prev) => prev + 1);
+    } else {
+      void playWrongAnswerSound();
     }
     setResultsById((prev) => ({
       ...prev,

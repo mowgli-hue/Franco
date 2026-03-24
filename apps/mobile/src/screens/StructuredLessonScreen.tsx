@@ -36,7 +36,7 @@ import { assessPronunciation } from '../services/ai/PronunciationAssessmentServi
 import { assessSpeakingResponse } from '../services/ai/SpeakingAssessmentService';
 import { askAITutor } from '../services/ai/AITutorChatService';
 import { assessWritingResponse } from '../services/ai/WritingCorrectionService';
-import { playCorrectAnswerSound } from '../services/audio/answerFeedbackAudio';
+import { playCorrectAnswerSound, playWrongAnswerSound } from '../services/audio/answerFeedbackAudio';
 import { playPronunciation } from '../services/audio/pronunciationAudio';
 import { loadUserOnboardingProfile } from '../navigation/routePersistence';
 import type { Exercise, StructuredLessonContent, TeachingSegment } from '../types/LessonContentTypes';
@@ -1233,6 +1233,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     const practiceHardGate = currentBlockType === 'practice' && !result.evaluation.correct && attempts < 2;
 
     if (!result.evaluation.correct) {
+      void playWrongAnswerSound();
       recordError({
         lessonId: lesson.id,
         exerciseId: result.currentExercise?.id ?? currentStep.id,
@@ -2638,8 +2639,9 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
               rubricFocus: currentExercise.rubricFocus,
               audioUri: recordingUri
             });
+            const assessmentModeLabel = speaking.source === 'backend' ? 'AI model' : 'local rubric';
             const summary =
-              `AI speaking check: ${speaking.scorePercent}% (${speaking.passed ? 'pass' : 'needs work'}). ` +
+              `AI speaking check (${assessmentModeLabel}): ${speaking.scorePercent}% (${speaking.passed ? 'pass' : 'needs work'}). ` +
               `Pronunciation ${speaking.rubric.pronunciation}, Fluency ${speaking.rubric.fluency}, Grammar ${speaking.rubric.grammar}, Task ${speaking.rubric.taskCompletion}.`;
             setAiSummaryByExercise((prev) => ({ ...prev, [currentExercise.id]: `${summary} ${pronunciationSummary}` }));
 
@@ -2662,7 +2664,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
               correctedSentence: speaking.correctionModel,
               improvedVersion:
                 estimatedClb < targetClb
-                  ? `${speaking.correctionModel} Ensuite, ajoute un détail concret et un connecteur.`
+                  ? `${speaking.correctionModel} Ensuite, ajoute un detail concret et un connecteur.`
                   : speaking.correctionModel,
               weaknesses
             };

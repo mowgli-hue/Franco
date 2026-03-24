@@ -46,6 +46,16 @@ function formatSkillFocus(skillFocus: SkillFocus): string {
   }
 }
 
+function mapFoundationLessonIdToScreenLessonId(lessonId: string): string | null {
+  const foundationMap: Record<string, string> = {
+    'foundation-lesson-1': 'alphabet-sounds',
+    'foundation-lesson-2': 'basic-greetings',
+    'foundation-lesson-3': 'introducing-yourself',
+    'foundation-lesson-4': 'numbers-0-20'
+  };
+  return foundationMap[lessonId] ?? null;
+}
+
 export function LearningHubScreen({ navigation }: Props) {
   const {
     curriculumState,
@@ -147,7 +157,12 @@ export function LearningHubScreen({ navigation }: Props) {
     }
 
     if (lessonId.startsWith('foundation-lesson-')) {
-      if (!openInPathTab('BeginnerFoundationScreen')) {
+      const mappedLessonId = mapFoundationLessonIdToScreenLessonId(lessonId);
+      if (mappedLessonId) {
+        if (!openInPathTab('FoundationLessonScreen', { lessonId: mappedLessonId })) {
+          (navigation.navigate as any)('FoundationLessonScreen', { lessonId: mappedLessonId });
+        }
+      } else if (!openInPathTab('BeginnerFoundationScreen')) {
         (navigation.navigate as any)('BeginnerFoundationScreen');
       }
       return;

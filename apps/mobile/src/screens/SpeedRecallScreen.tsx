@@ -6,6 +6,7 @@ import { AnimatedButton } from '../components/AnimatedButton';
 import { Card } from '../components/Card';
 import { speedRecallPrompts } from '../data/practiceLabDrills';
 import type { MainStackParamList } from '../navigation/AppNavigator';
+import { playCorrectAnswerSound, playWrongAnswerSound } from '../services/audio/answerFeedbackAudio';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
@@ -87,7 +88,10 @@ export function SpeedRecallScreen({ navigation }: Props) {
     setSelectedIndex(optionIndex);
     setAnswered(true);
     if (optionIndex === current.correctIndex) {
+      void playCorrectAnswerSound();
       setCorrectCount((prev) => prev + 1);
+    } else {
+      void playWrongAnswerSound();
     }
   };
 

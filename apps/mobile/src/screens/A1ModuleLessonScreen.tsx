@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -7,8 +7,10 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useAuth } from '../context/AuthContext';
 import { useCurriculumProgress } from '../context/CurriculumProgressContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import type { MainStackParamList } from '../navigation/AppNavigator';
 import { sendLessonCompletionEmail } from '../services/notifications/notificationEmailService';
+import { shouldAllowSinglePreview, shouldRouteToUpgrade } from '../services/subscription/subscriptionGate';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
@@ -27,9 +29,25 @@ export function A1ModuleLessonScreen({ route, navigation }: Props) {
   const lessonNumber = parseA1LessonNumber(lessonId);
   const { user } = useAuth();
   const { completeLesson } = useCurriculumProgress();
+  const { subscriptionProfile, markProPreviewUsed } = useSubscription();
   const [result, setResult] = useState<
     { passed: boolean; scorePercent: number; minorCorrection?: boolean } | null
   >(null);
+
+  useEffect(() => {
+    if (!lessonNumber || lessonNumber < 2) {
+      return;
+    }
+
+    if (shouldRouteToUpgrade(subscriptionProfile)) {
+      (navigation.navigate as any)('UpgradeScreen');
+      return;
+    }
+
+    if (shouldAllowSinglePreview(subscriptionProfile)) {
+      void markProPreviewUsed();
+    }
+  }, [lessonNumber, markProPreviewUsed, navigation, subscriptionProfile]);
 
   const nextLessonId = useMemo(() => {
     if (!lessonNumber) return null;

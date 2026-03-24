@@ -8,7 +8,7 @@ import {
   type AILessonStep,
   type AnswerValidationRule
 } from '../data/aiLessons';
-import { playCorrectAnswerSound } from '../services/audio/answerFeedbackAudio';
+import { playCorrectAnswerSound, playWrongAnswerSound } from '../services/audio/answerFeedbackAudio';
 
 type FeedbackState = {
   type: 'success' | 'error' | 'info';
@@ -204,6 +204,7 @@ export function useLessonSession(lessonId: string): LessonSessionController {
       setFeedback({ type: 'success', text: step.interaction.successFeedback });
       return;
     }
+    void playWrongAnswerSound();
 
     if (!isRetryRound) {
       setRetryQueueStepIds((prev) => (prev.includes(step.id) ? prev : [...prev, step.id]));
@@ -222,6 +223,7 @@ export function useLessonSession(lessonId: string): LessonSessionController {
     const isCorrect = validateAnswer(userInput, question.validation);
 
     if (!isCorrect) {
+      void playWrongAnswerSound();
       setStatus('awaitingInput');
       setFeedback({ type: 'error', text: question.incorrectFeedback, hint: question.companionHint });
       return;
@@ -249,6 +251,7 @@ export function useLessonSession(lessonId: string): LessonSessionController {
       return;
     }
 
+    void playWrongAnswerSound();
     setStatus('awaitingInput');
     setCheckpointQuestionIndex(0);
     setCheckpointResults([]);

@@ -125,10 +125,14 @@ learningRouter.post('/ai/speaking-assess', async (req, res) => {
         `Learner transcript: ${input.transcriptText}`,
         `Expected patterns: ${input.expectedPatterns.join(', ') || 'none'}`,
         'Score for transcript-based speaking evaluation only (not real audio pronunciation).',
+        'Important scoring rules:',
+        '- If response is nonsense, random letters, or under 3 words: taskCompletion <= 20, fluency <= 35, grammar <= 35.',
+        '- Do not set taskCompletion to 0 if any expected idea is partially present. Use partial credit (20/40/60).',
+        '- pronunciation is transcript proxy only; keep between 45-75 unless transcript clearly excellent.',
         'Return JSON keys exactly: scorePercent, passed, rubric, feedback, correctionModel.',
         'rubric must include pronunciation, fluency, grammar, taskCompletion (0-100).',
         'Keep feedback concise (1-2 sentences).',
-        'correctionModel should be a better French version of the learner response.'
+        'correctionModel must be a clean French sentence model; never copy random letters from learner transcript.'
       ].join('\n')
     );
 

@@ -82,6 +82,16 @@ function formatSkillLabel(skill: 'listening' | 'speaking' | 'writing' | 'reading
   }
 }
 
+function mapFoundationLessonIdToScreenLessonId(lessonId: string): string | null {
+  const foundationMap: Record<string, string> = {
+    'foundation-lesson-1': 'alphabet-sounds',
+    'foundation-lesson-2': 'basic-greetings',
+    'foundation-lesson-3': 'introducing-yourself',
+    'foundation-lesson-4': 'numbers-0-20'
+  };
+  return foundationMap[lessonId] ?? null;
+}
+
 export function HomeDashboardScreen({ navigation }: Props) {
   const { user } = useAuth();
   const { events } = useLearningTelemetry();
@@ -227,7 +237,14 @@ export function HomeDashboardScreen({ navigation }: Props) {
       navigateToPathTab(navigation as any, screen, params);
 
     if (lessonId.startsWith('foundation-lesson-')) {
-      if (!goPath('BeginnerFoundationScreen')) (navigation.navigate as any)('LearningHubScreen');
+      const mappedLessonId = mapFoundationLessonIdToScreenLessonId(lessonId);
+      if (mappedLessonId) {
+        if (!goPath('FoundationLessonScreen', { lessonId: mappedLessonId })) {
+          (navigation.navigate as any)('FoundationLessonScreen', { lessonId: mappedLessonId });
+        }
+      } else if (!goPath('BeginnerFoundationScreen')) {
+        (navigation.navigate as any)('BeginnerFoundationScreen');
+      }
       return;
     }
     if (lessonId === 'a1-lesson-1') {
