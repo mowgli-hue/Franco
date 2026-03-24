@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 
 import { sendEmail } from '../../../modules/notifications/emailDelivery.service';
+import { appUrl, renderNotificationTemplate } from '../../../modules/notifications/emailTemplates';
 import { buildSubject } from '../../../modules/notifications/emailSubject.service';
 import { runNotificationSchedulerTick } from '../../../modules/notifications/notificationScheduler';
 import {
@@ -66,23 +67,36 @@ const lessonCompleteSchema = z.object({
 
 async function buildWelcomeEmail(userId: string, name?: string) {
   const learnerName = name?.trim() || 'there';
+  const bullets = [
+    'Complete your onboarding and level placement',
+    'Start your first guided lesson',
+    'Do one focused 25-minute session daily'
+  ];
   return {
     subject: await buildSubject({ campaign: 'welcome', userId, displayName: name }),
     text: [
-      `Hi ${learnerName},`,
+      `Hi ${learnerName}, 👋`,
       '',
-      'Welcome to CLB French Trainer.',
+      'Welcome to Franco.',
       'Your plan uses focused 25:5 sessions to help you build consistent French progress for TEF Canada and CLB goals.',
       '',
       'What to do first:',
-      '1. Complete your onboarding and level placement.',
-      '2. Start your first guided lesson.',
-      '3. Study regularly using short daily sessions.',
+      '1. Complete your onboarding and level placement',
+      '2. Start your first guided lesson',
+      '3. Study regularly using short daily sessions',
       '',
       'You will receive study reminders and weekly progress summaries (if enabled in your profile).',
       '',
-      'CLB French Trainer'
-    ].join('\n')
+      'Franco Team'
+    ].join('\n'),
+    html: renderNotificationTemplate({
+      title: '🎉 Welcome to Franco',
+      intro: `Hi ${learnerName}, your structured French training path is ready. Use 25:5 sessions to build real CLB and TEF performance, step by step.`,
+      bullets,
+      ctaLabel: 'Open Franco',
+      ctaUrl: appUrl('/'),
+      footer: 'Franco • Canadian French Training'
+    })
   };
 }
 
@@ -162,13 +176,20 @@ notificationsRouter.post('/jobs/send-study-reminders', async (_req, res) => {
           displayName: p.displayName
         }),
         text: [
-          `Hi ${p.displayName?.trim() || 'there'},`,
+          `Hi ${p.displayName?.trim() || 'there'}, ⏰`,
           '',
           'This is your CLB French Trainer study reminder.',
           'Open the app and complete one 25-minute session today.',
           '',
           'Focus on your weakest skill and keep the streak going.'
-        ].join('\n')
+        ].join('\n'),
+        html: renderNotificationTemplate({
+          title: '⏰ Study Reminder',
+          intro: `Hi ${p.displayName?.trim() || 'there'}, your French focus session is due. Keep your streak alive with one 25-minute block today.`,
+          bullets: ['Open your current lesson', 'Complete one focused session', 'Lock one weak grammar pattern'],
+          ctaLabel: 'Start Session',
+          ctaUrl: appUrl('/')
+        })
       });
       await markStudyReminderSent(p.userId, daySeed);
     }
@@ -196,7 +217,7 @@ notificationsRouter.post('/jobs/send-weekly-reports', async (_req, res) => {
           displayName: p.displayName
         }),
         text: [
-          `Hi ${p.displayName?.trim() || 'there'},`,
+          `Hi ${p.displayName?.trim() || 'there'}, 📊`,
           '',
           'This is your weekly progress reminder from CLB French Trainer.',
           'Open the app to review:',
@@ -205,7 +226,14 @@ notificationsRouter.post('/jobs/send-weekly-reports', async (_req, res) => {
           '- Next session recommendations',
           '',
           'Keep your 25:5 study routine consistent this week.'
-        ].join('\n')
+        ].join('\n'),
+        html: renderNotificationTemplate({
+          title: '📊 Weekly Progress Check',
+          intro: `Hi ${p.displayName?.trim() || 'there'}, your weekly Franco review is ready. Use it to decide your next high-impact session.`,
+          bullets: ['Completed lessons', 'Weak-skill focus', 'Recommended next module'],
+          ctaLabel: 'Review Progress',
+          ctaUrl: appUrl('/')
+        })
       });
       await markWeeklyReportSent(p.userId, daySeed);
     }
@@ -248,7 +276,7 @@ notificationsRouter.post('/lesson-complete', async (req, res) => {
         displayName: input.displayName
       }),
       text: [
-        `Hi ${learnerName},`,
+        `Hi ${learnerName}, ✅`,
         '',
         `Congratulations on completing ${input.lessonTitle}.`,
         `Score: ${score}%`,
@@ -258,7 +286,18 @@ notificationsRouter.post('/lesson-complete', async (req, res) => {
         'Open Franco and continue your learning path.',
         '',
         'Franco Team'
-      ].join('\n')
+      ].join('\n'),
+      html: renderNotificationTemplate({
+        title: input.minorCorrection ? '✅ Lesson Complete (Minor Fix Needed)' : '✅ Lesson Complete',
+        intro: `Hi ${learnerName}, great work completing ${input.lessonTitle}. You scored ${score}%.`,
+        bullets: [
+          correctionLine,
+          nextLine,
+          'Keep your daily 25-minute rhythm to progress faster.'
+        ],
+        ctaLabel: 'Continue Learning',
+        ctaUrl: appUrl('/')
+      })
     });
 
     return res.json({ ok: true });

@@ -1,4 +1,5 @@
 import { sendEmail } from './emailDelivery.service';
+import { appUrl, renderNotificationTemplate } from './emailTemplates';
 import { buildSubject } from './emailSubject.service';
 import {
   listNotificationPreferences,
@@ -76,13 +77,20 @@ export async function runNotificationSchedulerTick(): Promise<{ reminders: numbe
           displayName: prefs.displayName
         }),
         text: [
-          `Hi ${prefs.displayName?.trim() || 'there'},`,
+          `Hi ${prefs.displayName?.trim() || 'there'}, ⏰`,
           '',
           'Your French focus session is due.',
           'Complete one 25-minute Franco session today to maintain momentum toward your CLB target.',
           '',
           'Open Franco now and continue your current lesson.'
-        ].join('\n')
+        ].join('\n'),
+        html: renderNotificationTemplate({
+          title: '⏰ Time for Today’s Session',
+          intro: `Hi ${prefs.displayName?.trim() || 'there'}, keep momentum strong with one focused 25-minute French session today.`,
+          bullets: ['Open your current lesson', 'Complete the 4 session blocks', 'Review one weak pattern'],
+          ctaLabel: 'Resume Training',
+          ctaUrl: appUrl('/')
+        })
       });
       await markStudyReminderSent(prefs.userId, local.dateKey);
       reminders += 1;
@@ -98,7 +106,7 @@ export async function runNotificationSchedulerTick(): Promise<{ reminders: numbe
           displayName: prefs.displayName
         }),
         text: [
-          `Hi ${prefs.displayName?.trim() || 'there'},`,
+          `Hi ${prefs.displayName?.trim() || 'there'}, 📈`,
           '',
           'Your weekly Franco report is ready.',
           'This week, review:',
@@ -107,7 +115,14 @@ export async function runNotificationSchedulerTick(): Promise<{ reminders: numbe
           '- next module recommendation',
           '',
           'Keep the 25:5 rhythm next week for measurable progress.'
-        ].join('\n')
+        ].join('\n'),
+        html: renderNotificationTemplate({
+          title: '📈 Weekly Franco Report',
+          intro: `Hi ${prefs.displayName?.trim() || 'there'}, your weekly summary is ready. Review performance and set the next target.`,
+          bullets: ['Sessions completed', 'Weakest skill trend', 'Next module recommendation'],
+          ctaLabel: 'Open Weekly Review',
+          ctaUrl: appUrl('/')
+        })
       });
       await markWeeklyReportSent(prefs.userId, local.dateKey);
       weeklyReports += 1;
