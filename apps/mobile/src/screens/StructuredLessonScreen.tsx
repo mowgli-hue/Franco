@@ -1609,6 +1609,21 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     URL.revokeObjectURL(url);
   };
 
+  const renderExercisePromptCard = (prompt: string) => (
+    <View style={styles.promptCard}>
+      <Text style={styles.miniLabel}>Question</Text>
+      <Text style={styles.promptCardText}>{prompt}</Text>
+      {canadaTemplate ? (
+        <Text numberOfLines={2} ellipsizeMode="tail" style={styles.promptContextText}>
+          Canada use: {canadaTemplate.functionalTask}
+        </Text>
+      ) : null}
+      <Pressable onPress={() => void playPronunciation(prompt)} style={styles.promptActionChip}>
+        <Text style={styles.promptActionChipText}>Hear this question</Text>
+      </Pressable>
+    </View>
+  );
+
   const renderStepContent = () => {
     if (activeAiCorrection) {
       return (
@@ -1776,10 +1791,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       ) {
         return (
           <View style={styles.interactiveStep}>
-            <View style={styles.promptCard}>
-              <Text style={styles.miniLabel}>Question</Text>
-              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
-            </View>
+            {renderExercisePromptCard(currentExercise.prompt)}
             {currentExercise.readingPassage ? <Text style={styles.passage}>{currentExercise.readingPassage}</Text> : null}
             <View style={styles.optionsWrap}>
               {currentExercise.options.map((option, idx) => {
@@ -1820,10 +1832,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
-            <View style={styles.promptCard}>
-              <Text style={styles.miniLabel}>Question</Text>
-              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
-            </View>
+            {renderExercisePromptCard(currentExercise.prompt)}
             {currentExercise.instructions ? <Text style={styles.hintText}>{currentExercise.instructions}</Text> : null}
             <Text style={styles.questionCounter}>
               Pair {Math.min(Object.keys(pairMap).length + 1, currentExercise.correctPairs.length)} / {currentExercise.correctPairs.length}
@@ -1891,10 +1900,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
-            <View style={styles.promptCard}>
-              <Text style={styles.miniLabel}>Question</Text>
-              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
-            </View>
+            {renderExercisePromptCard(currentExercise.prompt)}
             {currentExercise.instructions ? <Text style={styles.hintText}>{currentExercise.instructions}</Text> : null}
             <View style={styles.answerBox}>
               {ordered.length ? (
@@ -1956,10 +1962,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
-            <View style={styles.promptCard}>
-              <Text style={styles.miniLabel}>Question</Text>
-              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
-            </View>
+            {renderExercisePromptCard(currentExercise.prompt)}
             {currentExercise.instructions ? <Text style={styles.hintText}>{currentExercise.instructions}</Text> : null}
             <View style={styles.tokenWrap}>
               {currentExercise.categories.map((category) => (
@@ -2007,10 +2010,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
-            <View style={styles.promptCard}>
-              <Text style={styles.miniLabel}>Question</Text>
-              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
-            </View>
+            {renderExercisePromptCard(currentExercise.prompt)}
             {currentExercise.instructions ? <Text style={styles.hintText}>{currentExercise.instructions}</Text> : null}
             <View style={styles.memoryGrid}>
               {cards.map((card) => (
@@ -2064,10 +2064,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
-            <View style={styles.promptCard}>
-              <Text style={styles.miniLabel}>Question</Text>
-              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
-            </View>
+            {renderExercisePromptCard(currentExercise.prompt)}
             <InputField
               label="What you said (transcript)"
               value={textValue}
@@ -2159,10 +2156,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         const performanceFeedback = performanceFeedbackByExercise[currentExercise.id];
         return (
           <View style={styles.interactiveStep}>
-            <View style={styles.promptCard}>
-              <Text style={styles.miniLabel}>Question</Text>
-              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
-            </View>
+            {renderExercisePromptCard(currentExercise.prompt)}
             <InputField
               label="Write your answer"
               value={textValue}
@@ -2195,10 +2189,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
       return (
         <View style={styles.interactiveStep}>
-          <View style={styles.promptCard}>
-            <Text style={styles.miniLabel}>Question</Text>
-            <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
-          </View>
+          {renderExercisePromptCard(currentExercise.prompt)}
           <InputField
             label="Write your answer"
             value={textValue}
@@ -2962,11 +2953,12 @@ const styles = StyleSheet.create({
   cueGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm
+    gap: spacing.xs,
+    justifyContent: 'space-between'
   },
   cueChip: {
-    width: '31%',
-    minHeight: 44,
+    width: '48%',
+    minHeight: 42,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#BFDBFE',
@@ -2979,13 +2971,15 @@ const styles = StyleSheet.create({
   cueChipText: {
     ...typography.bodyStrong,
     color: colors.primary,
-    textAlign: 'center'
+    textAlign: 'center',
+    fontSize: 13
   },
   cueChipSubText: {
     ...typography.caption,
     color: '#1E40AF',
     textAlign: 'center',
-    marginTop: 2
+    marginTop: 2,
+    fontSize: 11
   },
   downloadBtn: {
     borderRadius: 12,
@@ -3008,7 +3002,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12
   },
   exampleText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#1D4ED8',
     fontWeight: '600'
   },
@@ -3042,7 +3036,8 @@ const styles = StyleSheet.create({
   questionCounter: {
     ...typography.caption,
     color: colors.textSecondary,
-    fontWeight: '700'
+    fontWeight: '700',
+    fontSize: 11
   },
   optionsWrap: {
     gap: 8
@@ -3057,11 +3052,34 @@ const styles = StyleSheet.create({
   },
   promptCardText: {
     ...typography.bodyStrong,
-    color: colors.primary
+    color: colors.primary,
+    fontSize: 15,
+    lineHeight: 20
+  },
+  promptContextText: {
+    ...typography.caption,
+    color: '#334155',
+    marginTop: 3
+  },
+  promptActionChip: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 4
+  },
+  promptActionChipText: {
+    ...typography.caption,
+    color: '#1D4ED8',
+    fontWeight: '700',
+    fontSize: 11
   },
   matchingColumns: {
-    flexDirection: 'row',
-    gap: 10
+    flexDirection: 'column',
+    gap: 8
   },
   matchingCol: {
     flex: 1,
@@ -3181,7 +3199,7 @@ const styles = StyleSheet.create({
   },
   classifyItem: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: '#0F172A'
   },
   classifyBadge: {
@@ -3192,10 +3210,11 @@ const styles = StyleSheet.create({
   memoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8
+    gap: 8,
+    justifyContent: 'space-between'
   },
   memoryTile: {
-    width: '47%',
+    width: '48%',
     minHeight: 52,
     borderRadius: 12,
     borderWidth: 1,
@@ -3210,7 +3229,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ECFDF5'
   },
   memoryText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#0F172A',
     textAlign: 'center'
   },
