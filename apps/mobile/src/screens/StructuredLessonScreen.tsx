@@ -1776,6 +1776,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       ) {
         return (
           <View style={styles.interactiveStep}>
+            <View style={styles.promptCard}>
+              <Text style={styles.miniLabel}>Question</Text>
+              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
+            </View>
             {currentExercise.readingPassage ? <Text style={styles.passage}>{currentExercise.readingPassage}</Text> : null}
             <View style={styles.optionsWrap}>
               {currentExercise.options.map((option, idx) => {
@@ -1816,6 +1820,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
+            <View style={styles.promptCard}>
+              <Text style={styles.miniLabel}>Question</Text>
+              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
+            </View>
             {currentExercise.instructions ? <Text style={styles.hintText}>{currentExercise.instructions}</Text> : null}
             <Text style={styles.questionCounter}>
               Pair {Math.min(Object.keys(pairMap).length + 1, currentExercise.correctPairs.length)} / {currentExercise.correctPairs.length}
@@ -1883,6 +1891,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
+            <View style={styles.promptCard}>
+              <Text style={styles.miniLabel}>Question</Text>
+              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
+            </View>
             {currentExercise.instructions ? <Text style={styles.hintText}>{currentExercise.instructions}</Text> : null}
             <View style={styles.answerBox}>
               {ordered.length ? (
@@ -1944,6 +1956,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
+            <View style={styles.promptCard}>
+              <Text style={styles.miniLabel}>Question</Text>
+              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
+            </View>
             {currentExercise.instructions ? <Text style={styles.hintText}>{currentExercise.instructions}</Text> : null}
             <View style={styles.tokenWrap}>
               {currentExercise.categories.map((category) => (
@@ -1991,6 +2007,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
+            <View style={styles.promptCard}>
+              <Text style={styles.miniLabel}>Question</Text>
+              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
+            </View>
             {currentExercise.instructions ? <Text style={styles.hintText}>{currentExercise.instructions}</Text> : null}
             <View style={styles.memoryGrid}>
               {cards.map((card) => (
@@ -2044,6 +2064,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
+            <View style={styles.promptCard}>
+              <Text style={styles.miniLabel}>Question</Text>
+              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
+            </View>
             <InputField
               label="What you said (transcript)"
               value={textValue}
@@ -2135,6 +2159,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         const performanceFeedback = performanceFeedbackByExercise[currentExercise.id];
         return (
           <View style={styles.interactiveStep}>
+            <View style={styles.promptCard}>
+              <Text style={styles.miniLabel}>Question</Text>
+              <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
+            </View>
             <InputField
               label="Write your answer"
               value={textValue}
@@ -2167,6 +2195,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
       return (
         <View style={styles.interactiveStep}>
+          <View style={styles.promptCard}>
+            <Text style={styles.miniLabel}>Question</Text>
+            <Text style={styles.promptCardText}>{currentExercise.prompt}</Text>
+          </View>
           <InputField
             label="Write your answer"
             value={textValue}
