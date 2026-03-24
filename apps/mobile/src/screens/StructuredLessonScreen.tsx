@@ -970,6 +970,8 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const [practiceRecoveryCursor, setPracticeRecoveryCursor] = useState(0);
   const [practiceRecoveryActive, setPracticeRecoveryActive] = useState(false);
   const [showSessionSummary, setShowSessionSummary] = useState(false);
+  const [liveStreak, setLiveStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
   const [aiCorrectionByExercise, setAiCorrectionByExercise] = useState<Record<string, AiCorrectionNote>>({});
   const [activeAiCorrection, setActiveAiCorrection] = useState<AiCorrectionNote | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
@@ -1257,6 +1259,11 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     });
 
     if (result.evaluation.correct) {
+      setLiveStreak((prev) => {
+        const next = prev + 1;
+        setBestStreak((best) => Math.max(best, next));
+        return next;
+      });
       if (currentStep.exercise?.id) {
         setRetryExerciseVariants((prev) => {
           if (!prev[currentStep.exercise!.id]) return prev;
@@ -1267,10 +1274,12 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       }
       triggerSuccess();
     } else if (practiceHardGate && currentExercise && currentStep.exercise?.id) {
+      setLiveStreak(0);
       const category = inferRetryCategory(currentExercise, lesson);
       const variant = buildAdaptiveRetryVariant(currentExercise, lesson, category, attempts + 1);
       setRetryExerciseVariants((prev) => ({ ...prev, [currentStep.exercise!.id]: variant }));
     } else if (!result.evaluation.correct && attempts >= 2 && currentExercise?.id) {
+      setLiveStreak(0);
       const exerciseId = currentExercise.id;
       const note: AiCorrectionNote = {
         exerciseId,
@@ -1309,6 +1318,8 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
           }));
         }
       })();
+    } else if (!result.evaluation.correct) {
+      setLiveStreak(0);
     }
   };
 
@@ -1609,10 +1620,30 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     URL.revokeObjectURL(url);
   };
 
-  const renderExercisePromptCard = (prompt: string) => (
+  const renderExercisePromptCard = (prompt: string, exerciseKind?: Exercise['kind']) => (
     <View style={styles.promptCard}>
       <Text style={styles.miniLabel}>Question</Text>
       <Text style={styles.promptCardText}>{prompt}</Text>
+      <Text style={styles.promptGoalText}>
+        Goal:{' '}
+        {exerciseKind === 'multipleChoice' || exerciseKind === 'readingComprehension'
+          ? 'Pick the best meaning quickly.'
+          : exerciseKind === 'listeningPrompt'
+            ? 'Listen and identify the right response.'
+            : exerciseKind === 'matchingPairs'
+              ? 'Match words using the right pair.'
+              : exerciseKind === 'sentenceOrderPuzzle'
+                ? 'Build one natural sentence.'
+                : exerciseKind === 'quickClassification'
+                  ? 'Sort by the correct grammar idea.'
+                  : exerciseKind === 'memoryMatch'
+                    ? 'Recall and match fast.'
+                    : exerciseKind === 'speakingPrompt'
+                      ? 'Speak clearly and naturally.'
+                      : exerciseKind === 'writingPrompt'
+                        ? 'Write clear, useful French.'
+                        : 'Answer clearly and confidently.'}
+      </Text>
       {canadaTemplate ? (
         <Text numberOfLines={2} ellipsizeMode="tail" style={styles.promptContextText}>
           Canada use: {canadaTemplate.functionalTask}
@@ -1665,6 +1696,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
                     correctness={correctness}
                     onPress={() => {
                       setActivationSelections((prev) => ({ ...prev, [currentQuestion.id]: idx }));
+                      void playPronunciation(option);
                     }}
                   />
                 );
@@ -1791,7 +1823,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       ) {
         return (
           <View style={styles.interactiveStep}>
-            {renderExercisePromptCard(currentExercise.prompt)}
+            {renderExercisePromptCard(currentExercise.prompt, currentExercise.kind)}
             {currentExercise.readingPassage ? <Text style={styles.passage}>{currentExercise.readingPassage}</Text> : null}
             <View style={styles.optionsWrap}>
               {currentExercise.options.map((option, idx) => {
@@ -1807,6 +1839,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
                     disabled={currentStepSubmitted}
                     onPress={() => {
                       setChoiceSelections((prev) => ({ ...prev, [currentExercise.id]: idx }));
+                      void playPronunciation(option);
                     }}
                   />
                 );
@@ -1832,7 +1865,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
-            {renderExercisePromptCard(currentExercise.prompt)}
+            {renderExercisePromptCard(currentExercise.prompt, currentExercise.kind)}
             {currentExercise.instructions ? <Text style={styles.hintText}>{currentExercise.instructions}</Text> : null}
             <Text style={styles.questionCounter}>
               Pair {Math.min(Object.keys(pairMap).length + 1, currentExercise.correctPairs.length)} / {currentExercise.correctPairs.length}
@@ -1900,7 +1933,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
-            {renderExercisePromptCard(currentExercise.prompt)}
+            {renderExercisePromptCard(currentExercise.prompt, currentExercise.kind)}
             {currentExercise.instructions ? <Text style={styles.hintText}>{currentExercise.instructions}</Text> : null}
             <View style={styles.answerBox}>
               {ordered.length ? (
@@ -1962,7 +1995,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
-            {renderExercisePromptCard(currentExercise.prompt)}
+            {renderExercisePromptCard(currentExercise.prompt, currentExercise.kind)}
             {currentExercise.instructions ? <Text style={styles.hintText}>{currentExercise.instructions}</Text> : null}
             <View style={styles.tokenWrap}>
               {currentExercise.categories.map((category) => (
@@ -2010,7 +2043,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
-            {renderExercisePromptCard(currentExercise.prompt)}
+            {renderExercisePromptCard(currentExercise.prompt, currentExercise.kind)}
             {currentExercise.instructions ? <Text style={styles.hintText}>{currentExercise.instructions}</Text> : null}
             <View style={styles.memoryGrid}>
               {cards.map((card) => (
@@ -2064,7 +2097,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         return (
           <View style={styles.interactiveStep}>
-            {renderExercisePromptCard(currentExercise.prompt)}
+            {renderExercisePromptCard(currentExercise.prompt, currentExercise.kind)}
             <InputField
               label="What you said (transcript)"
               value={textValue}
@@ -2156,7 +2189,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         const performanceFeedback = performanceFeedbackByExercise[currentExercise.id];
         return (
           <View style={styles.interactiveStep}>
-            {renderExercisePromptCard(currentExercise.prompt)}
+            {renderExercisePromptCard(currentExercise.prompt, currentExercise.kind)}
             <InputField
               label="Write your answer"
               value={textValue}
@@ -2189,7 +2222,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
       return (
         <View style={styles.interactiveStep}>
-          {renderExercisePromptCard(currentExercise.prompt)}
+          {renderExercisePromptCard(currentExercise.prompt, currentExercise.kind)}
           <InputField
             label="Write your answer"
             value={textValue}
@@ -2241,6 +2274,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
                       } else {
                         setMasterySelections((prev) => ({ ...prev, [currentQuestion.id]: idx }));
                       }
+                      void playPronunciation(option);
                     }}
                   />
                 );
@@ -2797,6 +2831,11 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
           </Text>
         </Animated.View>
       ) : null}
+      {liveStreak > 0 ? (
+        <View style={styles.streakBadge}>
+          <Text style={styles.streakBadgeText}>Streak {liveStreak} • Best {bestStreak}</Text>
+        </View>
+      ) : null}
       {renderStepContent()}
     </LessonStepEngine>
   );
@@ -2832,6 +2871,21 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
     fontSize: 12
+  },
+  streakBadge: {
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    backgroundColor: '#F0F9FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4
+  },
+  streakBadgeText: {
+    ...typography.caption,
+    color: '#0C4A6E',
+    fontWeight: '700'
   },
   interactiveStep: {
     flex: 1,
@@ -3055,6 +3109,11 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 15,
     lineHeight: 20
+  },
+  promptGoalText: {
+    ...typography.caption,
+    color: '#0F172A',
+    marginTop: 2
   },
   promptContextText: {
     ...typography.caption,
