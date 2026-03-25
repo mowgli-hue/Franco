@@ -616,6 +616,38 @@ function buildActivationQuestions(lesson: StructuredLessonContent): QuizQuestion
     return distributeQuizQuestionOptions(questions, `${lesson.id}:activation`);
   }
 
+  if (lesson.levelId === 'a2') {
+    const a2LessonNumber = getLevelLessonNumber(lesson, 'a2');
+    if (a2LessonNumber != null && a2LessonNumber <= 2) {
+      questions = [
+        {
+          id: 'activation-1',
+          prompt: 'Choose the polite request start.',
+          options: ['Je voudrais...', 'Je veux vite.', 'Donne-moi.', 'Maintenant.'],
+          correctIndex: 0
+        },
+        {
+          id: 'activation-2',
+          prompt: 'Choose the simple connector for reason.',
+          options: ['parce que', 'donc donc', 'et et', 'mais mais'],
+          correctIndex: 0
+        },
+        {
+          id: 'activation-3',
+          prompt: 'Choose the clear service sentence.',
+          options: [
+            'Je voudrais déplacer mon rendez-vous.',
+            'Déplace rendez-vous.',
+            'Rendez-vous non.',
+            'Je veux autre temps vite.'
+          ],
+          correctIndex: 0
+        }
+      ];
+      return distributeQuizQuestionOptions(questions, `${lesson.id}:activation`);
+    }
+  }
+
   questions = [
     {
       id: 'activation-1',
@@ -924,6 +956,14 @@ function getBeginnerLessonIndex(lesson: StructuredLessonContent): number {
   }
 
   return 1;
+}
+
+function getLevelLessonNumber(lesson: StructuredLessonContent, track: 'a1' | 'a2' | 'b1' | 'clb5' | 'clb7'): number | null {
+  const currentId = lesson.curriculumLessonId ?? lesson.id;
+  const match = currentId.match(new RegExp(`^${track}-lesson-(\\d+)$`));
+  if (!match) return null;
+  const lessonNum = Number(match[1]);
+  return Number.isFinite(lessonNum) ? lessonNum : null;
 }
 
 function getBeginnerConversationTier(lesson: StructuredLessonContent): BeginnerConversationTier {
