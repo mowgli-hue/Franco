@@ -387,6 +387,12 @@ function makeA2Lesson(spec: A2Spec): StructuredLessonContent {
   const idb = `a2l${spec.lessonNumber}`;
   const context = spec.authoredContext ?? A2_AUTHORED_CONTEXTS[spec.lessonNumber];
   const grammarAnchor = spec.grammarTargets[0] ?? 'target form';
+  const isStarterRamp = spec.lessonNumber <= 2;
+  const isEarlyRamp = spec.lessonNumber <= 5;
+  const spokenMinWords = isStarterRamp ? 7 : isEarlyRamp ? 8 : 10;
+  const writingMinWords = isStarterRamp ? 12 : isEarlyRamp ? 14 : 16;
+  const miniTestWritingMinWords = isStarterRamp ? 14 : isEarlyRamp ? 16 : 18;
+  const masteryThresholdPercent = isStarterRamp ? 72 : isEarlyRamp ? 74 : 78;
   return {
     id: `a2-structured-${spec.lessonNumber}`,
     curriculumLessonId: `a2-lesson-${spec.lessonNumber}`,
@@ -552,7 +558,7 @@ function makeA2Lesson(spec: A2Spec): StructuredLessonContent {
                 kind: 'speakingPrompt',
                 prompt: spec.productionPrompt,
                 expectedPatterns: spec.productionExpected,
-                minWords: 10,
+                minWords: spokenMinWords,
                 rubricFocus: ['taskCompletion', 'fluency', 'grammar', 'pronunciation'],
                 sampleAnswer: spec.productionSample,
                 fallbackTextEvaluationAllowed: true,
@@ -565,7 +571,7 @@ function makeA2Lesson(spec: A2Spec): StructuredLessonContent {
                 kind: 'writingPrompt',
                 prompt: spec.productionPrompt,
                 expectedElements: spec.productionExpected,
-                minWords: 16,
+                minWords: writingMinWords,
                 rubricFocus: ['taskCompletion', 'grammar', 'coherence', 'vocabulary'],
                 sampleAnswer: spec.productionSample,
                 skillFocus: 'writing',
@@ -612,7 +618,7 @@ function makeA2Lesson(spec: A2Spec): StructuredLessonContent {
             kind: 'writingPrompt',
             prompt: spec.writingPrompt,
             expectedElements: spec.writingExpected,
-            minWords: 18,
+            minWords: miniTestWritingMinWords,
             rubricFocus: ['taskCompletion', 'grammar', 'coherence'],
             sampleAnswer: spec.writingSample,
             skillFocus: 'writing',
@@ -624,7 +630,7 @@ function makeA2Lesson(spec: A2Spec): StructuredLessonContent {
       }
     ],
     assessment: {
-      masteryThresholdPercent: 78,
+      masteryThresholdPercent,
       productionRequired: true,
       retryIncorrectLater: true,
       strictSequential: true
@@ -659,7 +665,7 @@ const A2_SPECS: A2Spec[] = [
     productionSample: "Hier, j'ai travaillé. J'ai pris le bus. J'ai étudié le soir.",
     testPrompt: 'Which sentence is the best past-tense report?',
     testOptions: ['Hier, je travaille.', "Hier, j'ai travaillé.", 'Demain, j’ai travaillé.', 'Je voudrais travaillé.'],
-    testCorrect: 0,
+    testCorrect: 1,
     testWrong: 'Use a clear past-time marker + passé composé.',
     writingPrompt: 'Write a short message (2-3 lines) to explain your day yesterday to a teacher/employer.',
     writingExpected: ['hier', "j'ai", 'ensuite'],
@@ -699,12 +705,12 @@ const A2_SPECS: A2Spec[] = [
     vocabularyTargets: ['pouvoir', 'devoir', 'vouloir', 'aide', 'document'],
     grammarTargets: ['Modal verbs in simple present'],
     sampleTeach: ['Je peux venir demain matin.', 'Je dois envoyer le document aujourd’hui.', 'Je voudrais un rendez-vous.'],
-    mcqPrompt: 'Choose the best sentence expressing obligation.',
+    mcqPrompt: 'Choose the sentence that clearly expresses obligation.',
     mcqOptions: [
       'Je peux envoyer le document.',
       'Je dois envoyer le document.',
       'Je veux envoyer le document.',
-      "Je dois vérifier le formulaire aujourd'hui."
+      "Je vais vérifier le formulaire aujourd'hui."
     ],
     mcqCorrect: 1,
     mcqWrong: 'Devoir expresses obligation: je dois...',
@@ -761,12 +767,12 @@ const A2_SPECS: A2Spec[] = [
     vocabularyTargets: ['problème', 'carte', 'ne marche pas', 'aide', 'service'],
     grammarTargets: ['Simple problem statements', 'Negation reinforcement'],
     sampleTeach: ['Ma carte ne marche pas.', "J'ai un problème avec mon compte."],
-    mcqPrompt: 'Choose the best sentence to report a problem.',
+    mcqPrompt: 'Choose the clearest problem report sentence.',
     mcqOptions: [
       "J'ai un problème avec ma carte.",
-      "J'ai un problème avec mon compte.",
       'Bonjour, merci pour votre aide.',
-      'Au revoir et merci.'
+      'Au revoir et merci.',
+      'Je cherche un bus.'
     ],
     mcqCorrect: 0,
     mcqWrong: 'Use j’ai un problème avec... to report a problem clearly.',
@@ -783,7 +789,7 @@ const A2_SPECS: A2Spec[] = [
       "Je dois terminer ce formulaire aujourd'hui.",
       'Merci pour votre réponse.'
     ],
-    testCorrect: 1,
+    testCorrect: 0,
     testWrong: 'Use a polite request: Pouvez-vous m’aider... ?',
     writingPrompt: 'Write a short message to a service office reporting a problem and asking for help.',
     writingExpected: ['problème', 'aide'],
