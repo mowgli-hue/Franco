@@ -31,8 +31,8 @@ export function IntroRoadmapScreen({ onStart }: Props) {
   return (
     <View style={styles.root}>
       <View style={styles.container}>
-        <Text style={styles.title}>Your 8-Month French Journey</Text>
-        <Text style={styles.subtitle}>Daily 25-minute sessions. Clear progress from beginner to CLB goals.</Text>
+        <Text style={styles.title}>Your 8-Month Training Roadmap</Text>
+        <Text style={styles.subtitle}>One 25-minute session per day from beginner level to CLB goals.</Text>
 
         <View style={styles.calendarCard}>
           <Text style={styles.calendarTitle}>Roadmap</Text>
@@ -46,11 +46,11 @@ export function IntroRoadmapScreen({ onStart }: Props) {
           <View style={styles.track}>
             <Animated.View style={[styles.trackFill, { width: widthInterpolate }]} />
           </View>
-          <Text style={styles.meta}>230 sessions • 1 session/day • TEF & CLB aligned</Text>
+          <Text style={styles.meta}>230 sessions • 1 session/day • CLB + TEF aligned</Text>
         </View>
 
         <Pressable style={styles.cardHint} onPress={onStart}>
-          <Text style={styles.cardHintText}>Tap below to start your path</Text>
+          <Text style={styles.cardHintText}>Ready to start your plan?</Text>
         </Pressable>
 
         <Button label="Start" onPress={onStart} />

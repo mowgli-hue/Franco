@@ -17,7 +17,7 @@ export function WelcomeScreen({ navigation }: Props) {
       <View style={styles.content}>
         <Text style={styles.headline}>Build your Canadian French performance.</Text>
         <Text style={styles.subtext}>
-          Structured 25-minute sessions aligned with CLB and TEF standards.
+          Daily 25-minute sessions aligned with CLB and TEF requirements.
         </Text>
       </View>
       <View style={styles.footer}>

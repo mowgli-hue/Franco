@@ -28,7 +28,7 @@ export function StudyPlanIntroScreen({ navigation, route }: Props) {
             <Text style={styles.structureLine}>• Mastery check</Text>
           </View>
 
-          <Text style={styles.subtitle}>One focused session per day builds measurable progress.</Text>
+          <Text style={styles.subtitle}>One focused session each day builds measurable progress.</Text>
 
           <Button
             label="Continue"

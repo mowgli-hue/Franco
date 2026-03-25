@@ -31,7 +31,7 @@ export function IntroBrandScreen({ onNext }: Props) {
             <Text style={styles.markEmoji}>🍁</Text>
           </View>
           <Text style={styles.brandName}>FRANCO</Text>
-          <Text style={styles.tagline}>Make French interesting.</Text>
+          <Text style={styles.tagline}>Structured French performance training for Canada.</Text>
           <Text style={styles.tapHint}>Tap to continue</Text>
         </Animated.View>
       </Pressable>

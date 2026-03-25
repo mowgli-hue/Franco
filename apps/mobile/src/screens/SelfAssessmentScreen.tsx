@@ -33,7 +33,7 @@ export function SelfAssessmentScreen({ navigation }: Props) {
         <Card>
           <Text style={styles.step}>Step 2 of 5</Text>
           <Text style={styles.title}>What are you preparing for?</Text>
-          <Text style={styles.subtitle}>Choose one focus so your path can be personalized.</Text>
+          <Text style={styles.subtitle}>Choose your main goal. We will personalize your training path.</Text>
 
           <View style={styles.optionList}>
             {goalOptions.map((option) => {

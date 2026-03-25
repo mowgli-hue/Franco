@@ -377,6 +377,8 @@ function buildTemplateLesson(spec: A1TemplateSpec): StructuredLessonContent {
   const idBase = `a1l${spec.lessonNumber}`;
   const context = spec.authoredContext ?? A1_AUTHORED_CONTEXTS[spec.lessonNumber];
   const microTeach = A1_MICRO_TEACH_SEGMENTS[(spec.lessonNumber - 1) % A1_MICRO_TEACH_SEGMENTS.length];
+  const coreGrammar = spec.grammarTargets[0] ?? 'target structure';
+  const coreVocabulary = spec.vocabularyTargets.slice(0, 3).join(', ');
   return {
     id: `a1-structured-${spec.lessonNumber}`,
     curriculumLessonId: `a1-lesson-${spec.lessonNumber}`,
@@ -421,6 +423,16 @@ function buildTemplateLesson(spec: A1TemplateSpec): StructuredLessonContent {
                   examples: [...microTeach.examples],
                   companionTip: microTeach.companionTip,
                   pronunciationCues: buildPronunciationCues(microTeach.examples)
+                },
+                {
+                  id: `${idBase}-teach-4`,
+                  title: 'Common Mistakes to Avoid',
+                  explanation: `Learners often mix word order or skip function words. Keep ${coreGrammar.toLowerCase()} short and stable before adding extra details.`,
+                  examples: [
+                    `Use one clear pattern first: ${spec.teachExamples[0] ?? 'Bonjour. Je suis étudiant.'}`,
+                    `Keep key words visible: ${coreVocabulary || 'bonjour, merci, au revoir'}`
+                  ],
+                  companionTip: 'Accuracy first, speed second. A clean short sentence is better than a long incorrect sentence.'
                 }
               ]
             : [
@@ -431,6 +443,13 @@ function buildTemplateLesson(spec: A1TemplateSpec): StructuredLessonContent {
                   examples: [...microTeach.examples],
                   companionTip: microTeach.companionTip,
                   pronunciationCues: buildPronunciationCues(microTeach.examples)
+                },
+                {
+                  id: `${idBase}-teach-4`,
+                  title: 'Common Mistakes to Avoid',
+                  explanation: `Keep ${coreGrammar.toLowerCase()} stable and avoid guessing word order.`,
+                  examples: [spec.teachExamples[0] ?? 'Je suis ici.', spec.teachExamples[1] ?? 'Je parle français.'],
+                  companionTip: 'Repeat the same correct frame 2-3 times before moving on.'
                 }
               ])
         ],
@@ -596,6 +615,22 @@ function buildTemplateLesson(spec: A1TemplateSpec): StructuredLessonContent {
           },
           {
             id: `${idBase}-t2`,
+            kind: 'listeningPrompt',
+            prompt: 'Choose the best meaning for the short line.',
+            options: [
+              'A simple useful daily-life line',
+              'A refusal with negative meaning',
+              'A formal legal statement',
+              'A final goodbye only'
+            ],
+            correctOptionIndex: 0,
+            explanationOnWrong: 'At A1, identify main purpose first: greeting, request, or short information.',
+            audioText: context?.listeningMessage ?? spec.teachExamples[0],
+            skillFocus: 'listening',
+            points: 5
+          },
+          {
+            id: `${idBase}-t3`,
             kind: 'writingPrompt',
             prompt: spec.writingTestPrompt,
             expectedElements: spec.writingTestExpected,
@@ -840,34 +875,44 @@ const detailedA1Lesson2: StructuredLessonContent = {
   estimatedMinutes: 25,
   mode: 'guided',
   outcomes: [
-    'Introduce yourself using Je m’appelle and Je suis',
-    'Answer simple identity questions',
-    'Write a short self-introduction'
+    'Introduce yourself with greeting + name + origin',
+    'Answer basic first-contact questions in a newcomer context',
+    'Produce a short 3-line self-introduction confidently'
   ],
-  vocabularyTargets: ['je', 'm’appelle', 'je suis', 'étudiant(e)', 'bonjour'],
-  grammarTargets: ['Fixed expression: Je m’appelle', 'Identity statement: Je suis'],
+  vocabularyTargets: ['bonjour', "je m'appelle", 'je suis', 'j’habite à', 'enchanté(e)'],
+  grammarTargets: ['Fixed expression: Je m’appelle', 'Identity/location with Je suis / J’habite à'],
   blocks: [
     {
       id: 'a1l2-teach',
       type: 'teach',
-      title: 'Teach: Name and Identity Sentences',
+      title: 'Teach: First Introduction in Real Life',
       targetMinutes: 6,
-      objectives: ['Teach Je m’appelle and Je suis with models'],
+      objectives: ['Use a practical 3-part intro used in class and services'],
       teachingSegments: [
         {
           id: 'a1l2-seg1',
-          title: 'Name Pattern',
-          explanation: 'Use Je m’appelle + your name to introduce yourself.',
-          examples: ["Je m'appelle Ahmed.", "Je m'appelle Sofia."],
-          companionTip: 'Pause after Bonjour, then say your full name sentence.',
-          pronunciationCues: ['Je m’appelle', 'Je m’appelle Nadia']
+          title: 'Part 1: Greeting + Name',
+          explanation: 'Start with Bonjour, then use Je m’appelle + your name.',
+          examples: ["Bonjour. Je m'appelle Ahmed.", "Bonjour. Je m'appelle Sofia."],
+          companionTip: 'Speak in two short chunks: Bonjour. Je m’appelle ...',
+          pronunciationCues: ['Bonjour', 'Je m’appelle', "Bonjour. Je m'appelle Nadia."]
         },
         {
           id: 'a1l2-seg2',
-          title: 'Identity Pattern',
-          explanation: 'Use Je suis + role or identity detail.',
-          examples: ['Je suis étudiant.', 'Je suis au Canada.'],
-          companionTip: 'Use Je suis to say who you are or a simple status.'
+          title: 'Part 2: Identity + Origin',
+          explanation: 'Add one identity detail with Je suis and one location detail with J’habite à.',
+          examples: ['Je suis étudiante.', "J'habite à Toronto."],
+          companionTip: 'One sentence for identity, one for city. Keep it simple and clear.'
+        },
+        {
+          id: 'a1l2-seg3',
+          title: 'Canadian Context: Newcomer Language Class',
+          explanation: 'At registration, learners usually give a short self-introduction before asking a question.',
+          examples: [
+            "Bonjour. Je m'appelle Lina. J'habite à Calgary.",
+            "Enchantée. Je suis étudiante et j'habite à Montréal."
+          ],
+          companionTip: 'Use this structure anytime you meet a teacher, advisor, or classmate.'
         }
       ],
       requiresCompletionToAdvance: true
@@ -875,51 +920,73 @@ const detailedA1Lesson2: StructuredLessonContent = {
     {
       id: 'a1l2-practice',
       type: 'practice',
-      title: 'Practice: Recognition, Usage, and Matching',
+      title: 'Practice: Intro Structure and Meaning',
       targetMinutes: 8,
-      objectives: ['Recognize identity patterns in context'],
+      objectives: ['Recognize and build a correct beginner self-introduction'],
       exercises: [
         {
           id: 'a1l2-p1',
           kind: 'multipleChoice',
-          prompt: 'Which sentence introduces your name?',
-          options: ["Je m'appelle Rami.", 'Je suis Rami.', 'Au revoir, Rami.', 'Bonjour, je travaille ici.'],
+          prompt: 'Which line correctly introduces your name?',
+          options: ["Je m'appelle Rami.", 'Je suis Rami.', "M'appelle Rami.", 'Bonjour je suis le nom Rami.'],
           correctOptionIndex: 0,
-          explanationOnWrong: 'Use Je m’appelle + name.',
+          explanationOnWrong: 'For your name, use Je m’appelle + name.',
           skillFocus: 'reading',
           points: 5
         },
         {
           id: 'a1l2-p2',
+          kind: 'shortAnswer',
+          prompt: 'Type the French phrase: "My name is".',
+          acceptedAnswers: ["je m'appelle", 'je mappelle'],
+          normalizeAccents: true,
+          explanationOnWrong: "Use: Je m'appelle",
+          skillFocus: 'writing',
+          points: 5
+        },
+        {
+          id: 'a1l2-p3',
           kind: 'listeningPrompt',
-          prompt: 'Someone asks: "Comment tu t’appelles ?" Best answer:',
+          prompt: 'You hear: "Comment tu t’appelles ?" Best answer:',
           options: ['Merci.', "Je m'appelle Sara.", 'Au revoir.', 'Bonjour Canada.'],
           correctOptionIndex: 1,
-          explanationOnWrong: 'Answer with Je m’appelle + name.',
+          explanationOnWrong: "Answer with Je m'appelle + name.",
           skillFocus: 'listening',
           points: 5,
           audioText: 'Comment tu t’appelles ?'
         },
         {
-          id: 'a1l2-p3',
+          id: 'a1l2-p4',
+          kind: 'sentenceOrderPuzzle',
+          prompt: 'Build the correct sentence from tiles.',
+          instructions: 'Tap in order.',
+          tokens: ['Je', "m'appelle", 'Sara'],
+          correctOrder: ['Je', "m'appelle", 'Sara'],
+          explanationOnWrong: "Start with Je, then m'appelle, then the name.",
+          skillFocus: 'writing',
+          points: 5,
+          hint: { message: "Pattern: Je + m'appelle + Name" }
+        },
+        {
+          id: 'a1l2-p5',
           kind: 'matchingPairs',
           prompt: 'Match the function to the correct French expression.',
           leftItems: [
             { id: 'fn-name', label: 'Say your name' },
-            { id: 'fn-identity', label: 'Say who you are' },
-            { id: 'fn-thanks', label: 'Say thank you' }
+            { id: 'fn-city', label: 'Say where you live' },
+            { id: 'fn-identity', label: 'Say who you are' }
           ],
           rightItems: [
-            { id: 'fr1', label: 'Je suis ...' },
-            { id: 'fr2', label: 'Je m’appelle ...' },
-            { id: 'fr3', label: 'Merci' }
+            { id: 'fr1', label: "J'habite à ..." },
+            { id: 'fr2', label: "Je m'appelle ..." },
+            { id: 'fr3', label: 'Je suis ...' }
           ],
           correctPairs: [
             { leftId: 'fn-name', rightId: 'fr2' },
-            { leftId: 'fn-identity', rightId: 'fr1' },
-            { leftId: 'fn-thanks', rightId: 'fr3' }
+            { leftId: 'fn-city', rightId: 'fr1' },
+            { leftId: 'fn-identity', rightId: 'fr3' }
           ],
-          explanationOnWrong: 'Match by function: name, identity, thanks.',
+          explanationOnWrong: 'Match each real-life function with its fixed beginner expression.',
           skillFocus: 'reading',
           points: 10
         }
@@ -931,26 +998,26 @@ const detailedA1Lesson2: StructuredLessonContent = {
       type: 'production',
       title: 'Production: Self Introduction',
       targetMinutes: 5,
-      objectives: ['Produce greeting + name + identity detail'],
+      objectives: ['Produce a complete 3-line intro for a class registration moment'],
       productionTask: {
         id: 'a1l2-prod',
         title: 'Self-Intro Production',
-        instructions: 'Introduce yourself with greeting, name, and one identity detail.',
+        instructions: 'Introduce yourself with greeting, name, and one personal detail.',
         mode: 'spoken',
         mandatory: true,
         targetMinutes: 5,
         exercise: {
           id: 'a1l2-prod-ex',
           kind: 'speakingPrompt',
-          prompt: 'Say: Bonjour. Je m’appelle [name]. Je suis [student/worker/etc.].',
-          expectedPatterns: ['bonjour', "je m'appelle", 'je suis'],
-          minWords: 7,
+          prompt: "Say 3 lines: Bonjour. Je m'appelle [name]. J'habite à [city].",
+          expectedPatterns: ['bonjour', "je m'appelle", "j'habite"],
+          minWords: 8,
           rubricFocus: ['taskCompletion', 'fluency', 'grammar', 'pronunciation'],
-          sampleAnswer: "Bonjour. Je m'appelle Samir. Je suis étudiant.",
+          sampleAnswer: "Bonjour. Je m'appelle Samir. J'habite à Toronto.",
           fallbackTextEvaluationAllowed: true,
           skillFocus: 'speaking',
           points: 20,
-          hint: { message: 'Use all three parts: greeting + name + identity.' }
+          hint: { message: '3 parts only: greeting + name + city.' }
         }
       },
       requiresCompletionToAdvance: true
@@ -960,7 +1027,7 @@ const detailedA1Lesson2: StructuredLessonContent = {
       type: 'miniTest',
       title: 'Mini Test: Introduce Yourself',
       targetMinutes: 6,
-      objectives: ['Verify A1 identity statement control'],
+      objectives: ['Verify clear A1 beginner self-introduction control'],
       exercises: [
         {
           id: 'a1l2-t1',
@@ -974,15 +1041,25 @@ const detailedA1Lesson2: StructuredLessonContent = {
         },
         {
           id: 'a1l2-t2',
+          kind: 'shortAnswer',
+          prompt: 'Type the French start for: "I live in..."',
+          acceptedAnswers: ["j'habite à", "j'habite a"],
+          normalizeAccents: true,
+          explanationOnWrong: "Use: J'habite à ...",
+          skillFocus: 'writing',
+          points: 5
+        },
+        {
+          id: 'a1l2-t3',
           kind: 'writingPrompt',
-          prompt: 'Write a 2-sentence self-introduction in French.',
-          expectedElements: ['bonjour', "je m'appelle", 'je suis'],
-          minWords: 8,
+          prompt: 'Write a 3-line self-introduction in French for a first class meeting.',
+          expectedElements: ['bonjour', "je m'appelle", "j'habite"],
+          minWords: 10,
           rubricFocus: ['taskCompletion', 'grammar', 'coherence'],
-          sampleAnswer: "Bonjour. Je m'appelle Lina. Je suis étudiante.",
+          sampleAnswer: "Bonjour. Je m'appelle Lina. J'habite à Montréal.",
           skillFocus: 'writing',
           points: 20,
-          hint: { message: 'Include greeting + name + identity statement.' }
+          hint: { message: 'Include greeting + name + city.' }
         }
       ],
       requiresCompletionToAdvance: true
@@ -1002,113 +1079,291 @@ const detailedA1Lesson2: StructuredLessonContent = {
   }
 };
 
+const detailedA1Lesson3: StructuredLessonContent = {
+  id: 'a1-structured-3-pronouns-etre',
+  curriculumLessonId: 'a1-lesson-3',
+  levelId: 'a1',
+  moduleId: 'a1-core-module-1',
+  title: 'A1 Lesson 3: Subject Pronouns + Etre',
+  estimatedMinutes: 25,
+  mode: 'guided',
+  outcomes: [
+    'Use je / tu / il / elle with correct etre forms',
+    'Build simple identity and location sentences',
+    'Avoid common beginner errors with etre agreement'
+  ],
+  vocabularyTargets: ['je', 'tu', 'il', 'elle', 'suis', 'es', 'est'],
+  grammarTargets: ['Subject pronouns', 'Etre in present (je suis, tu es, il/elle est)'],
+  blocks: [
+    {
+      id: 'a1l3-teach',
+      type: 'teach',
+      title: 'Teach: Who + Etre Form',
+      targetMinutes: 6,
+      objectives: ['Link each pronoun to the correct form of etre'],
+      teachingSegments: [
+        {
+          id: 'a1l3-seg1',
+          title: 'Core Pattern',
+          explanation: 'French needs the pronoun and the correct etre form together.',
+          examples: ['Je suis étudiant.', 'Tu es prêt.', 'Elle est au Canada.'],
+          companionTip: 'Memorize in chunks: je suis, tu es, il est, elle est.',
+          pronunciationCues: ['Je suis', 'Tu es', 'Il est', 'Elle est']
+        },
+        {
+          id: 'a1l3-seg2',
+          title: 'Common Mistakes to Avoid',
+          explanation: 'Do not mix forms. Je es and Tu suis are incorrect.',
+          examples: ['Correct: Je suis ici.', 'Correct: Tu es à Vancouver.'],
+          companionTip: 'If the subject changes, the etre form must change.'
+        },
+        {
+          id: 'a1l3-seg3',
+          title: 'Canadian Context: Arrival and Settlement',
+          explanation: 'These patterns are used in newcomer classes, registration desks, and first interviews.',
+          examples: ['Je suis nouveau au Canada.', 'Elle est à Toronto.'],
+          companionTip: 'Use short, correct lines. Accuracy is more important than long sentences.'
+        }
+      ],
+      requiresCompletionToAdvance: true
+    },
+    {
+      id: 'a1l3-practice',
+      type: 'practice',
+      title: 'Practice: Form Selection and Sentence Building',
+      targetMinutes: 8,
+      objectives: ['Select correct etre form and build clean A1 sentences'],
+      exercises: [
+        {
+          id: 'a1l3-p1',
+          kind: 'multipleChoice',
+          prompt: 'Choose the correct sentence.',
+          options: ['Je es au Canada.', 'Tu suis étudiant.', 'Elle est au cours.', 'Il suis ici.'],
+          correctOptionIndex: 2,
+          explanationOnWrong: 'Only "Elle est ..." is correctly formed.',
+          skillFocus: 'reading',
+          points: 5
+        },
+        {
+          id: 'a1l3-p2',
+          kind: 'shortAnswer',
+          prompt: 'Type the French form of "I am".',
+          acceptedAnswers: ['je suis'],
+          normalizeAccents: true,
+          explanationOnWrong: 'Use: je suis',
+          skillFocus: 'writing',
+          points: 5
+        },
+        {
+          id: 'a1l3-p3',
+          kind: 'listeningPrompt',
+          prompt: 'You hear: "Tu es prêt." What is the key verb form?',
+          options: ['suis', 'es', 'est', 'sommes'],
+          correctOptionIndex: 1,
+          explanationOnWrong: 'With tu, use es.',
+          audioText: 'Tu es prêt.',
+          skillFocus: 'listening',
+          points: 5
+        },
+        {
+          id: 'a1l3-p4',
+          kind: 'sentenceOrderPuzzle',
+          prompt: 'Build the correct sentence from tiles.',
+          instructions: 'Tap in order.',
+          tokens: ['Elle', 'est', 'à', 'Montréal'],
+          correctOrder: ['Elle', 'est', 'à', 'Montréal'],
+          explanationOnWrong: 'Use subject + etre + location.',
+          skillFocus: 'writing',
+          points: 5,
+          hint: { message: 'Start with the subject pronoun.' }
+        },
+        {
+          id: 'a1l3-p5',
+          kind: 'matchingPairs',
+          prompt: 'Match each pronoun with the correct etre form.',
+          leftItems: [
+            { id: 'l1', label: 'je' },
+            { id: 'l2', label: 'tu' },
+            { id: 'l3', label: 'il/elle' }
+          ],
+          rightItems: [
+            { id: 'r1', label: 'suis' },
+            { id: 'r2', label: 'es' },
+            { id: 'r3', label: 'est' }
+          ],
+          correctPairs: [
+            { leftId: 'l1', rightId: 'r1' },
+            { leftId: 'l2', rightId: 'r2' },
+            { leftId: 'l3', rightId: 'r3' }
+          ],
+          explanationOnWrong: 'Recheck each pronoun chunk: je suis, tu es, il/elle est.',
+          skillFocus: 'reading',
+          points: 10
+        }
+      ],
+      requiresCompletionToAdvance: true
+    },
+    {
+      id: 'a1l3-production',
+      type: 'production',
+      title: 'Production: Personal Statements with Etre',
+      targetMinutes: 5,
+      objectives: ['Produce short spoken lines using two different pronouns'],
+      productionTask: {
+        id: 'a1l3-prod',
+        title: 'Pronoun + Etre Production',
+        instructions: 'Say short lines using Je suis and one other pronoun pattern.',
+        mode: 'spoken',
+        mandatory: true,
+        targetMinutes: 5,
+        exercise: {
+          id: 'a1l3-prod-ex',
+          kind: 'speakingPrompt',
+          prompt: 'Say 2-3 short lines. Example: Je suis à Toronto. Elle est étudiante.',
+          expectedPatterns: ['je suis', 'est'],
+          minWords: 8,
+          rubricFocus: ['taskCompletion', 'fluency', 'grammar', 'pronunciation'],
+          sampleAnswer: 'Je suis au Canada. Elle est étudiante.',
+          fallbackTextEvaluationAllowed: true,
+          skillFocus: 'speaking',
+          points: 20,
+          hint: { message: 'Use at least two pronouns with correct etre forms.' }
+        }
+      },
+      requiresCompletionToAdvance: true
+    },
+    {
+      id: 'a1l3-test',
+      type: 'miniTest',
+      title: 'Mini Test: Pronouns + Etre',
+      targetMinutes: 6,
+      objectives: ['Confirm beginner control of je/tu/il/elle + etre'],
+      exercises: [
+        {
+          id: 'a1l3-t1',
+          kind: 'multipleChoice',
+          prompt: 'Complete: Elle ___ à Montréal.',
+          options: ['suis', 'es', 'est', 'sommes'],
+          correctOptionIndex: 2,
+          explanationOnWrong: 'Elle takes est.',
+          skillFocus: 'reading',
+          points: 5
+        },
+        {
+          id: 'a1l3-t2',
+          kind: 'shortAnswer',
+          prompt: 'Type the French form for "you are" (informal singular).',
+          acceptedAnswers: ['tu es'],
+          normalizeAccents: true,
+          explanationOnWrong: 'Use: tu es',
+          skillFocus: 'writing',
+          points: 5
+        },
+        {
+          id: 'a1l3-t3',
+          kind: 'writingPrompt',
+          prompt: 'Write 2 short sentences using two different pronouns with etre.',
+          expectedElements: ['suis', 'est'],
+          minWords: 8,
+          rubricFocus: ['taskCompletion', 'grammar', 'coherence'],
+          sampleAnswer: 'Je suis ici. Elle est au cours.',
+          skillFocus: 'writing',
+          points: 20,
+          hint: { message: 'Use one sentence with Je suis and one with Il/Elle est.' }
+        }
+      ],
+      requiresCompletionToAdvance: true
+    }
+  ],
+  assessment: {
+    masteryThresholdPercent: 75,
+    productionRequired: true,
+    retryIncorrectLater: true,
+    strictSequential: true
+  },
+  aiHooks: {
+    companionPersonaHookId: 'a1-coach',
+    speakingAssessmentHookId: 'speaking-v1',
+    writingCorrectionHookId: 'writing-v1',
+    dynamicExplanationHookId: 'grammar-a1-lesson3'
+  }
+};
+
 const templatedA1Lessons: StructuredLessonContent[] = [
   buildTemplateLesson({
-    lessonNumber: 3,
-    title: 'Subject Pronouns + Être',
-    outcomes: ['Use je/tu/il/elle with être', 'Build simple identity/location sentences', 'Recognize verb agreement'],
-    vocabularyTargets: ['je', 'tu', 'il', 'elle', 'suis', 'es', 'est'],
-    grammarTargets: ['Subject pronouns', 'être in present'],
-    teachTitle: 'Pronouns and être',
-    teachExplanation: 'Use subject pronouns with the correct form of être to describe identity or location.',
-    teachExamples: ['Je suis au Canada.', 'Elle est étudiante.'],
-    practiceMcqPrompt: 'Choose the correct sentence with être.',
-    practiceMcqOptions: ['Je es étudiant.', 'Tu suis ici.', 'Elle est au cours.', 'Nous est au Canada.'],
-    practiceMcqCorrect: 2,
-    practiceMcqWrongExplanation: 'Use the pronoun with the correct être form (je suis, tu es, elle est).',
-    shortAnswerPrompt: 'Type the French form of "I am".',
-    shortAnswerAccepted: ['je suis'],
-    matchingLeft: [{ id: 'l1', label: 'je' }, { id: 'l2', label: 'tu' }, { id: 'l3', label: 'elle' }],
-    matchingRight: [{ id: 'r1', label: 'es' }, { id: 'r2', label: 'est' }, { id: 'r3', label: 'suis' }],
-    matchingPairs: [{ leftId: 'l1', rightId: 'r3' }, { leftId: 'l2', rightId: 'r1' }, { leftId: 'l3', rightId: 'r2' }],
-    productionMode: 'spoken',
-    productionPrompt: 'Say two short sentences with Je suis and Tu es.',
-    productionExpected: ['je suis', 'tu es'],
-    productionSample: 'Je suis étudiant. Tu es au Canada.',
-    productionMinWords: 6,
-    miniTestPrompt: 'Complete correctly: Elle ___ à Montréal.',
-    miniTestOptions: ['suis', 'es', 'est', 'sommes'],
-    miniTestCorrect: 2,
-    miniTestWrongExplanation: 'Elle takes est.',
-    writingTestPrompt: 'Write two short sentences using être with different pronouns.',
-    writingTestExpected: ['suis', 'est'],
-    writingTestSample: 'Je suis ici. Elle est au cours.',
-    writingTestMinWords: 6
-  }),
-  buildTemplateLesson({
     lessonNumber: 4,
-    title: 'Articles & Gender',
-    outcomes: ['Use un/une and le/la', 'Recognize masculine/feminine article patterns', 'Write simple noun phrases'],
-    vocabularyTargets: ['un', 'une', 'le', 'la', 'les', 'maison', 'livre'],
-    grammarTargets: ['Definite/indefinite articles', 'Gender awareness'],
-    teachTitle: 'Articles and Nouns',
-    teachExplanation: 'French nouns usually need an article. Learn the article with the noun.',
-    teachExamples: ['un livre', 'une maison', 'le bus', 'la table'],
-    practiceMcqPrompt: 'Choose the best article for a feminine noun phrase.',
-    practiceMcqOptions: ['le maison', 'la maison', 'un maison', 'les maison'],
+    title: 'Articles and Gender in Daily Life',
+    outcomes: ['Use un/une and le/la correctly', 'Identify noun gender in common Canadian life vocabulary', 'Produce short noun groups accurately'],
+    vocabularyTargets: ['un', 'une', 'le', 'la', 'les', 'billet', 'carte', 'banque', 'clinique'],
+    grammarTargets: ['Definite/indefinite articles', 'Gender pattern recognition'],
+    teachTitle: 'Articles with Real Nouns',
+    teachExplanation: 'In French, nouns almost always need an article. Learn each noun with its article, not alone.',
+    teachExamples: ['un billet', 'une carte', 'la banque', 'la clinique'],
+    practiceMcqPrompt: 'Choose the correct phrase for "the clinic".',
+    practiceMcqOptions: ['le clinique', 'la clinique', 'un clinique', 'les clinique'],
     practiceMcqCorrect: 1,
-    practiceMcqWrongExplanation: 'Use la with a feminine singular noun like maison.',
-    shortAnswerPrompt: 'Type the indefinite article for a feminine singular noun.',
+    practiceMcqWrongExplanation: 'Clinique is feminine singular: la clinique.',
+    shortAnswerPrompt: 'Type the indefinite article for a feminine noun (example: carte).',
     shortAnswerAccepted: ['une'],
     matchingLeft: [{ id: 'l1', label: 'masculine singular' }, { id: 'l2', label: 'feminine singular' }, { id: 'l3', label: 'plural (definite)' }],
     matchingRight: [{ id: 'r1', label: 'les' }, { id: 'r2', label: 'le / un' }, { id: 'r3', label: 'la / une' }],
     matchingPairs: [{ leftId: 'l1', rightId: 'r2' }, { leftId: 'l2', rightId: 'r3' }, { leftId: 'l3', rightId: 'r1' }],
     productionMode: 'written',
-    productionPrompt: 'Write 4 noun phrases with correct articles (2 masculine, 2 feminine).',
+    productionPrompt: 'Write 4 useful noun phrases for newcomer life (bank, transit, health) with correct articles.',
     productionExpected: ['un', 'une', 'le', 'la'],
-    productionSample: 'un livre, le café, une table, la maison',
+    productionSample: 'un billet, le bus, une carte, la banque',
     productionMinWords: 8,
-    miniTestPrompt: 'Choose the correct phrase.',
-    miniTestOptions: ['le table', 'la table', 'un table', 'les table'],
-    miniTestCorrect: 1,
-    miniTestWrongExplanation: 'table is feminine: la table.',
-    writingTestPrompt: 'Write 3 noun phrases with correct articles, including one plural.',
+    miniTestPrompt: 'Choose the correct phrase for "the bank card".',
+    miniTestOptions: ['la carte de banque', 'le carte de banque', 'un carte de banque', 'les carte de banque'],
+    miniTestCorrect: 0,
+    miniTestWrongExplanation: 'Carte is feminine singular: la carte.',
+    writingTestPrompt: 'Write 3 noun phrases with correct articles, including one plural used in daily services.',
     writingTestExpected: ['les'],
-    writingTestSample: 'le livre, la porte, les documents',
-    writingTestMinWords: 6
+    writingTestSample: 'le billet, la carte, les documents',
+    writingTestMinWords: 7
   }),
   buildTemplateLesson({
     lessonNumber: 5,
-    title: '-ER Verbs Present Tense',
-    outcomes: ['Conjugate common -ER verbs', 'Build simple daily action sentences', 'Recognize endings'],
-    vocabularyTargets: ['parler', 'travailler', 'habiter', 'aimer'],
+    title: '-ER Verbs for Everyday Actions',
+    outcomes: ['Conjugate common -ER verbs in present tense', 'Describe simple routines', 'Use correct endings in practical sentences'],
+    vocabularyTargets: ['parler', 'travailler', 'habiter', 'chercher', 'aimer'],
     grammarTargets: ['-ER present endings'],
     teachTitle: '-ER Verb Endings',
-    teachExplanation: 'Remove -ER and add present tense endings: e, es, e, ons, ez, ent.',
-    teachExamples: ['Je parle français.', 'Nous habitons au Canada.'],
+    teachExplanation: 'Remove -ER and add present endings: e, es, e, ons, ez, ent. Keep the subject + verb agreement stable.',
+    teachExamples: ['Je parle français.', 'Nous habitons à Montréal.'],
     practiceMcqPrompt: 'Choose the correct form: Nous ___ à Montréal. (habiter)',
     practiceMcqOptions: ['habite', 'habites', 'habitons', 'habitez'],
     practiceMcqCorrect: 2,
     practiceMcqWrongExplanation: 'Nous takes -ons: habitons.',
-    shortAnswerPrompt: 'Type the ending for vous with a regular -ER verb.',
+    shortAnswerPrompt: 'Type the ending for vous with a regular -ER verb (e.g., vous parl___).',
     shortAnswerAccepted: ['ez', '-ez'],
     matchingLeft: [{ id: 'l1', label: 'je' }, { id: 'l2', label: 'nous' }, { id: 'l3', label: 'vous' }],
     matchingRight: [{ id: 'r1', label: '-ez' }, { id: 'r2', label: '-ons' }, { id: 'r3', label: '-e' }],
     matchingPairs: [{ leftId: 'l1', rightId: 'r3' }, { leftId: 'l2', rightId: 'r2' }, { leftId: 'l3', rightId: 'r1' }],
     productionMode: 'written',
-    productionPrompt: 'Write 4 simple sentences using different -ER verbs.',
-    productionExpected: ['je', 'nous'],
-    productionSample: 'Je parle français. Nous habitons au Canada.',
+    productionPrompt: 'Write 4 short sentences about your day using -ER verbs (work, study, live, search).',
+    productionExpected: ['je', 'nous', 'vous'],
+    productionSample: 'Je travaille le matin. Nous habitons à Calgary. Vous parlez anglais.',
     productionMinWords: 10,
     miniTestPrompt: 'Choose the correct sentence.',
     miniTestOptions: ['Je habites ici.', 'Vous parlons français.', 'Il travaille le matin.', 'Nous aimez le café.'],
     miniTestCorrect: 2,
     miniTestWrongExplanation: 'Il travaille is correctly conjugated.',
-    writingTestPrompt: 'Write two sentences with one -ER verb in je form and one in vous form.',
+    writingTestPrompt: 'Write two sentences with one -ER verb in je form and one in vous form for a class/work context.',
     writingTestExpected: ['je', 'vous'],
-    writingTestSample: 'Je parle anglais. Vous travaillez ici.',
+    writingTestSample: 'Je parle français au cours. Vous travaillez au bureau.',
     writingTestMinWords: 8
   }),
   buildTemplateLesson({
     lessonNumber: 6,
-    title: 'Asking Questions',
-    outcomes: ['Use est-ce que questions', 'Use question words', 'Ask for information politely'],
+    title: 'Asking Questions in Service Situations',
+    outcomes: ['Use est-ce que questions', 'Use core question words', 'Ask for information politely in public services'],
     vocabularyTargets: ['est-ce que', 'où', 'quand', 'comment', 'pourquoi'],
     grammarTargets: ['Question formation', 'Question words'],
     teachTitle: 'Question Patterns',
-    teachExplanation: 'Start with est-ce que for clear beginner questions, then use question words for meaning.',
-    teachExamples: ['Est-ce que vous travaillez ici ?', 'Où est la station ?'],
-    practiceMcqPrompt: 'Which word asks for location?',
+    teachExplanation: 'Use est-ce que for clear beginner questions. Add question words (où, quand, comment) for precise meaning.',
+    teachExamples: ['Est-ce que vous travaillez ici ?', 'Où est le bureau de services ?'],
+    practiceMcqPrompt: 'Which word asks for location in French?',
     practiceMcqOptions: ['Quand', 'Pourquoi', 'Où', 'Comment'],
     practiceMcqCorrect: 2,
     practiceMcqWrongExplanation: 'Où asks “where”.',
@@ -1118,27 +1373,27 @@ const templatedA1Lessons: StructuredLessonContent[] = [
     matchingRight: [{ id: 'r1', label: 'how' }, { id: 'r2', label: 'when' }, { id: 'r3', label: 'where' }],
     matchingPairs: [{ leftId: 'l1', rightId: 'r3' }, { leftId: 'l2', rightId: 'r2' }, { leftId: 'l3', rightId: 'r1' }],
     productionMode: 'mixed',
-    productionPrompt: 'Ask 3 simple service-desk questions in French.',
-    productionExpected: ['est-ce que', 'où'],
-    productionSample: 'Bonjour, est-ce que vous êtes ouvert ? Où est le bureau ?',
+    productionPrompt: 'Ask 3 short questions at a service counter (opening time, location, next step).',
+    productionExpected: ['est-ce que', 'où', 'quand'],
+    productionSample: 'Bonjour, est-ce que vous êtes ouvert ? Où est le bureau ? Quand puis-je revenir ?',
     productionMinWords: 9,
     miniTestPrompt: 'Choose the best beginner question.',
     miniTestOptions: ['Vous travaillez ici.', 'Est-ce que vous travaillez ici ?', 'Pourquoi vous ici.', 'Vous est ici ?'],
     miniTestCorrect: 1,
     miniTestWrongExplanation: 'Use est-ce que + sentence for a clear beginner question.',
-    writingTestPrompt: 'Write two information questions (one with Où, one with Quand).',
+    writingTestPrompt: 'Write two service questions (one with Où, one with Quand).',
     writingTestExpected: ['où', 'quand'],
-    writingTestSample: 'Où est la classe ? Quand est le cours ?',
+    writingTestSample: 'Où est le bureau ? Quand est le rendez-vous ?',
     writingTestMinWords: 8
   }),
   buildTemplateLesson({
     lessonNumber: 7,
-    title: 'Daily Routine',
-    outcomes: ['Describe morning/evening routine', 'Use sequence words', 'Use time references'],
+    title: 'Daily Routine and Study Discipline',
+    outcomes: ['Describe routine with time', 'Use sequence words', 'Talk about work/study habits'],
     vocabularyTargets: ['le matin', 'ensuite', 'puis', 'je me lève', 'je travaille'],
     grammarTargets: ['Simple present routine sentences', 'Sequence connectors'],
     teachTitle: 'Routine Sequencing',
-    teachExplanation: 'Describe routine in simple present and connect actions with ensuite and puis.',
+    teachExplanation: 'Describe routine in simple present and connect steps with ensuite and puis.',
     teachExamples: ['Je me lève à 7h.', 'Ensuite, je prends le bus.'],
     practiceMcqPrompt: 'Choose the best connector to continue a routine sentence.',
     practiceMcqOptions: ['merci', 'ensuite', 'bonjour', 'pourquoi'],
@@ -1150,27 +1405,27 @@ const templatedA1Lessons: StructuredLessonContent[] = [
     matchingRight: [{ id: 'r1', label: 'in the evening' }, { id: 'r2', label: 'then / next' }, { id: 'r3', label: 'in the morning' }],
     matchingPairs: [{ leftId: 'l1', rightId: 'r3' }, { leftId: 'l2', rightId: 'r2' }, { leftId: 'l3', rightId: 'r1' }],
     productionMode: 'written',
-    productionPrompt: 'Write 4-5 sentences about your weekday routine using one connector.',
+    productionPrompt: 'Write 4-5 sentences about your weekday routine (work/study) using at least one connector.',
     productionExpected: ['ensuite'],
-    productionSample: 'Je me lève à 7h. Ensuite, je prends le bus.',
+    productionSample: 'Je me lève à 7h. Ensuite, je prends le bus. Puis, je commence le travail.',
     productionMinWords: 14,
     miniTestPrompt: 'Choose the best routine sentence.',
     miniTestOptions: ['Ensuite, je prendre le bus.', 'Je me lève à 7h.', 'Pourquoi je prends le bus au travail ?', 'Je suis prêt pour le cours.'],
     miniTestCorrect: 1,
     miniTestWrongExplanation: 'This is a correct routine sentence in simple present.',
-    writingTestPrompt: 'Write two routine sentences and include a time.',
+    writingTestPrompt: 'Write two routine sentences with one time and one connector.',
     writingTestExpected: ['7h'],
-    writingTestSample: 'Je me lève à 7h. Je travaille le matin.',
+    writingTestSample: 'Je me lève à 7h. Ensuite, je travaille le matin.',
     writingTestMinWords: 8
   }),
   buildTemplateLesson({
     lessonNumber: 8,
-    title: 'Time and Schedules',
-    outcomes: ['Recognize times and schedules', 'Ask what time', 'State simple schedule details'],
+    title: 'Time, Schedules, and Appointments',
+    outcomes: ['Read and state times', 'Ask what time', 'Handle simple schedules and appointments'],
     vocabularyTargets: ['heure', 'à', 'demain', 'aujourd’hui', 'rendez-vous'],
     grammarTargets: ['Time expressions', 'Schedule statements'],
     teachTitle: 'Time Expressions',
-    teachExplanation: 'Use simple time expressions to discuss classes, work, and appointments.',
+    teachExplanation: 'Use simple time expressions to discuss class, work shifts, and appointments.',
     teachExamples: ['Le cours est à 9h.', 'Mon rendez-vous est demain.'],
     practiceMcqPrompt: 'Choose the sentence about an appointment time.',
     practiceMcqOptions: ['Je suis prêt.', 'Le rendez-vous est à 10h.', 'Bonjour, où est la salle ?', 'Je parle demain.'],
@@ -1182,27 +1437,27 @@ const templatedA1Lessons: StructuredLessonContent[] = [
     matchingRight: [{ id: 'r1', label: 'today' }, { id: 'r2', label: 'time/hour' }, { id: 'r3', label: 'tomorrow' }],
     matchingPairs: [{ leftId: 'l1', rightId: 'r3' }, { leftId: 'l2', rightId: 'r1' }, { leftId: 'l3', rightId: 'r2' }],
     productionMode: 'mixed',
-    productionPrompt: 'Say or write two sentences about your class or appointment schedule.',
+    productionPrompt: 'Say or write two sentences about class/work schedule and one appointment time.',
     productionExpected: ['à', 'rendez-vous'],
-    productionSample: 'Mon rendez-vous est à 10h. Le cours est demain.',
+    productionSample: 'Mon rendez-vous est à 10h. Le cours est demain à 18h.',
     productionMinWords: 10,
     miniTestPrompt: 'Choose the best question to ask time.',
     miniTestOptions: ['Où est la classe ?', 'Comment ça va ?', 'Quelle heure est-il ?', 'Pourquoi merci ?'],
     miniTestCorrect: 2,
     miniTestWrongExplanation: 'Quelle heure est-il ? asks the time.',
-    writingTestPrompt: 'Write one appointment sentence and one class schedule sentence.',
+    writingTestPrompt: 'Write one appointment sentence and one class/work schedule sentence.',
     writingTestExpected: ['rendez-vous', 'à'],
     writingTestSample: 'Mon rendez-vous est à 14h. Le cours est à 16h.',
     writingTestMinWords: 10
   }),
   buildTemplateLesson({
     lessonNumber: 9,
-    title: 'Directions and Places',
-    outcomes: ['Ask for location', 'Use simple place words', 'Understand basic direction questions'],
+    title: 'Directions and Public Places',
+    outcomes: ['Ask for location clearly', 'Use direction words', 'Respond to simple direction requests'],
     vocabularyTargets: ['où', 'station', 'bureau', 'à gauche', 'à droite'],
     grammarTargets: ['Location questions', 'Place expressions'],
     teachTitle: 'Asking for Directions',
-    teachExplanation: 'Use Où est... ? and basic direction words in simple situations.',
+    teachExplanation: 'Use Où est... ? plus short direction answers in transit or service buildings.',
     teachExamples: ['Où est la station ?', 'Le bureau est à droite.'],
     practiceMcqPrompt: 'Which sentence asks for a location?',
     practiceMcqOptions: ['Le bureau est ici.', 'Où est la station ?', 'Merci beaucoup.', 'Je m’appelle Karim.'],
@@ -1214,7 +1469,7 @@ const templatedA1Lessons: StructuredLessonContent[] = [
     matchingRight: [{ id: 'r1', label: 'station' }, { id: 'r2', label: 'to the right' }, { id: 'r3', label: 'to the left' }],
     matchingPairs: [{ leftId: 'l1', rightId: 'r3' }, { leftId: 'l2', rightId: 'r2' }, { leftId: 'l3', rightId: 'r1' }],
     productionMode: 'spoken',
-    productionPrompt: 'Ask for a place and respond with one simple direction.',
+    productionPrompt: 'Create a short direction exchange: ask location, then give one clear direction.',
     productionExpected: ['où', 'à droite'],
     productionSample: 'Où est la station ? La station est à droite.',
     productionMinWords: 8,
@@ -1222,19 +1477,19 @@ const templatedA1Lessons: StructuredLessonContent[] = [
     miniTestOptions: ['Merci au revoir.', 'La station est à droite.', 'Je suis étudiant.', 'Bonjour je m’appelle.'],
     miniTestCorrect: 1,
     miniTestWrongExplanation: 'This is a correct simple direction response.',
-    writingTestPrompt: 'Write one question and one answer about location.',
+    writingTestPrompt: 'Write one location question and one direction answer.',
     writingTestExpected: ['où', 'est'],
     writingTestSample: 'Où est le bureau ? Le bureau est ici.',
     writingTestMinWords: 8
   }),
   buildTemplateLesson({
     lessonNumber: 10,
-    title: 'Shopping and Prices',
-    outcomes: ['Ask simple shopping questions', 'Recognize prices', 'Use polite shopping phrases'],
+    title: 'Shopping and Prices in Canada',
+    outcomes: ['Ask price politely', 'Request an item', 'Handle short shopping interactions'],
     vocabularyTargets: ['combien', 'ça coûte', 'euro', 'dollar', 's’il vous plaît'],
     grammarTargets: ['Price questions', 'Polite request phrases'],
     teachTitle: 'Shopping Questions',
-    teachExplanation: 'Use Combien and Ça coûte combien ? to ask prices politely.',
+    teachExplanation: 'Use Combien and polite request phrases for cafés, stores, and counters.',
     teachExamples: ['Combien ça coûte ?', 'Un café, s’il vous plaît.'],
     practiceMcqPrompt: 'Which phrase asks for a price?',
     practiceMcqOptions: ['Merci beaucoup', 'Combien ça coûte ?', 'Où est la station ?', 'Je m’appelle Sara'],
@@ -1246,7 +1501,7 @@ const templatedA1Lessons: StructuredLessonContent[] = [
     matchingRight: [{ id: 'r1', label: 'it costs' }, { id: 'r2', label: 'please' }, { id: 'r3', label: 'how much' }],
     matchingPairs: [{ leftId: 'l1', rightId: 'r3' }, { leftId: 'l2', rightId: 'r2' }, { leftId: 'l3', rightId: 'r1' }],
     productionMode: 'spoken',
-    productionPrompt: 'Say a short shopping interaction with one item and a price question.',
+    productionPrompt: 'Say a short shopping interaction with greeting, item request, and price question.',
     productionExpected: ['bonjour', 'combien'],
     productionSample: 'Bonjour. Un café, s’il vous plaît. Combien ça coûte ?',
     productionMinWords: 8,
@@ -1254,7 +1509,7 @@ const templatedA1Lessons: StructuredLessonContent[] = [
     miniTestOptions: ['Café.', 'Je veux un café.', 'Un café, s’il vous plaît.', 'Bonjour, combien ça coûte ?'],
     miniTestCorrect: 2,
     miniTestWrongExplanation: 'Add s’il vous plaît for a polite request.',
-    writingTestPrompt: 'Write a 2-line shopping interaction (request + price question).',
+    writingTestPrompt: 'Write a 2-line shopping interaction (polite request + price question).',
     writingTestExpected: ['s’il', 'combien'],
     writingTestSample: 'Un pain, s’il vous plaît. Combien ça coûte ?',
     writingTestMinWords: 8
@@ -1262,14 +1517,19 @@ const templatedA1Lessons: StructuredLessonContent[] = [
   buildTemplateLesson({
     lessonNumber: 11,
     title: 'Appointments and Polite Requests',
-    outcomes: ['Make a simple appointment request', 'Use polite request forms', 'Confirm a time/date'],
+    outcomes: ['Request appointments politely', 'Ask availability', 'Confirm a date/time clearly'],
     vocabularyTargets: ['rendez-vous', 'je voudrais', 'disponible', 'demain', 'à'],
     grammarTargets: ['Polite request frame', 'Availability/time questions'],
     teachTitle: 'Appointment Requests',
     teachExplanation: 'Use polite forms like Je voudrais ... and simple time statements to request appointments.',
     teachExamples: ['Je voudrais un rendez-vous.', 'Êtes-vous disponible demain ?'],
     practiceMcqPrompt: 'Which sentence is a polite appointment request?',
-    practiceMcqOptions: ['Donnez rendez-vous.', 'Je voudrais un rendez-vous.', 'Rendez-vous pourquoi.', 'Je suis rendez-vous.'],
+    practiceMcqOptions: [
+      'Donnez-moi un rendez-vous.',
+      'Je voudrais un rendez-vous.',
+      'Pourquoi un rendez-vous ?',
+      'Je confirme mon rendez-vous.'
+    ],
     practiceMcqCorrect: 1,
     practiceMcqWrongExplanation: 'Je voudrais ... is a polite beginner request pattern.',
     shortAnswerPrompt: 'Type the polite starter for "I would like..." in French.',
@@ -1278,7 +1538,7 @@ const templatedA1Lessons: StructuredLessonContent[] = [
     matchingRight: [{ id: 'r1', label: 'available' }, { id: 'r2', label: 'appointment' }, { id: 'r3', label: 'tomorrow' }],
     matchingPairs: [{ leftId: 'l1', rightId: 'r2' }, { leftId: 'l2', rightId: 'r1' }, { leftId: 'l3', rightId: 'r3' }],
     productionMode: 'mixed',
-    productionPrompt: 'Ask for an appointment and suggest one time.',
+    productionPrompt: 'Ask for an appointment at a clinic/service office and suggest one time.',
     productionExpected: ['je voudrais', 'rendez-vous', 'à'],
     productionSample: 'Bonjour, je voudrais un rendez-vous demain à 10h.',
     productionMinWords: 9,
@@ -1286,7 +1546,7 @@ const templatedA1Lessons: StructuredLessonContent[] = [
     miniTestOptions: ['Vous disponible ?', 'Êtes-vous disponible demain ?', 'Demain rendez-vous?', 'Je voudrais où ?'],
     miniTestCorrect: 1,
     miniTestWrongExplanation: 'This is the clearest beginner availability question.',
-    writingTestPrompt: 'Write a short appointment request (1-2 sentences).',
+    writingTestPrompt: 'Write a short appointment request with one availability detail.',
     writingTestExpected: ['je voudrais', 'rendez-vous'],
     writingTestSample: 'Bonjour, je voudrais un rendez-vous demain.',
     writingTestMinWords: 7
@@ -1294,11 +1554,11 @@ const templatedA1Lessons: StructuredLessonContent[] = [
   buildTemplateLesson({
     lessonNumber: 12,
     title: 'Module 1 Integration Checkpoint',
-    outcomes: ['Combine greetings, identity, questions, and routine language', 'Produce a short practical interaction', 'Prepare for A1 module review'],
+    outcomes: ['Combine greeting + identity + request', 'Handle a short practical interaction', 'Prepare for A1 module transition'],
     vocabularyTargets: ['bonjour', 'je m’appelle', 'je suis', 'où', 'combien', 'rendez-vous'],
     grammarTargets: ['Integrated A1 beginner patterns'],
     teachTitle: 'How to Combine A1 Tools',
-    teachExplanation: 'This checkpoint combines greetings, identity, routine, and service questions in one practical sequence.',
+    teachExplanation: 'This checkpoint combines core A1 tools into one real communication sequence.',
     teachExamples: ['Bonjour, je m’appelle Lina.', 'Je voudrais un rendez-vous à 10h.'],
     practiceMcqPrompt: 'Which option combines greeting + identity correctly?',
     practiceMcqOptions: ['Bonjour, merci.', "Bonjour, je m'appelle Ali.", 'Au revoir, combien ça coûte ?', 'Je voudrais où est le bureau.'],
@@ -1310,7 +1570,7 @@ const templatedA1Lessons: StructuredLessonContent[] = [
     matchingRight: [{ id: 'r1', label: 'Combien ça coûte ?' }, { id: 'r2', label: 'Où est ... ?' }, { id: 'r3', label: 'Je m’appelle ...' }],
     matchingPairs: [{ leftId: 'l1', rightId: 'r3' }, { leftId: 'l2', rightId: 'r2' }, { leftId: 'l3', rightId: 'r1' }],
     productionMode: 'mixed',
-    productionPrompt: 'Create a short 3-line practical interaction using greeting, identity, and one question.',
+    productionPrompt: 'Create a short 3-line interaction for a service desk: greeting, identity, request/question.',
     productionExpected: ['bonjour', "je m'appelle"],
     productionSample: "Bonjour. Je m'appelle Lina. Où est le bureau ?",
     productionMinWords: 12,
@@ -1323,7 +1583,7 @@ const templatedA1Lessons: StructuredLessonContent[] = [
     ],
     miniTestCorrect: 0,
     miniTestWrongExplanation: 'The first option combines correct A1 beginner patterns.',
-    writingTestPrompt: 'Write a 3-line mini interaction (greeting + self-intro + simple question/request).',
+    writingTestPrompt: 'Write a 3-line mini interaction (greeting + self-intro + practical request).',
     writingTestExpected: ['bonjour', "je m'appelle"],
     writingTestSample: "Bonjour. Je m'appelle Omar. Je voudrais un rendez-vous.",
     writingTestMinWords: 12
@@ -1776,25 +2036,81 @@ function sessionTypeLabel(type: ReturnType<typeof a1ProgramSessionType>) {
   }
 }
 
-function buildA1GeneratedPracticeOptions(focus: A1ProgramFocus): [string, string, string, string] {
+type A1SessionType = ReturnType<typeof a1ProgramSessionType>;
+
+function buildA1GeneratedPracticeOptions(
+  focus: A1ProgramFocus,
+  sessionType: A1SessionType
+): [string, string, string, string] {
   const correct = focus.scenarioExamples[0] ?? focus.teachExamples[0] ?? 'Bonjour.';
-  const keywordA = focus.vocabularyTargets[0] ?? 'mot';
-  const keywordB = focus.vocabularyTargets[1] ?? 'mot';
-  const keywordC = focus.vocabularyTargets[2] ?? 'mot';
-  return [
-    correct,
-    'Bonjour, merci. Au revoir.',
-    `${keywordA}, ${keywordB}, ${keywordC}.`,
-    `Je ${keywordA} au Canada.`
-  ];
+  const nearMiss = focus.scenarioExamples[1] ?? focus.teachExamples[1] ?? 'Je comprends la situation.';
+
+  if (sessionType === 'listening') {
+    return [correct, nearMiss, 'Pouvez-vous répéter, s’il vous plaît ?', 'Merci pour votre aide.'];
+  }
+  if (sessionType === 'speaking') {
+    return [correct, nearMiss, 'Bonjour, je vais pratiquer cette phrase.', 'Je ne comprends pas encore.'];
+  }
+  if (sessionType === 'writing') {
+    return [correct, nearMiss, 'Bonjour, je vous écris pour une demande.', 'Je confirme votre message.'];
+  }
+  if (sessionType === 'review') {
+    return [correct, nearMiss, focus.teachExamples[0] ?? 'Bonjour, je voudrais une information.', 'Au revoir et merci.'];
+  }
+  if (sessionType === 'benchmark') {
+    return [correct, nearMiss, 'Bonjour, je peux donner un détail pratique.', 'Merci pour votre attention.'];
+  }
+
+  return [correct, nearMiss, 'Bonjour. Merci pour votre aide.', "Je suis fatigué aujourd'hui."];
 }
 
-function buildA1GeneratedMiniTestOptions(focus: A1ProgramFocus): [string, string, string, string] {
-  const correct = focus.scenarioExamples[0] ?? focus.teachExamples[0] ?? 'Bonjour.';
-  const offTask = focus.scenarioExamples[1] ?? 'Merci.';
-  const keywordA = focus.vocabularyTargets[0] ?? 'mot';
-  const keywordB = focus.vocabularyTargets[1] ?? 'mot';
-  return [correct, offTask, `${keywordA} ${keywordB}.`, `Je suis ${keywordA}.`];
+function buildA1GeneratedMiniTestOptions(
+  focus: A1ProgramFocus,
+  sessionType: A1SessionType
+): [string, string, string, string] {
+  const complete = `${focus.scenarioExamples[0] ?? focus.teachExamples[0] ?? 'Bonjour.'} ${
+    focus.scenarioExamples[1] ?? ''
+  }`.trim();
+  const correct = complete || focus.scenarioExamples[0] || focus.teachExamples[0] || 'Bonjour.';
+  const partial = focus.scenarioExamples[0] ?? 'Bonjour.';
+  const generic = 'Merci pour votre aide.';
+
+  if (sessionType === 'listening') {
+    return [correct, partial, 'Pouvez-vous répéter ?', generic];
+  }
+  if (sessionType === 'speaking') {
+    return [correct, partial, 'Bonjour, je vais essayer encore.', generic];
+  }
+  if (sessionType === 'writing') {
+    return [correct, partial, 'Bonjour, je vous écris pour une demande.', generic];
+  }
+  if (sessionType === 'review') {
+    return [correct, partial, focus.teachExamples[0] ?? 'Bonjour, je voudrais un rendez-vous.', generic];
+  }
+  if (sessionType === 'benchmark') {
+    return [correct, partial, 'Bonjour, je peux expliquer mon besoin.', generic];
+  }
+
+  return [correct, partial, 'Bonjour, je peux poser une question.', generic];
+}
+
+function buildA1ShortAnswerPrompt(focus: A1ProgramFocus, sessionType: A1SessionType): string {
+  if (sessionType === 'listening') {
+    return `Type one key word you heard in this audio topic (${focus.title.toLowerCase()}).`;
+  }
+  if (sessionType === 'speaking') {
+    return `Type one phrase starter you can speak in ${focus.title.toLowerCase()}.`;
+  }
+  if (sessionType === 'writing') {
+    return `Type one keyword you should include in a short message for ${focus.title.toLowerCase()}.`;
+  }
+  if (sessionType === 'review') {
+    return `Type one review keyword from ${focus.title.toLowerCase()}.`;
+  }
+  if (sessionType === 'benchmark') {
+    return `Type one core expression needed for this benchmark (${focus.title.toLowerCase()}).`;
+  }
+  return `Type one useful word for ${focus.title.toLowerCase()}.`;
 }
 
 function buildA1ProgrammaticSpec(lessonNumber: number): A1TemplateSpec {
@@ -1812,6 +2128,17 @@ function buildA1ProgrammaticSpec(lessonNumber: number): A1TemplateSpec {
     isSpeaking ? 'spoken' : isWriting ? 'written' : isBenchmark || isReview ? 'mixed' : 'mixed';
 
   const expectedAnchor = focus.baseQuestionWord ?? focus.vocabularyTargets[0] ?? 'bonjour';
+  const keyTerms = Array.from(
+    new Set([focus.vocabularyTargets[0], focus.vocabularyTargets[1], focus.vocabularyTargets[2], focus.baseQuestionWord].filter(Boolean))
+  ) as string[];
+  const matchingRightLabels =
+    sessionType === 'listening'
+      ? ['main message term', 'question/location cue', 'topic word']
+      : sessionType === 'writing'
+        ? ['message keyword', 'request/detail term', 'topic word']
+        : sessionType === 'review'
+          ? ['review anchor term', 'high-frequency expression', 'topic word']
+          : ['core topic word', 'useful daily expression', 'A1 vocabulary item'];
   const reviewPromptHint = isReview
     ? 'Use one sentence from memory, then improve it with one detail.'
     : isBenchmark
@@ -1847,28 +2174,21 @@ function buildA1ProgrammaticSpec(lessonNumber: number): A1TemplateSpec {
       isBenchmark
         ? `Pick the best A1 response for this ${focus.title.toLowerCase()} situation.`
         : `Pick the best beginner sentence for ${focus.title.toLowerCase()}.`,
-    practiceMcqOptions: buildA1GeneratedPracticeOptions(focus),
+    practiceMcqOptions: buildA1GeneratedPracticeOptions(focus, sessionType),
     practiceMcqCorrect: 0,
     practiceMcqWrongExplanation:
       isReview ? 'Review the model expressions and choose the sentence that is complete and useful.' : 'Choose the complete and practical A1 sentence.',
-    shortAnswerPrompt:
-      isListening
-        ? `Type one key word you heard in this topic (${focus.title.toLowerCase()}).`
-        : isBenchmark
-          ? `Type one core expression from ${focus.title.toLowerCase()}.`
-          : `Type one useful word for ${focus.title.toLowerCase()}.`,
-    shortAnswerAccepted: Array.from(
-      new Set([focus.vocabularyTargets[0], focus.vocabularyTargets[1], focus.vocabularyTargets[2], focus.baseQuestionWord].filter(Boolean))
-    ) as string[],
+    shortAnswerPrompt: buildA1ShortAnswerPrompt(focus, sessionType),
+    shortAnswerAccepted: keyTerms,
     matchingLeft: [
       { id: `l${lessonNumber}1`, label: focus.vocabularyTargets[0] ?? 'bonjour' },
       { id: `l${lessonNumber}2`, label: focus.vocabularyTargets[1] ?? 'merci' },
       { id: `l${lessonNumber}3`, label: focus.vocabularyTargets[2] ?? 'question' }
     ],
     matchingRight: [
-      { id: `r${lessonNumber}1`, label: 'core topic word' },
-      { id: `r${lessonNumber}2`, label: 'useful daily expression' },
-      { id: `r${lessonNumber}3`, label: 'A1 vocabulary item' }
+      { id: `r${lessonNumber}1`, label: matchingRightLabels[0] },
+      { id: `r${lessonNumber}2`, label: matchingRightLabels[1] },
+      { id: `r${lessonNumber}3`, label: matchingRightLabels[2] }
     ],
     matchingPairs: [
       { leftId: `l${lessonNumber}1`, rightId: `r${lessonNumber}1` },
@@ -1891,7 +2211,7 @@ function buildA1ProgrammaticSpec(lessonNumber: number): A1TemplateSpec {
       isBenchmark
         ? `Pick the best integrated A1 line for this ${focus.title.toLowerCase()} benchmark task.`
         : `Pick the correct A1 sentence for ${focus.title.toLowerCase()}.`,
-    miniTestOptions: buildA1GeneratedMiniTestOptions(focus),
+    miniTestOptions: buildA1GeneratedMiniTestOptions(focus, sessionType),
     miniTestCorrect: 0,
     miniTestWrongExplanation:
       isBenchmark ? 'Benchmark items require a complete, practical sentence with correct beginner structure.' : 'Pick the complete, useful A1 sentence.',
@@ -1900,7 +2220,9 @@ function buildA1ProgrammaticSpec(lessonNumber: number): A1TemplateSpec {
         ? `Rewrite two short sentences from memory about ${focus.title.toLowerCase()} and improve one detail.`
         : isBenchmark
           ? `Write a short A1 functional response (2-3 lines) about ${focus.title.toLowerCase()}.`
-          : `Write 2 short A1 sentences about ${focus.title.toLowerCase()}.`,
+          : isWriting
+            ? `Write a short practical message (2-3 lines) for ${focus.scenarioTitle.toLowerCase()}.`
+            : `Write 2 short A1 sentences about ${focus.title.toLowerCase()}.`,
     writingTestExpected: [focus.vocabularyTargets[0] ?? 'bonjour', expectedAnchor],
     writingTestSample: `${focus.scenarioExamples[0] ?? focus.teachExamples[0]}. ${focus.scenarioExamples[1] ?? focus.teachExamples[1] ?? ''}`.trim(),
     writingTestMinWords: isBenchmark ? 14 : 8,
@@ -1951,6 +2273,7 @@ const generatedA1Sessions13to40: StructuredLessonContent[] = Array.from({ length
 export const a1StructuredLessons: StructuredLessonContent[] = [
   detailedA1Lesson1,
   detailedA1Lesson2,
+  detailedA1Lesson3,
   ...templatedA1Lessons,
   ...generatedA1Sessions13to40
 ];

@@ -70,12 +70,12 @@ export function AuthLandingScreen({ navigation, onContinueGuest }: Props) {
           </Animated.View>
           <View style={styles.bubble}>
             <Text style={styles.bubbleText}>
-              Bonjour! I&apos;m your AI French teacher. Let&apos;s practice French for Canada.
+              Bonjour. I&apos;m your AI coach for Canadian French training.
             </Text>
           </View>
 
-          <Text style={styles.title}>Learn French for Canadian Immigration with AI</Text>
-          <Text style={styles.subtitle}>Improve your CLB score with daily AI-powered French speaking practice.</Text>
+          <Text style={styles.title}>French Training for Canada</Text>
+          <Text style={styles.subtitle}>Structured daily sessions to improve CLB performance for immigration goals.</Text>
 
           <View style={styles.ctaRow}>
             <Pressable
@@ -88,7 +88,7 @@ export function AuthLandingScreen({ navigation, onContinueGuest }: Props) {
               ]}
               onPress={() => navigation.navigate('LoginScreen')}
             >
-              <Text style={styles.ctaPrimaryText}>Start Learning</Text>
+              <Text style={styles.ctaPrimaryText}>Start Training</Text>
             </Pressable>
           </View>
 
@@ -98,12 +98,12 @@ export function AuthLandingScreen({ navigation, onContinueGuest }: Props) {
             style={({ pressed }) => [styles.guestButton, (pressed || guestHovered) && styles.guestButtonHover]}
             onPress={onContinueGuest}
           >
-            <Text style={styles.guestButtonText}>Continue as Guest</Text>
+            <Text style={styles.guestButtonText}>Try as Guest</Text>
           </Pressable>
           <Pressable onPress={() => navigation.navigate('LoginScreen')}>
-            <Text style={styles.registerLink}>Already have an account? Login</Text>
+            <Text style={styles.registerLink}>Already registered? Sign in</Text>
           </Pressable>
-          <Text style={styles.socialProof}>⭐ Trusted by learners preparing for Canadian immigration</Text>
+          <Text style={styles.socialProof}>Used by learners preparing for Canadian immigration pathways</Text>
         </Animated.View>
 
         <Animated.View style={[styles.featuresWrap, { opacity: featureOpacity, transform: [{ translateY: featureTranslateY }] }]}>
@@ -114,7 +114,7 @@ export function AuthLandingScreen({ navigation, onContinueGuest }: Props) {
             style={[styles.featureCard, hoveredFeature === 'speaking' && styles.featureCardHover]}
           >
             <Text style={styles.featureIcon}>🗣️</Text>
-            <Text style={styles.featureText}>AI French Speaking Practice</Text>
+            <Text style={styles.featureText}>AI speaking practice</Text>
           </Pressable>
           <Pressable
             onPress={() => undefined}
@@ -123,7 +123,7 @@ export function AuthLandingScreen({ navigation, onContinueGuest }: Props) {
             style={[styles.featureCard, hoveredFeature === 'clb' && styles.featureCardHover]}
           >
             <Text style={styles.featureIcon}>🎯</Text>
-            <Text style={styles.featureText}>CLB & TEF Focused Training</Text>
+            <Text style={styles.featureText}>CLB + TEF aligned sessions</Text>
           </Pressable>
           <Pressable
             onPress={() => undefined}
@@ -132,7 +132,7 @@ export function AuthLandingScreen({ navigation, onContinueGuest }: Props) {
             style={[styles.featureCard, hoveredFeature === 'canada' && styles.featureCardHover]}
           >
             <Text style={styles.featureIcon}>🍁</Text>
-            <Text style={styles.featureText}>Designed for Canada Immigration</Text>
+            <Text style={styles.featureText}>Canadian context scenarios</Text>
           </Pressable>
           <Pressable
             onPress={() => undefined}
@@ -141,7 +141,7 @@ export function AuthLandingScreen({ navigation, onContinueGuest }: Props) {
             style={[styles.featureCard, hoveredFeature === 'agents' && styles.featureCardHover]}
           >
             <Text style={styles.featureIcon}>🤖</Text>
-            <Text style={styles.featureText}>AI Automation Agents for Personalized Learning Journeys</Text>
+            <Text style={styles.featureText}>Adaptive feedback and coaching</Text>
           </Pressable>
 
           <View style={styles.trustBlock}>

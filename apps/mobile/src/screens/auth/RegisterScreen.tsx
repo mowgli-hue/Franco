@@ -86,7 +86,7 @@ export function RegisterScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         <View style={styles.header}>
           <Text style={styles.title}>Create your account</Text>
-          <Text style={styles.subtitle}>Start your AI-guided French path for Canadian immigration.</Text>
+          <Text style={styles.subtitle}>Start your AI-guided French training for Canada.</Text>
         </View>
 
         <Card>

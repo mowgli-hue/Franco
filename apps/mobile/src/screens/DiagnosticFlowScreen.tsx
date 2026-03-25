@@ -31,8 +31,8 @@ const levelOptions: LevelOption[] = [
   { id: 'none', label: 'No knowledge', hint: 'Approx. pre-CLB 1' },
   { id: 'basic', label: 'Basic words and phrases', hint: 'Approx. CLB 1-2' },
   { id: 'simple', label: 'Can form simple sentences', hint: 'Approx. CLB 2-3' },
-  { id: 'conversation', label: 'Can hold conversation', hint: 'Approx. CLB 4-5' },
-  { id: 'comfortable', label: 'Comfortable discussing topics', hint: 'Approx. CLB 5+' }
+  { id: 'conversation', label: 'Can hold basic conversations', hint: 'Approx. CLB 4-5' },
+  { id: 'comfortable', label: 'Comfortable discussing common topics', hint: 'Approx. CLB 5+' }
 ];
 
 const MAX_DIAGNOSTIC_QUESTIONS = 15;
@@ -118,7 +118,7 @@ export function DiagnosticFlowScreen({ navigation, route }: Props) {
           <Card>
             <Text style={styles.step}>Step 3 of 5</Text>
             <Text style={styles.title}>How would you describe your current French level?</Text>
-            <Text style={styles.subtitle}>Select one level to calibrate your starting path.</Text>
+            <Text style={styles.subtitle}>Select one option so we can set your starting level.</Text>
 
             <View style={styles.optionList}>
               {levelOptions.map((option) => {

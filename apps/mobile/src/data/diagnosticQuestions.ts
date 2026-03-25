@@ -99,7 +99,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'a2-r1',
       tier: 'A2',
       domain: 'reading',
-      passage: 'Centre de services: La réunion commence à 9 h. Apportez vos notes et votre badge.',
+      passage: 'Vancouver centre de services: La réunion commence à 9 h. Apportez vos notes et votre badge.',
       prompt: 'What should you bring to the meeting?',
       options: ['Passport only', 'Notebook and badge', 'Lunch', 'Laptop charger only'],
       correctOption: 1
@@ -121,7 +121,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'a2-v2',
       tier: 'A2',
       domain: 'vocabulary',
-      prompt: 'Opposite of "chaud" is:',
+      prompt: 'Opposite of "chaud" in Canada weather context is:',
       options: ['froid', 'lent', 'petit', 'fort'],
       correctOption: 0
     },
@@ -137,7 +137,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'a2-v3',
       tier: 'A2',
       domain: 'vocabulary',
-      prompt: 'Choose the best word: Je dois remplir un ___.',
+      prompt: 'Choose the best word (immigration/service office): Je dois remplir un ___.',
       options: ['formulaire', 'quartier', 'trajet', 'repas'],
       correctOption: 0
     },
@@ -145,7 +145,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'a2-r2',
       tier: 'A2',
       domain: 'reading',
-      passage: 'Bonjour, je ne peux pas venir mardi au bureau. Je suis disponible jeudi après-midi.',
+      passage: 'Bonjour, je ne peux pas venir mardi au bureau de Toronto. Je suis disponible jeudi après-midi.',
       prompt: 'When is the person available?',
       options: ['Tuesday morning', 'Thursday afternoon', 'Wednesday evening', 'Friday afternoon'],
       correctOption: 1
@@ -164,7 +164,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'b1-v1',
       tier: 'B1',
       domain: 'vocabulary',
-      prompt: 'Choose the closest meaning of "soutenir".',
+      prompt: 'Choose the closest meaning of "soutenir" in a Canada workplace/support context.',
       options: ['abandonner', 'appuyer', 'eviter', 'retarder'],
       correctOption: 1
     },
@@ -190,7 +190,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'b1-v2',
       tier: 'B1',
       domain: 'vocabulary',
-      prompt: 'The term "démarche" is best translated as:',
+      prompt: 'The term "démarche" in Canada administrative context is best translated as:',
       options: ['step/process', 'transport', 'housing', 'salary'],
       correctOption: 0
     },
@@ -206,7 +206,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'b1-v3',
       tier: 'B1',
       domain: 'vocabulary',
-      prompt: 'Closest meaning of "délai":',
+      prompt: 'Closest meaning of "délai" in ServiceOntario processing context:',
       options: ['deadline/period', 'salary bonus', 'neighborhood', 'passport office'],
       correctOption: 0
     },
@@ -233,7 +233,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'b2-v1',
       tier: 'B2',
       domain: 'vocabulary',
-      prompt: 'Select the closest meaning of "pertinent" in context.',
+      prompt: 'Select the closest meaning of "pertinent" in a Canada policy/report context.',
       options: ['irrelevant', 'appropriate', 'delayed', 'mandatory'],
       correctOption: 1
     },
@@ -242,7 +242,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       tier: 'B2',
       domain: 'reading',
       passage:
-        'Afin d\'optimiser les services, l\'organisme mettra en œuvre une plateforme numérique permettant un suivi personnalisé des dossiers.',
+        'Afin d\'optimiser les services aux nouveaux arrivants au Canada, l\'organisme mettra en œuvre une plateforme numérique permettant un suivi personnalisé des dossiers.',
       prompt: 'What is the main purpose of the new platform?',
       options: [
         'Reduce staff salaries',
@@ -269,7 +269,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'b2-v2',
       tier: 'B2',
       domain: 'vocabulary',
-      prompt: '"Mettre en œuvre" means:',
+      prompt: '"Mettre en œuvre" in ServiceOntario-style public-service planning means:',
       options: ['to postpone', 'to implement', 'to summarize', 'to negotiate'],
       correctOption: 1
     },
@@ -290,7 +290,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'b2-v3',
       tier: 'B2',
       domain: 'vocabulary',
-      prompt: 'Closest meaning of "enjeu" in professional context:',
+      prompt: 'Closest meaning of "enjeu" in immigration/workplace professional context:',
       options: ['stake/issue', 'salary slip', 'meeting room', 'transport stop'],
       correctOption: 0
     },
@@ -299,7 +299,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       tier: 'B2',
       domain: 'reading',
       passage:
-        'Le rapport recommande une mise en œuvre progressive afin de limiter les risques opérationnels et de garantir une adoption durable.',
+        'Le rapport de services au Canada recommande une mise en œuvre progressive afin de limiter les risques opérationnels et de garantir une adoption durable.',
       prompt: 'Why is progressive implementation recommended?',
       options: [
         'To reduce operational risk',

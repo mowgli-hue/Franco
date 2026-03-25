@@ -386,6 +386,7 @@ const A2_AUTHORED_CONTEXTS: Partial<Record<number, A2AuthoredContext>> = {
 function makeA2Lesson(spec: A2Spec): StructuredLessonContent {
   const idb = `a2l${spec.lessonNumber}`;
   const context = spec.authoredContext ?? A2_AUTHORED_CONTEXTS[spec.lessonNumber];
+  const grammarAnchor = spec.grammarTargets[0] ?? 'target form';
   return {
     id: `a2-structured-${spec.lessonNumber}`,
     curriculumLessonId: `a2-lesson-${spec.lessonNumber}`,
@@ -420,9 +421,27 @@ function makeA2Lesson(spec: A2Spec): StructuredLessonContent {
                   explanation: context.scenarioExplanation,
                   examples: context.scenarioExamples,
                   companionTip: 'Practice these lines as real messages you might use in Canada.'
+                },
+                {
+                  id: `${idb}-seg3`,
+                  title: 'Common Mistakes to Avoid',
+                  explanation: `A2 learners often lose control of ${grammarAnchor.toLowerCase()} when sentences get longer. Keep one clear idea per sentence.`,
+                  examples: [
+                    spec.sampleTeach[0] ?? 'Demain, je vais appeler la clinique.',
+                    spec.sampleTeach[1] ?? "J'ai besoin d'aide pour ce formulaire."
+                  ],
+                  companionTip: 'Use connector + detail, but do not overload one sentence.'
                 }
               ]
-            : [])
+            : [
+                {
+                  id: `${idb}-seg3`,
+                  title: 'Common Mistakes to Avoid',
+                  explanation: `Keep ${grammarAnchor.toLowerCase()} stable and avoid translating word-by-word from English.`,
+                  examples: [spec.sampleTeach[0] ?? "J'ai besoin d'aide."],
+                  companionTip: 'At A2, clarity + correct structure beats complex language.'
+                }
+              ])
         ],
         requiresCompletionToAdvance: true
       },
@@ -575,6 +594,21 @@ function makeA2Lesson(spec: A2Spec): StructuredLessonContent {
           },
           {
             id: `${idb}-t2`,
+            kind: 'shortAnswer',
+            prompt: 'Type one key expression from this lesson you must remember.',
+            acceptedAnswers: Array.from(
+              new Set([
+                ...spec.productionExpected.map((item) => item.toLowerCase()),
+                ...spec.vocabularyTargets.slice(0, 3).map((item) => item.toLowerCase())
+              ])
+            ),
+            normalizeAccents: true,
+            explanationOnWrong: 'Use one core expression from the teaching examples.',
+            skillFocus: 'writing',
+            points: 5
+          },
+          {
+            id: `${idb}-t3`,
             kind: 'writingPrompt',
             prompt: spec.writingPrompt,
             expectedElements: spec.writingExpected,
@@ -609,10 +643,10 @@ const A2_SPECS: A2Spec[] = [
     lessonNumber: 1,
     title: 'Past Events with Passé Composé (Intro)',
     focus: 'Describing recent past events',
-    outcomes: ['Describe one past event', 'Use common past helpers', 'Understand basic past-tense messages'],
-    vocabularyTargets: ['hier', 'ce matin', 'j’ai', 'j’ai fait', 'visité'],
+    outcomes: ['Describe one past event clearly', 'Use common past helpers accurately', 'Understand basic past-tense service/work messages'],
+    vocabularyTargets: ['hier', 'ce matin', 'j’ai', 'j’ai fait', 'j’ai pris', 'visité'],
     grammarTargets: ['Passé composé intro with avoir'],
-    sampleTeach: ['Hier, j’ai visité la banque.', 'Ce matin, j’ai pris le bus.'],
+    sampleTeach: ['Hier, j’ai visité la banque à Toronto.', 'Ce matin, j’ai pris le bus pour le travail.'],
     mcqPrompt: 'Choose the sentence describing a completed past action.',
     mcqOptions: ['Je vais à la banque.', 'J’ai visité la banque.', 'Je visite demain.', 'Je voudrais visiter.'],
     mcqCorrect: 1,
@@ -620,25 +654,25 @@ const A2_SPECS: A2Spec[] = [
     shortPrompt: 'Type the helper verb used in "j’ai visité".',
     shortAnswers: ['ai'],
     productionMode: 'written',
-    productionPrompt: 'Write 3 short sentences about what you did yesterday.',
+    productionPrompt: 'Write 3 short past-tense sentences about yesterday (work, transit, and one personal task).',
     productionExpected: ["j'ai", 'hier'],
     productionSample: "Hier, j'ai travaillé. J'ai pris le bus. J'ai étudié le soir.",
     testPrompt: 'Which sentence is the best past-tense report?',
     testOptions: ['Hier, je travaille.', "Hier, j'ai travaillé.", 'Demain, j’ai travaillé.', 'Je voudrais travaillé.'],
-    testCorrect: 1,
+    testCorrect: 0,
     testWrong: 'Use a clear past-time marker + passé composé.',
-    writingPrompt: 'Write a short message (2-3 lines) about your day yesterday.',
-    writingExpected: ['hier', "j'ai"],
-    writingSample: "Hier, j'ai travaillé jusqu'à 17h. Ensuite, j'ai fait des courses."
+    writingPrompt: 'Write a short message (2-3 lines) to explain your day yesterday to a teacher/employer.',
+    writingExpected: ['hier', "j'ai", 'ensuite'],
+    writingSample: "Hier, j'ai travaillé jusqu'à 17h. Ensuite, j'ai pris le bus et j'ai fait des courses."
   },
   {
     lessonNumber: 2,
     title: 'Future Plans and Intentions',
     focus: 'Near future (aller + infinitif)',
-    outcomes: ['Express simple future plans', 'Talk about appointments/plans', 'Understand intention statements'],
+    outcomes: ['Express simple future plans', 'Talk about appointments and classes', 'Understand intention statements in daily life'],
     vocabularyTargets: ['demain', 'ce soir', 'je vais', 'nous allons', 'rendez-vous'],
     grammarTargets: ['Aller + infinitif'],
-    sampleTeach: ['Demain, je vais appeler la clinique.', 'Nous allons visiter un appartement.'],
+    sampleTeach: ['Demain, je vais appeler la clinique pour un rendez-vous.', 'Nous allons visiter un appartement à Vancouver.'],
     mcqPrompt: 'Choose the sentence expressing a future plan.',
     mcqOptions: ['Je vais appeler la clinique demain.', "J'ai appelé la clinique.", 'Je veux clinique.', 'Clinique bonjour.'],
     mcqCorrect: 0,
@@ -646,51 +680,61 @@ const A2_SPECS: A2Spec[] = [
     shortPrompt: 'Type the infinitive in: Je vais travailler.',
     shortAnswers: ['travailler'],
     productionMode: 'spoken',
-    productionPrompt: 'Say 2-3 future plans for tomorrow.',
+    productionPrompt: 'Say 2-3 future plans for tomorrow with one time or place detail.',
     productionExpected: ['demain', 'je vais'],
     productionSample: 'Demain, je vais travailler et je vais étudier.',
     testPrompt: 'Which sentence is the best near-future form?',
     testOptions: ['Je vais prendre le bus.', 'Je prends le bus hier.', "J'ai va prendre le bus.", 'Je prends demain bus.'],
     testCorrect: 0,
     testWrong: 'Near future = aller + infinitif.',
-    writingPrompt: 'Write a short plan for tomorrow (2-3 lines).',
+    writingPrompt: 'Write a short plan for tomorrow (2-3 lines) including one appointment or class.',
     writingExpected: ['demain', 'je vais'],
-    writingSample: 'Demain, je vais aller au cours. Ensuite, je vais faire des exercices.'
+    writingSample: 'Demain, je vais aller au cours à 18h. Ensuite, je vais appeler la clinique.'
   },
   {
     lessonNumber: 3,
     title: 'Modal Verbs for Daily Needs',
     focus: 'Pouvoir, devoir, vouloir in practical contexts',
-    outcomes: ['Express need, ability, and desire', 'Make practical requests', 'Understand modal-based messages'],
+    outcomes: ['Express need, ability, and obligation', 'Make practical requests politely', 'Understand modal-based service messages'],
     vocabularyTargets: ['pouvoir', 'devoir', 'vouloir', 'aide', 'document'],
     grammarTargets: ['Modal verbs in simple present'],
-    sampleTeach: ['Je peux venir demain.', 'Je dois envoyer le document.', 'Je veux un rendez-vous.'],
+    sampleTeach: ['Je peux venir demain matin.', 'Je dois envoyer le document aujourd’hui.', 'Je voudrais un rendez-vous.'],
     mcqPrompt: 'Choose the best sentence expressing obligation.',
-    mcqOptions: ['Je peux envoyer le document.', 'Je dois envoyer le document.', 'Je veux document.', 'Je suis envoyer.'],
+    mcqOptions: [
+      'Je peux envoyer le document.',
+      'Je dois envoyer le document.',
+      'Je veux envoyer le document.',
+      "Je dois vérifier le formulaire aujourd'hui."
+    ],
     mcqCorrect: 1,
     mcqWrong: 'Devoir expresses obligation: je dois...',
     shortPrompt: 'Type the verb that means "to be able to".',
     shortAnswers: ['pouvoir'],
     productionMode: 'mixed',
-    productionPrompt: 'Ask for help and explain one thing you need to do today.',
+    productionPrompt: 'Ask for help and explain one thing you must do today in a service/work context.',
     productionExpected: ['je dois', 'je peux'],
-    productionSample: "Bonjour, je peux avoir de l'aide ? Je dois remplir ce formulaire aujourd'hui.",
+    productionSample: "Bonjour, je peux avoir de l'aide ? Je dois remplir ce formulaire d'immigration aujourd'hui.",
     testPrompt: 'Which sentence is the clearest practical request?',
-    testOptions: ['Je veux aide.', "Je voudrais de l'aide, s'il vous plaît.", 'Aide document pouvoir.', 'Je suis besoin aide.'],
-    testCorrect: 1,
+    testOptions: [
+      "Je voudrais de l'aide, s'il vous plaît.",
+      'Je peux envoyer le document demain.',
+      "Je dois terminer ce formulaire aujourd'hui.",
+      'Merci pour votre réponse.'
+    ],
+    testCorrect: 0,
     testWrong: 'Use a polite request structure with modal meaning.',
-    writingPrompt: 'Write a short message about what you can do and what you must do today.',
+    writingPrompt: 'Write a short message about what you can do and what you must do today (2-3 lines).',
     writingExpected: ['je peux', 'je dois'],
-    writingSample: "Aujourd'hui, je peux aller à la banque, mais je dois travailler d'abord."
+    writingSample: "Aujourd'hui, je peux aller à la banque, mais je dois envoyer mes documents d'abord."
   },
   {
     lessonNumber: 4,
-    title: 'Comparisons and Choices',
+    title: 'Comparisons and Daily Choices',
     focus: 'Comparatives for daily decisions',
-    outcomes: ['Compare two options', 'Give a simple reason', 'Use basic comparative forms'],
+    outcomes: ['Compare two options', 'Give one simple reason', 'Use basic comparative forms correctly'],
     vocabularyTargets: ['plus', 'moins', 'aussi', 'cher', 'rapide'],
     grammarTargets: ['Comparatives'],
-    sampleTeach: ['Le bus est plus rapide que le métro.', 'Cet appartement est moins cher.'],
+    sampleTeach: ['Le bus est plus rapide que le métro pour aller au centre-ville.', 'Cet appartement est moins cher que l’autre.'],
     mcqPrompt: 'Choose the correct comparative sentence.',
     mcqOptions: ['Le bus est plus rapide que le métro.', 'Le bus est rapide plus.', 'Plus le bus rapide.', 'Le bus que métro plus.'],
     mcqCorrect: 0,
@@ -698,152 +742,202 @@ const A2_SPECS: A2Spec[] = [
     shortPrompt: 'Type the word used for "more" in a comparison.',
     shortAnswers: ['plus'],
     productionMode: 'spoken',
-    productionPrompt: 'Compare two options (transport, apartment, or schedule) and give one reason.',
+    productionPrompt: 'Compare two options (transport, apartment, or schedule) and give one practical reason.',
     productionExpected: ['plus', 'que'],
-    productionSample: 'Le bus est plus rapide que le train, parce que il est direct.',
+    productionSample: 'Le bus est plus rapide que le train, parce qu’il est direct.',
     testPrompt: 'Which sentence compares price correctly?',
     testOptions: ['Cet appartement est moins cher.', 'Cet appartement moins est cher.', 'Appartement est cher moins.', 'Moins appartement cher.'],
     testCorrect: 0,
     testWrong: 'Use moins + adjective in correct order.',
-    writingPrompt: 'Write 2-3 lines comparing two choices (home, transport, or class schedule).',
+    writingPrompt: 'Write 2-3 lines comparing two choices (housing, transport, or class schedule).',
     writingExpected: ['plus', 'que'],
-    writingSample: 'Le cours du matin est plus pratique que le cours du soir pour moi.'
+    writingSample: 'Le cours du matin est plus pratique que le cours du soir, parce que je travaille le soir.'
   },
   {
     lessonNumber: 5,
-    title: 'Service Problem Reporting',
+    title: 'Service Problem Reporting and Help Requests',
     focus: 'Explain a simple problem and ask for help',
-    outcomes: ['Describe a problem briefly', 'Ask for help politely', 'Understand service responses'],
+    outcomes: ['Describe a service problem briefly', 'Ask for help politely', 'Understand simple service responses'],
     vocabularyTargets: ['problème', 'carte', 'ne marche pas', 'aide', 'service'],
     grammarTargets: ['Simple problem statements', 'Negation reinforcement'],
     sampleTeach: ['Ma carte ne marche pas.', "J'ai un problème avec mon compte."],
     mcqPrompt: 'Choose the best sentence to report a problem.',
-    mcqOptions: ["J'ai un problème avec ma carte.", 'Bonjour merci au revoir.', 'Je suis carte problème.', 'Carte bonjour.'],
+    mcqOptions: [
+      "J'ai un problème avec ma carte.",
+      "J'ai un problème avec mon compte.",
+      'Bonjour, merci pour votre aide.',
+      'Au revoir et merci.'
+    ],
     mcqCorrect: 0,
     mcqWrong: 'Use j’ai un problème avec... to report a problem clearly.',
     shortPrompt: 'Type the French word for problem.',
     shortAnswers: ['problème', 'probleme'],
     productionMode: 'mixed',
-    productionPrompt: 'Explain one service problem and ask for help politely.',
+    productionPrompt: 'Explain one service problem and ask for help politely in 2-3 lines.',
     productionExpected: ['problème', 'aide'],
     productionSample: "Bonjour, j'ai un problème avec ma carte. Pouvez-vous m'aider, s'il vous plaît ?",
     testPrompt: 'Which line is the best help request after a problem statement?',
-    testOptions: ['Merci au revoir.', "Pouvez-vous m'aider, s'il vous plaît ?", 'Je suis aide.', 'Problème vous.'],
+    testOptions: [
+      "Pouvez-vous m'aider, s'il vous plaît ?",
+      'Je peux envoyer le document demain.',
+      "Je dois terminer ce formulaire aujourd'hui.",
+      'Merci pour votre réponse.'
+    ],
     testCorrect: 1,
     testWrong: 'Use a polite request: Pouvez-vous m’aider... ?',
-    writingPrompt: 'Write a short message reporting a service problem and asking for help.',
+    writingPrompt: 'Write a short message to a service office reporting a problem and asking for help.',
     writingExpected: ['problème', 'aide'],
-    writingSample: "Bonjour, j'ai un problème avec mon rendez-vous. Pouvez-vous m'aider ?"
+    writingSample: "Bonjour, j'ai un problème avec mon rendez-vous de jeudi. Pouvez-vous m'aider ?"
   },
   {
     lessonNumber: 6,
     title: 'Housing and Landlord Messages',
     focus: 'Renting and housing communication',
-    outcomes: ['Describe a housing issue', 'Contact a landlord', 'Request a repair/response'],
+    outcomes: ['Describe a housing issue clearly', 'Contact a landlord politely', 'Request a repair with detail'],
     vocabularyTargets: ['appartement', 'propriétaire', 'chauffage', 'réparer', 'fuite'],
     grammarTargets: ['Practical housing vocabulary in simple present/past'],
     sampleTeach: ["Le chauffage ne marche pas dans l'appartement.", "Je dois contacter le propriétaire."],
     mcqPrompt: 'Choose the best message about a housing problem.',
-    mcqOptions: ["Le chauffage ne marche pas.", 'Bonjour appartement merci.', 'Je suis chauffage.', 'Réparer propriétaire bonjour.'],
+    mcqOptions: [
+      "Le chauffage ne marche pas.",
+      "Bonjour, j'ai un problème dans l'appartement.",
+      'Le propriétaire est disponible demain.',
+      'Merci pour votre aide.'
+    ],
     mcqCorrect: 0,
     mcqWrong: 'Use a clear subject + problem statement.',
     shortPrompt: 'Type the French word for landlord/owner.',
     shortAnswers: ['propriétaire', 'proprietaire'],
     productionMode: 'written',
-    productionPrompt: 'Write a short message to a landlord about a problem in the apartment.',
-    productionExpected: ['appartement', 'problème'],
+    productionPrompt: 'Write a short landlord message about a housing problem and requested action.',
+    productionExpected: ['appartement', 'problème', 'pouvez-vous'],
     productionSample: "Bonjour, j'ai un problème dans l'appartement. Le chauffage ne marche pas.",
     testPrompt: 'Which is a clear repair request?',
-    testOptions: ['Pouvez-vous réparer le chauffage ?', 'Chauffage réparer vous.', 'Je suis réparer chauffage.', 'Merci chauffage.'],
+    testOptions: [
+      'Pouvez-vous réparer le chauffage ?',
+      'Pouvez-vous contacter le propriétaire ?',
+      "Je dois rester à l'appartement demain.",
+      'Merci pour votre retour.'
+    ],
     testCorrect: 0,
     testWrong: 'Use pouvez-vous + infinitif for a clear request.',
-    writingPrompt: 'Write a 2-3 line landlord message (problem + request).',
+    writingPrompt: 'Write a 2-3 line landlord message (problem + request + time detail).',
     writingExpected: ['chauffage', 'pouvez-vous'],
-    writingSample: 'Bonjour, le chauffage ne marche pas. Pouvez-vous venir cette semaine ?'
+    writingSample: 'Bonjour, le chauffage ne marche pas dans mon appartement. Pouvez-vous venir demain soir ?'
   },
   {
     lessonNumber: 7,
-    title: 'Healthcare and Pharmacy',
+    title: 'Healthcare and Pharmacy Communication',
     focus: 'Basic healthcare communication',
-    outcomes: ['Describe a simple symptom', 'Ask for a pharmacy item', 'Understand a simple instruction'],
+    outcomes: ['Describe a simple symptom clearly', 'Ask for a pharmacy item politely', 'Understand basic care instructions'],
     vocabularyTargets: ['mal', 'fièvre', 'pharmacie', 'médicament', 'ordonnance'],
     grammarTargets: ['Simple symptom statements'],
     sampleTeach: ["J'ai mal à la tête.", "Je cherche un médicament pour la toux."],
     mcqPrompt: 'Choose the sentence describing a symptom.',
-    mcqOptions: ["J'ai mal à la tête.", 'Je m’appelle pharmacie.', 'Bonjour médicament merci.', 'Où problème prix.'],
+    mcqOptions: [
+      "J'ai mal à la tête.",
+      "J'ai besoin d'un médicament.",
+      'Bonjour, je suis à la pharmacie.',
+      "J'ai rendez-vous demain."
+    ],
     mcqCorrect: 0,
     mcqWrong: 'Use avoir mal à... for common symptoms.',
     shortPrompt: 'Type the French word for pharmacy.',
     shortAnswers: ['pharmacie'],
     productionMode: 'spoken',
-    productionPrompt: 'Describe one symptom and ask for help at a pharmacy.',
+    productionPrompt: 'Describe one symptom and ask for help at a pharmacy (2-3 lines).',
     productionExpected: ['j’ai mal', 'pharmacie'],
-    productionSample: "Bonjour, j'ai mal à la tête. Je suis à la pharmacie pour un médicament.",
+    productionSample: "Bonjour, j'ai mal à la tête depuis ce matin. Je cherche un médicament, s'il vous plaît.",
     testPrompt: 'Which line asks for medicine?',
-    testOptions: ['Je cherche un médicament.', 'Je suis médicament.', 'Médicament bonjour.', 'Au revoir pharmacie.'],
+    testOptions: [
+      'Je cherche un médicament.',
+      "J'ai besoin d'un conseil.",
+      "J'ai mal à la gorge depuis ce matin.",
+      'Merci pour votre aide.'
+    ],
     testCorrect: 0,
     testWrong: 'Use chercher + item to request what you need.',
-    writingPrompt: 'Write a short pharmacy request (symptom + what you need).',
+    writingPrompt: 'Write a short pharmacy request (symptom + what you need + polite close).',
     writingExpected: ['mal', 'médicament'],
-    writingSample: "Bonjour, j'ai mal à la gorge. Je cherche un médicament."
+    writingSample: "Bonjour, j'ai mal à la gorge. Je cherche un médicament pour la toux. Merci."
   },
   {
     lessonNumber: 8,
     title: 'Work Schedules and Availability',
     focus: 'Discuss work times and availability',
-    outcomes: ['Describe schedule', 'State availability', 'Ask to change times'],
+    outcomes: ['Describe schedule changes', 'State availability clearly', 'Ask to change times politely'],
     vocabularyTargets: ['horaire', 'disponible', 'quart', 'matin', 'soir'],
     grammarTargets: ['Schedule statements', 'Availability forms'],
     sampleTeach: ['Mon horaire change cette semaine.', 'Je suis disponible le soir.'],
     mcqPrompt: 'Choose the sentence about availability.',
-    mcqOptions: ['Je suis disponible jeudi.', 'Je disponible jeudi suis.', 'Disponible je jeudi.', 'Jeudis bonjour disponibilité.'],
+    mcqOptions: [
+      'Je suis disponible jeudi.',
+      'Mon horaire change cette semaine.',
+      'Je suis disponible mardi soir.',
+      'Merci pour la confirmation.'
+    ],
     mcqCorrect: 0,
     mcqWrong: 'Use être + disponible + time/day.',
     shortPrompt: 'Type the French word for schedule.',
     shortAnswers: ['horaire'],
     productionMode: 'mixed',
-    productionPrompt: 'Explain your availability and request a time change.',
+    productionPrompt: 'Explain your availability and request a schedule change politely.',
     productionExpected: ['disponible', 'horaire'],
     productionSample: 'Je suis disponible vendredi matin. Est-ce possible de changer mon horaire ?',
     testPrompt: 'Which sentence requests a schedule change politely?',
-    testOptions: ['Changer horaire.', 'Je veux changer horaire.', 'Est-ce possible de changer mon horaire ?', 'Horaire possible changer je.'],
+    testOptions: [
+      'Je veux changer mon horaire.',
+      'Puis-je changer mon horaire ?',
+      'Est-ce possible de changer mon horaire ?',
+      'Merci pour votre disponibilité.'
+    ],
     testCorrect: 2,
     testWrong: 'Use est-ce possible... for a polite request.',
-    writingPrompt: 'Write a short work message about availability and a schedule change request.',
+    writingPrompt: 'Write a short work message about availability and a schedule change request (2-3 lines).',
     writingExpected: ['disponible', 'horaire'],
-    writingSample: "Bonjour, je suis disponible mardi soir. Est-ce possible de changer mon horaire ?"
+    writingSample: "Bonjour, je suis disponible mardi soir. Est-ce possible de changer mon horaire de jeudi ?"
   },
   {
     lessonNumber: 9,
     title: 'Community and Government Services',
     focus: 'Ask for help in public service contexts',
-    outcomes: ['Ask where to go', 'Describe what service you need', 'Understand service desk guidance'],
+    outcomes: ['Ask where to go in a service office', 'Describe what service you need', 'Understand service desk guidance'],
     vocabularyTargets: ['service', 'bureau', 'document', 'formulaire', 'aide'],
     grammarTargets: ['Practical service-desk questions'],
     sampleTeach: ['Je cherche le bureau des services.', "J'ai besoin d'aide pour ce formulaire."],
     mcqPrompt: 'Choose the sentence that explains a service need.',
-    mcqOptions: ["J'ai besoin d'aide pour ce formulaire.", 'Bonjour formulaire merci.', 'Je suis document.', 'Service où bonjour merci.'],
+    mcqOptions: [
+      "J'ai besoin d'aide pour ce formulaire.",
+      'Bonjour, je cherche ce service.',
+      "J'ai un document à compléter.",
+      'Merci pour votre aide.'
+    ],
     mcqCorrect: 0,
     mcqWrong: 'Use j’ai besoin de... to explain what help you need.',
     shortPrompt: 'Type the French word for form.',
     shortAnswers: ['formulaire'],
     productionMode: 'spoken',
-    productionPrompt: 'Ask for help at a service office and explain what document/form you need.',
+    productionPrompt: 'Ask for help at a service office and explain what form/document you need.',
     productionExpected: ['aide', 'formulaire'],
     productionSample: "Bonjour, j'ai besoin d'aide pour ce formulaire. Où est le bon bureau ?",
     testPrompt: 'Which line asks where to go?',
-    testOptions: ['Où est le bon bureau ?', 'Bonjour merci bureau.', 'Je suis bureau.', 'Bureau formulaire aide.'],
+    testOptions: [
+      'Où est le bon bureau ?',
+      'Pouvez-vous me diriger vers le bon service ?',
+      "J'ai besoin d'aide pour ce formulaire.",
+      'Merci pour votre réponse.'
+    ],
     testCorrect: 0,
     testWrong: 'Use Où est... ? for location/help desk navigation.',
-    writingPrompt: 'Write a short message/request for help with a government or community form.',
+    writingPrompt: 'Write a short request for help with a government or community form.',
     writingExpected: ['formulaire', 'aide'],
-    writingSample: "Bonjour, j'ai besoin d'aide pour ce formulaire. Merci."
+    writingSample: "Bonjour, j'ai besoin d'aide pour ce formulaire de services. Merci."
   },
   {
     lessonNumber: 10,
     title: 'Voicemail and Short Message Understanding',
     focus: 'Understand and respond to short service messages',
-    outcomes: ['Identify main message purpose', 'Capture time/date details', 'Write a response message'],
+    outcomes: ['Identify main message purpose', 'Capture time/date details', 'Write a short reply message'],
     vocabularyTargets: ['message', 'rappel', 'confirmé', 'annuler', 'reporter'],
     grammarTargets: ['Short message response patterns'],
     sampleTeach: ['Votre rendez-vous est confirmé pour jeudi.', 'Veuillez rappeler demain matin.'],
@@ -854,42 +948,57 @@ const A2_SPECS: A2Spec[] = [
     shortPrompt: 'Type the French verb meaning "to cancel" (infinitive).',
     shortAnswers: ['annuler'],
     productionMode: 'written',
-    productionPrompt: 'Write a short response to confirm or reschedule an appointment.',
+    productionPrompt: 'Write a short response to confirm or reschedule an appointment with one detail.',
     productionExpected: ['rendez-vous'],
     productionSample: 'Bonjour, je confirme mon rendez-vous de jeudi. Merci.',
     testPrompt: 'Which is a good callback response?',
-    testOptions: ['Je confirme le rendez-vous.', 'Bonjour problème merci.', 'Rendez-vous bureau où ?', 'Je suis confirmé.'],
+    testOptions: [
+      'Je confirme le rendez-vous.',
+      'Je rappelle pour confirmer la date.',
+      'Je peux venir jeudi après-midi.',
+      'Merci pour votre message.'
+    ],
     testCorrect: 0,
     testWrong: 'A clear confirmation is a good A2 response.',
-    writingPrompt: 'Write a short appointment reply (confirm or reschedule) with one detail.',
+    writingPrompt: 'Write a short appointment reply (confirm or reschedule) with one date/time detail.',
     writingExpected: ['rendez-vous', 'jeudi'],
-    writingSample: "Bonjour, je confirme mon rendez-vous de jeudi à 14h."
+    writingSample: "Bonjour, je confirme mon rendez-vous de jeudi à 14h. Merci."
   },
   {
     lessonNumber: 11,
     title: 'A2 Functional Email Writing',
     focus: 'Short practical emails (request/reschedule/explain)',
-    outcomes: ['Write short practical emails', 'State purpose clearly', 'Add relevant details'],
+    outcomes: ['Write short practical emails', 'State purpose clearly in first line', 'Add relevant details and polite closing'],
     vocabularyTargets: ['bonjour', 'je vous écris', 'demande', 'rendez-vous', 'merci'],
     grammarTargets: ['Email openings and purpose statements'],
     sampleTeach: ['Bonjour, je vous écris pour demander un rendez-vous.', 'Merci pour votre aide.'],
     mcqPrompt: 'Choose the best opening for a practical email.',
-    mcqOptions: ['Salut ça va', 'Bonjour, je vous écris pour...', 'Je suis email bonjour', 'Où rendez-vous email'],
+    mcqOptions: [
+      'Salut, ça va ?',
+      'Bonjour, je vous écris pour demander un rendez-vous.',
+      'Bonjour, merci pour votre aide.',
+      'Où rendez-vous email ?'
+    ],
     mcqCorrect: 1,
     mcqWrong: 'Use a clear formal opening for practical requests.',
     shortPrompt: 'Type the phrase that means "I am writing to you".',
     shortAnswers: ['je vous écris', 'je vous ecris'],
     productionMode: 'written',
-    productionPrompt: 'Write a short email to request or reschedule an appointment (3-4 lines).',
+    productionPrompt: 'Write a short email to request or reschedule an appointment (3-4 lines, formal tone).',
     productionExpected: ['bonjour', 'rendez-vous', 'merci'],
     productionSample: "Bonjour, je vous écris pour demander un rendez-vous la semaine prochaine. Merci.",
     testPrompt: 'Which line clearly states email purpose?',
-    testOptions: ['Je vous écris pour demander un rendez-vous.', 'Bonjour merci au revoir.', 'Je suis rendez-vous.', 'Demande bureau formulaire.'],
+    testOptions: [
+      'Je vous écris pour demander un rendez-vous.',
+      'Bonjour, merci pour votre réponse.',
+      'Je vous remercie de votre attention.',
+      'Cordialement,'
+    ],
     testCorrect: 0,
     testWrong: 'State the purpose directly in the first line.',
-    writingPrompt: 'Write a short practical email (request/reschedule/explain) with greeting and closing.',
+    writingPrompt: 'Write a short practical email (request/reschedule/explain) with greeting, purpose, and closing.',
     writingExpected: ['bonjour', 'merci'],
-    writingSample: "Bonjour, je vous écris pour reporter mon rendez-vous. Merci de votre aide."
+    writingSample: "Bonjour, je vous écris pour reporter mon rendez-vous de mardi. Merci de votre aide."
   },
   {
     lessonNumber: 12,
@@ -898,20 +1007,20 @@ const A2_SPECS: A2Spec[] = [
     outcomes: ['Combine listening, speaking, and writing for practical tasks', 'Perform an A2 benchmark-style session', 'Identify weak skill before CLB5 bridge'],
     vocabularyTargets: ['rendez-vous', 'horaire', 'problème', 'formulaire', 'aide'],
     grammarTargets: ['Integrated A2 functional patterns'],
-    sampleTeach: ['A2 success = clear purpose + key details + polite language.', 'You do not need perfect grammar to complete the task.'],
+    sampleTeach: ['A2 success = clear purpose + key details + polite language.', 'You do not need perfect grammar to complete the task, but your message must be clear.'],
     mcqPrompt: 'Choose the strongest A2 practical response.',
     mcqOptions: [
       "Bonjour, j'ai un problème avec mon rendez-vous. Pouvez-vous m'aider ?",
-      'Bonjour merci au revoir',
-      'Je suis problème rendez-vous',
-      'Où formulaire prix'
+      'Bonjour, merci pour votre retour.',
+      "J'ai un problème avec ce formulaire.",
+      'Pouvez-vous confirmer mon horaire ?'
     ],
     mcqCorrect: 0,
     mcqWrong: 'Best A2 responses include purpose + key detail + polite request.',
     shortPrompt: 'Type one key A2 practical noun you studied (appointment / problem / form).',
     shortAnswers: ['rendez-vous', 'probleme', 'problème', 'formulaire'],
     productionMode: 'mixed',
-    productionPrompt: 'Complete a practical scenario: explain a problem, ask for help, and give one detail (time/day/document).',
+    productionPrompt: 'Complete a practical scenario: explain a problem, ask for help, and give one key detail (time/day/document).',
     productionExpected: ['problème', 'aide'],
     productionSample: "Bonjour, j'ai un problème avec mon rendez-vous. Pouvez-vous m'aider ? Je suis disponible demain matin.",
     testPrompt: 'Which response is most complete for A2 practical communication?',
@@ -923,9 +1032,9 @@ const A2_SPECS: A2Spec[] = [
     ],
     testCorrect: 0,
     testWrong: 'A complete A2 response names the issue and the need.',
-    writingPrompt: 'Write a short practical message (3-4 lines) explaining a problem and requesting help.',
+    writingPrompt: 'Write a short practical message (3-4 lines) explaining a problem and requesting help clearly.',
     writingExpected: ['problème', 'aide'],
-    writingSample: "Bonjour, j'ai un problème avec mon horaire. J'ai besoin d'aide pour changer mon rendez-vous."
+    writingSample: "Bonjour, j'ai un problème avec mon horaire de jeudi. J'ai besoin d'aide pour changer mon rendez-vous."
   }
 ];
 
@@ -1194,17 +1303,67 @@ function normalizeTokenForShortAnswer(token: string): string {
     .replace(/[’']/g, '');
 }
 
-function buildA2GeneratedMcqOptions(topic: (typeof A2_GENERATED_TOPICS)[number]): [string, string, string, string] {
-  const correct = topic.sampleTeach[0] ?? "J'ai besoin d'aide.";
-  const keywordA = topic.vocabularyTargets[0] ?? 'mot';
-  const keywordB = topic.vocabularyTargets[1] ?? 'mot';
-  return [correct, 'Bonjour, merci. Au revoir.', `${keywordA}, ${keywordB}.`, `Je suis ${keywordA}.`];
+type A2SessionType = 'core' | 'listening' | 'speaking' | 'writing' | 'review' | 'benchmark';
+
+function a2ProgramSessionType(lessonNumber: number): A2SessionType {
+  if (lessonNumber % 10 === 0) return 'benchmark';
+  if (lessonNumber % 7 === 0) return 'review';
+  if (lessonNumber % 5 === 0) return 'writing';
+  if (lessonNumber % 4 === 0) return 'speaking';
+  if (lessonNumber % 3 === 0) return 'listening';
+  return 'core';
 }
 
-function buildA2GeneratedTestOptions(topic: (typeof A2_GENERATED_TOPICS)[number]): [string, string, string, string] {
+function a2SessionTypeLabel(type: A2SessionType): string {
+  switch (type) {
+    case 'core':
+      return 'Core Session';
+    case 'listening':
+      return 'Listening Session';
+    case 'speaking':
+      return 'Speaking Session';
+    case 'writing':
+      return 'Writing Session';
+    case 'review':
+      return 'Review Session';
+    case 'benchmark':
+      return 'Benchmark Session';
+  }
+}
+
+function buildA2GeneratedMcqOptions(
+  topic: (typeof A2_GENERATED_TOPICS)[number],
+  sessionType: A2SessionType
+): [string, string, string, string] {
+  const correct = topic.sampleTeach[0] ?? "J'ai besoin d'aide.";
+  const nearMiss = topic.sampleTeach[1] ?? 'Pouvez-vous répéter, s’il vous plaît ?';
+  const generic =
+    sessionType === 'writing'
+      ? 'Bonjour, je vous écris pour clarifier ce point.'
+      : sessionType === 'listening'
+        ? 'Pouvez-vous répéter le message, s’il vous plaît ?'
+        : 'Merci pour votre message, je comprends.';
+  const offTask =
+    sessionType === 'benchmark'
+      ? "Je ne suis pas prêt aujourd'hui."
+      : "Je suis en vacances cette semaine.";
+  return [correct, nearMiss, generic, offTask];
+}
+
+function buildA2GeneratedTestOptions(
+  topic: (typeof A2_GENERATED_TOPICS)[number],
+  sessionType: A2SessionType
+): [string, string, string, string] {
   const combined = `${topic.sampleTeach[0] ?? ''} ${topic.sampleTeach[1] ?? ''}`.trim() || "J'ai besoin d'aide.";
-  const keywordA = topic.vocabularyTargets[0] ?? 'mot';
-  return [combined, 'Merci.', `${keywordA}.`, `Je veux aide.`];
+  const partial = topic.sampleTeach[0] ?? 'Merci.';
+  const generic =
+    sessionType === 'speaking'
+      ? 'Je peux expliquer la situation clairement.'
+      : sessionType === 'writing'
+        ? 'Je confirme la réception de votre message.'
+        : 'Je comprends la situation.';
+  const offTask = sessionType === 'review' ? 'Au revoir et merci.' : "Je n'ai pas le temps aujourd'hui.";
+  return [combined, partial, generic, offTask];
 }
 
 function buildA2GeneratedShortAnswers(topic: (typeof A2_GENERATED_TOPICS)[number]): string[] {
@@ -1213,33 +1372,89 @@ function buildA2GeneratedShortAnswers(topic: (typeof A2_GENERATED_TOPICS)[number
   return Array.from(new Set([...base, ...normalized]));
 }
 
+function buildA2GeneratedShortPrompt(topic: (typeof A2_GENERATED_TOPICS)[number], sessionType: A2SessionType): string {
+  if (sessionType === 'listening') {
+    return `Type one key word you heard in this audio context (${topic.focus.toLowerCase()}).`;
+  }
+  if (sessionType === 'speaking') {
+    return `Type one expression you can say aloud for ${topic.focus.toLowerCase()}.`;
+  }
+  if (sessionType === 'writing') {
+    return `Type one keyword you should include in a short written message for ${topic.focus.toLowerCase()}.`;
+  }
+  if (sessionType === 'review') {
+    return `Type one review keyword from this topic (${topic.title.toLowerCase()}).`;
+  }
+  if (sessionType === 'benchmark') {
+    return `Type one key benchmark term from this task (${topic.focus.toLowerCase()}).`;
+  }
+  return 'Type one key A2 word from this lesson.';
+}
+
 function makeGeneratedA2Spec(lessonNumber: number, topicIndex: number): A2Spec {
   const topic = A2_GENERATED_TOPICS[topicIndex % A2_GENERATED_TOPICS.length];
+  const sessionType = a2ProgramSessionType(lessonNumber);
+  const sessionLabel = a2SessionTypeLabel(sessionType);
+  const productionMode: A2Spec['productionMode'] =
+    sessionType === 'speaking'
+      ? 'spoken'
+      : sessionType === 'writing'
+        ? 'written'
+        : sessionType === 'review' || sessionType === 'benchmark'
+          ? 'mixed'
+          : topic.productionMode;
+  const promptTail =
+    sessionType === 'review'
+      ? ' Include one correction from a previous mistake.'
+      : sessionType === 'benchmark'
+        ? ' Keep it clear, complete, and practical.'
+        : '';
+
   return {
     lessonNumber,
-    title: topic.title,
+    title: `${topic.title} (${sessionLabel})`,
     focus: topic.focus,
     outcomes: topic.outcomes,
     vocabularyTargets: topic.vocabularyTargets,
     grammarTargets: topic.grammarTargets,
     sampleTeach: topic.sampleTeach,
-    mcqPrompt: `Pick the best A2 sentence for: ${topic.focus.toLowerCase()}.`,
-    mcqOptions: buildA2GeneratedMcqOptions(topic),
+    mcqPrompt:
+      sessionType === 'benchmark'
+        ? `Pick the most complete A2 response for this benchmark task (${topic.focus.toLowerCase()}).`
+        : `Pick the best A2 sentence for: ${topic.focus.toLowerCase()}.`,
+    mcqOptions: buildA2GeneratedMcqOptions(topic, sessionType),
     mcqCorrect: 0,
     mcqWrong: 'Use a complete practical sentence with clear purpose.',
-    shortPrompt: 'Type one key A2 word from this lesson.',
+    shortPrompt: buildA2GeneratedShortPrompt(topic, sessionType),
     shortAnswers: buildA2GeneratedShortAnswers(topic),
-    productionMode: topic.productionMode,
-    productionPrompt: topic.productionPrompt,
+    productionMode,
+    productionPrompt: `${topic.productionPrompt}${promptTail}`,
     productionExpected: topic.productionExpected,
     productionSample: topic.productionSample,
-    testPrompt: 'Which response is the most complete and practical?',
-    testOptions: buildA2GeneratedTestOptions(topic),
+    testPrompt:
+      sessionType === 'benchmark'
+        ? 'Which response is the most complete and practical under A2 benchmark expectations?'
+        : 'Which response is the most complete and practical?',
+    testOptions: buildA2GeneratedTestOptions(topic, sessionType),
     testCorrect: 0,
     testWrong: 'At A2, include practical context plus one detail.',
-    writingPrompt: topic.writingPrompt,
+    writingPrompt:
+      sessionType === 'writing'
+        ? `${topic.writingPrompt} Include greeting, purpose, and one concrete detail.`
+        : topic.writingPrompt,
     writingExpected: topic.writingExpected,
-    writingSample: topic.writingSample
+    writingSample: topic.writingSample,
+    authoredContext: {
+      scenarioTitle: `${topic.title} Practice Context`,
+      scenarioExplanation:
+        sessionType === 'review'
+          ? `Review cycle: reinforce ${topic.focus.toLowerCase()} and repair one recurring mistake from prior sessions.`
+          : sessionType === 'benchmark'
+            ? `Benchmark cycle: apply ${topic.focus.toLowerCase()} with minimal hints and complete practical output.`
+            : `Practical A2 context for ${topic.focus.toLowerCase()} in daily Canadian communication.`,
+      scenarioExamples: topic.sampleTeach,
+      listeningMessage: topic.sampleTeach[0]
+    }
   };
 }
 

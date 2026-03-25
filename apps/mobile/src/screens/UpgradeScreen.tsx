@@ -21,7 +21,7 @@ const FEATURES = [
   'Full CLB 3-7 structured path',
   'Unlimited speaking practice',
   'Advanced pronunciation scoring',
-  'Writing correction AI',
+  'AI writing correction',
   'Mock TEF simulation mode',
   'Weekly live class access',
   'Exam strategy workshop'
@@ -83,20 +83,20 @@ export function UpgradeScreen({}: Props) {
     <LinearGradient colors={['#F8FAFC', '#EEF4FF', '#FFFFFF']} style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerWrap}>
-          <Text style={styles.headline}>To continue, please choose your plan.</Text>
+          <Text style={styles.headline}>Choose a plan to continue your path.</Text>
           <Text style={styles.subtext}>
-            Your PR-focused training path is paused on Free. Activate Franco Pro to continue CLB 5/7 preparation without delay.
+            Your free path stops before CLB 3+. Upgrade to continue structured CLB 5/7 preparation.
           </Text>
           <View style={styles.urgencyStrip}>
-            <Text style={styles.urgencyTitle}>Keep your PR timeline on track</Text>
+            <Text style={styles.urgencyTitle}>Stay on your PR timeline</Text>
             <Text style={styles.urgencyBody}>
-              Delaying structured weekly sessions can extend your CLB readiness window.
+              Missing weekly sessions can delay score progress and application readiness.
             </Text>
           </View>
         </View>
 
         <Card>
-          <Text style={styles.sectionTitle}>What you unlock</Text>
+          <Text style={styles.sectionTitle}>What you unlock with Pro</Text>
           <View style={styles.featureList}>
             {FEATURES.slice(0, 4).map((feature) => (
               <Text key={feature} style={styles.featureItem}>
@@ -106,22 +106,22 @@ export function UpgradeScreen({}: Props) {
           </View>
           <View style={styles.priceStrip}>
             <Text style={styles.priceStripPrice}>$99 / month</Text>
-            <Text style={styles.priceStripMeta}>Cancel anytime • Full CLB pathway unlock</Text>
+            <Text style={styles.priceStripMeta}>Cancel anytime • Full CLB path</Text>
           </View>
-          <Button label={isGuest ? 'Create Account to Subscribe' : 'Choose Plan to Continue'} onPress={() => void handleSubscribe('pro')} loading={loading} />
+          <Button label={isGuest ? 'Create Account to Subscribe' : 'Continue with Pro'} onPress={() => void handleSubscribe('pro')} loading={loading} />
         </Card>
 
         <Card>
-          <Text style={styles.sectionTitle}>Choose your plan</Text>
+          <Text style={styles.sectionTitle}>Plan options</Text>
 
           {founderSeatsRemaining > 0 ? (
             <View style={[styles.planCard, styles.planCardFounder]}>
-              <Text style={styles.planBadge}>FOUNDING MEMBER</Text>
+            <Text style={styles.planBadge}>FOUNDING MEMBER</Text>
             <Text style={styles.planTitle}>Franco Founding</Text>
             <Text style={styles.price}>$49/month</Text>
-            <Text style={styles.priceMeta}>Same full Pro features. Limited founding offer for first 50 users.</Text>
+            <Text style={styles.priceMeta}>Full Pro features. Limited to first 50 users only.</Text>
             <Text style={styles.seatMeta}>{founderSeatsRemaining} seats remaining</Text>
-            <Button label="Checkout Founding Plan" onPress={() => void handleSubscribe('founder')} loading={loading} />
+            <Button label="Unlock Founding Plan" onPress={() => void handleSubscribe('founder')} loading={loading} />
           </View>
           ) : null}
 
@@ -129,9 +129,9 @@ export function UpgradeScreen({}: Props) {
             <Text style={styles.planLabel}>FRANCO PRO</Text>
             <Text style={styles.planTitle}>Standard Pro</Text>
             <Text style={styles.price}>$99/month</Text>
-            <Text style={styles.priceMeta}>120+ lessons, AI partner, CLB/TEF-focused training.</Text>
+            <Text style={styles.priceMeta}>120+ lessons, AI coach, CLB and TEF training.</Text>
             <Button
-              label={isGuest ? 'Create Account to Subscribe' : 'Checkout Franco Pro'}
+              label={isGuest ? 'Create Account to Subscribe' : 'Unlock Franco Pro'}
               onPress={() => void handleSubscribe('pro')}
               loading={loading}
             />

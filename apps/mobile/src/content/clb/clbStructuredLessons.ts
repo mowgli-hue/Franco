@@ -1,6 +1,7 @@
 import type { StructuredLessonContent } from '../../types/LessonContentTypes';
 
 type ClbTrack = 'clb5' | 'clb7';
+type ClbSessionType = 'core' | 'listening' | 'speaking' | 'writing' | 'review' | 'benchmark';
 
 type Topic = {
   title: string;
@@ -26,10 +27,10 @@ const CLB5_TOPICS: Topic[] = [
     focus: 'Handle practical service requests under time pressure',
     vocabularyTargets: ['rendez-vous', 'service', 'demande', 'confirmation', 'horaire'],
     grammarTargets: ['Functional requests', 'polite modal forms'],
-    scenarioTitle: 'Customer Service Phone Task',
-    scenarioExplanation: 'CLB5 needs clear requests with one or two practical details.',
-    scenarioExamples: ['Je voudrais confirmer mon rendez-vous de demain matin.'],
-    listeningMessage: "Bonjour, je voudrais confirmer mon rendez-vous de demain à 9h30.",
+    scenarioTitle: 'Service Canada Phone Task',
+    scenarioExplanation: 'CLB5 needs clear requests with one or two practical details in Canadian public-service contexts.',
+    scenarioExamples: ['Je voudrais confirmer mon rendez-vous de demain matin au bureau de Service Canada.'],
+    listeningMessage: "Bonjour, je voudrais confirmer mon rendez-vous de demain à 9h30 au bureau de Service Canada.",
     productionMode: 'spoken',
     productionPrompt: 'Call a service desk and complete a request with date/time details.',
     productionExpected: ['rendez-vous', 'demain'],
@@ -43,8 +44,8 @@ const CLB5_TOPICS: Topic[] = [
     focus: 'Report schedule conflicts and propose solutions',
     vocabularyTargets: ['quart', 'disponible', 'retard', 'équipe', 'solution'],
     grammarTargets: ['Cause + solution patterns'],
-    scenarioTitle: 'Shift Adjustment Communication',
-    scenarioExplanation: 'CLB5 tasks require actionable communication in workplace settings.',
+    scenarioTitle: 'Shift Adjustment Communication (Canada Workplace)',
+    scenarioExplanation: 'CLB5 tasks require actionable communication in Canadian workplace settings.',
     scenarioExamples: ['Je serai en retard de 20 minutes, mais je peux rester plus tard.'],
     listeningMessage: "Je serai en retard ce matin, mais je peux rester jusqu'à 18h30.",
     productionMode: 'mixed',
@@ -60,9 +61,9 @@ const CLB5_TOPICS: Topic[] = [
     focus: 'Report housing problems and request action',
     vocabularyTargets: ['logement', 'réparation', 'fuite', 'propriétaire', 'urgence'],
     grammarTargets: ['Problem -> request structure'],
-    scenarioTitle: 'Rental Problem Resolution',
-    scenarioExplanation: 'CLB5 users should report practical housing issues in clear sequence.',
-    scenarioExamples: ['Il y a une fuite dans la salle de bain depuis hier soir.'],
+    scenarioTitle: 'Rental Problem Resolution (Canada)',
+    scenarioExplanation: 'CLB5 users should report practical housing issues in clear sequence with location/time details.',
+    scenarioExamples: ['Il y a une fuite dans la salle de bain de mon appartement à Calgary depuis hier soir.'],
     listeningMessage: "Il y a une fuite dans la salle de bain et j'ai besoin d'une réparation rapide.",
     productionMode: 'written',
     productionPrompt: 'Write a clear housing issue report with requested action.',
@@ -77,10 +78,10 @@ const CLB5_TOPICS: Topic[] = [
     focus: 'Ask for help with forms and required documents',
     vocabularyTargets: ['formulaire', 'document', 'pièce', 'bureau', 'vérifier'],
     grammarTargets: ['Question and clarification patterns'],
-    scenarioTitle: 'Settlement Office Interaction',
-    scenarioExplanation: 'CLB5 emphasizes real public-service interactions and clear information exchange.',
+    scenarioTitle: 'Settlement Office Interaction (IRCC/Service Counter)',
+    scenarioExplanation: 'CLB5 emphasizes real public-service interactions and clear information exchange in newcomer processes.',
     scenarioExamples: ['Pouvez-vous vérifier si ce document est complet ?'],
-    listeningMessage: "J'ai besoin d'aide pour remplir ce formulaire et vérifier mes documents.",
+    listeningMessage: "J'ai besoin d'aide pour remplir ce formulaire d'immigration et vérifier mes documents.",
     productionMode: 'spoken',
     productionPrompt: 'Ask for form help and confirm required documents.',
     productionExpected: ['formulaire', 'document'],
@@ -94,10 +95,10 @@ const CLB5_TOPICS: Topic[] = [
     focus: 'Give short practical opinions with one reason',
     vocabularyTargets: ['selon moi', 'important', 'raison', 'exemple', 'recommander'],
     grammarTargets: ['Opinion structure at CLB5'],
-    scenarioTitle: 'Community Recommendation Prompt',
-    scenarioExplanation: 'Learners present practical opinions in a simple structured format.',
+    scenarioTitle: 'Community Recommendation Prompt (Newcomer Services)',
+    scenarioExplanation: 'Learners present practical opinions in a simple structured format linked to Canadian settlement services.',
     scenarioExamples: ['Selon moi, ce service est important parce qu’il aide les familles.'],
-    listeningMessage: "Selon moi, ce programme est utile parce qu'il offre un soutien pratique.",
+    listeningMessage: "Selon moi, ce programme est utile parce qu'il offre un soutien pratique aux nouveaux arrivants au Canada.",
     productionMode: 'mixed',
     productionPrompt: 'Give a practical opinion and one reason about a community service.',
     productionExpected: ['selon moi', 'parce que'],
@@ -111,8 +112,8 @@ const CLB5_TOPICS: Topic[] = [
     focus: 'Report transit disruption and adjust commitment clearly',
     vocabularyTargets: ['retard', 'itinéraire', 'arriver', 'prévenir', 'confirmation'],
     grammarTargets: ['Cause-detail communication'],
-    scenarioTitle: 'Commuter Update Task',
-    scenarioExplanation: 'CLB5 users communicate delays with one concrete timing detail and next action.',
+    scenarioTitle: 'Commuter Update Task (Toronto Transit)',
+    scenarioExplanation: 'CLB5 users communicate delays with one concrete timing detail and next action in Canadian transit contexts.',
     scenarioExamples: ["Mon itinéraire est perturbé, j'arriverai vers 9h20."],
     listeningMessage: "Le métro est en panne sur ma ligne; j'arriverai en retard et je vous préviens immédiatement.",
     productionMode: 'spoken',
@@ -128,8 +129,8 @@ const CLB5_TOPICS: Topic[] = [
     focus: 'Coordinate childcare pickup with clear timing',
     vocabularyTargets: ['garderie', 'récupérer', 'horaire', 'retard', 'autorisation'],
     grammarTargets: ['Time + action messaging'],
-    scenarioTitle: 'Daycare Coordination Call',
-    scenarioExplanation: 'CLB5 learners should communicate pickup changes calmly and precisely.',
+    scenarioTitle: 'Daycare Coordination Call (Canada)',
+    scenarioExplanation: 'CLB5 learners should communicate pickup changes calmly and precisely with timing and authorization details.',
     scenarioExamples: ['Je vais récupérer mon enfant à 17h30 au lieu de 17h.'],
     listeningMessage: "Je serai en retard de trente minutes pour récupérer mon enfant à la garderie.",
     productionMode: 'mixed',
@@ -145,8 +146,8 @@ const CLB5_TOPICS: Topic[] = [
     focus: 'Ask for medication clarification with practical detail',
     vocabularyTargets: ['ordonnance', 'dose', 'pharmacie', 'clarifier', 'instruction'],
     grammarTargets: ['Clarification and confirmation patterns'],
-    scenarioTitle: 'Pharmacy Counter Clarification',
-    scenarioExplanation: 'CLB5 performance includes asking clear follow-up questions about medication use.',
+    scenarioTitle: 'Pharmacy Counter Clarification (Canadian Clinic Path)',
+    scenarioExplanation: 'CLB5 performance includes asking clear follow-up questions about medication use in Canada health-service flow.',
     scenarioExamples: ['Pouvez-vous clarifier la dose pour ce médicament ?'],
     listeningMessage: "Je voudrais clarifier les instructions de cette ordonnance avant de commencer le traitement.",
     productionMode: 'spoken',
@@ -162,8 +163,8 @@ const CLB5_TOPICS: Topic[] = [
     focus: 'Explain absence and request next steps',
     vocabularyTargets: ['absence', 'cours', 'devoirs', 'rattraper', 'explication'],
     grammarTargets: ['Cause + request pattern'],
-    scenarioTitle: 'Teacher Follow-Up Task',
-    scenarioExplanation: 'CLB5 tasks often require concise school communication with practical next actions.',
+    scenarioTitle: 'Teacher Follow-Up Task (Adult Learning Program)',
+    scenarioExplanation: 'CLB5 tasks often require concise school communication with practical next actions in adult newcomer programs.',
     scenarioExamples: ["J'ai eu une absence mardi et je voudrais rattraper le cours."],
     listeningMessage: "J'ai été absent hier et je voudrais connaître les devoirs à faire pour rattraper.",
     productionMode: 'written',
@@ -179,10 +180,10 @@ const CLB5_TOPICS: Topic[] = [
     focus: 'Confirm appointment and required documents',
     vocabularyTargets: ['banque', 'rendez-vous', 'document', 'pièce d’identité', 'confirmer'],
     grammarTargets: ['Confirmation and request structures'],
-    scenarioTitle: 'Bank Service Preparation',
-    scenarioExplanation: 'CLB5 learners should confirm logistics before service appointments.',
+    scenarioTitle: 'Bank Service Preparation (Canada Banking)',
+    scenarioExplanation: 'CLB5 learners should confirm logistics before bank appointments in Canadian service settings.',
     scenarioExamples: ["Je confirme mon rendez-vous et je vérifie les documents requis."],
-    listeningMessage: "Je confirme mon rendez-vous à la banque et je voudrais vérifier les pièces d'identité à apporter.",
+    listeningMessage: "Je confirme mon rendez-vous à la banque au Canada et je voudrais vérifier les pièces d'identité à apporter.",
     productionMode: 'mixed',
     productionPrompt: 'Confirm a bank appointment and ask which documents are required.',
     productionExpected: ['confirmer', 'document'],
@@ -199,8 +200,8 @@ const CLB7_TOPICS: Topic[] = [
     focus: 'Analyze policy and present a reasoned recommendation',
     vocabularyTargets: ['politique', 'impact', 'analyse', 'recommandation', 'priorité'],
     grammarTargets: ['Conditionnel for nuance', 'advanced connectors'],
-    scenarioTitle: 'Workplace Policy Advisory Task',
-    scenarioExplanation: 'CLB7 expects clear analysis, balanced reasoning, and practical recommendation.',
+    scenarioTitle: 'Workplace Policy Advisory Task (Canada Employer Context)',
+    scenarioExplanation: 'CLB7 expects clear analysis, balanced reasoning, and practical recommendation in Canadian employer contexts.',
     scenarioExamples: ['Cette politique est utile, cependant elle doit être ajustée pour les nouveaux employés.'],
     listeningMessage: "La politique actuelle améliore l'efficacité, mais elle crée aussi des difficultés pour certains employés.",
     productionMode: 'spoken',
@@ -216,8 +217,8 @@ const CLB7_TOPICS: Topic[] = [
     focus: 'Write high-quality complaint with evidence and proposed resolution',
     vocabularyTargets: ['réclamation', 'preuve', 'préjudice', 'résolution', 'délai'],
     grammarTargets: ['Register control', 'cohesive formal writing'],
-    scenarioTitle: 'Formal Complaint Escalation',
-    scenarioExplanation: 'CLB7 complaints require coherence, factual evidence, and professional tone.',
+    scenarioTitle: 'Formal Complaint Escalation (Public Service Canada)',
+    scenarioExplanation: 'CLB7 complaints require coherence, factual evidence, and professional tone in high-stakes service contexts.',
     scenarioExamples: ['Je joins les preuves des échanges précédents et je demande une résolution sous cinq jours.'],
     listeningMessage: "Je vous contacte pour une réclamation formelle, avec preuves à l'appui et demande de résolution rapide.",
     productionMode: 'written',
@@ -233,8 +234,8 @@ const CLB7_TOPICS: Topic[] = [
     focus: 'Deliver opinion monologue with logic and examples',
     vocabularyTargets: ['thèse', 'argument', 'contre-argument', 'exemple', 'conclusion'],
     grammarTargets: ['Complex connectors and stance markers'],
-    scenarioTitle: 'CLB7 Speaking Benchmark Task',
-    scenarioExplanation: 'Learners practice argument structure for speaking benchmarks and TEF-style tasks.',
+    scenarioTitle: 'CLB7 Speaking Benchmark Task (TEF Canada style)',
+    scenarioExplanation: 'Learners practice argument structure for speaking benchmarks and TEF Canada-style tasks.',
     scenarioExamples: ["D'une part..., d'autre part..., en conclusion..."],
     listeningMessage: "D'une part, cette mesure est efficace; d'autre part, elle peut exclure certains groupes.",
     productionMode: 'spoken',
@@ -250,8 +251,8 @@ const CLB7_TOPICS: Topic[] = [
     focus: 'Extract intent and summarize multi-point messages',
     vocabularyTargets: ['intention', 'implication', 'résumer', 'point clé', 'attitude'],
     grammarTargets: ['Summary framing and neutral reporting'],
-    scenarioTitle: 'Advanced Listening Summary Task',
-    scenarioExplanation: 'CLB7 learners should capture implicit meaning and summarize efficiently.',
+    scenarioTitle: 'Advanced Listening Summary Task (Service/Policy Audio)',
+    scenarioExplanation: 'CLB7 learners should capture implicit meaning and summarize efficiently in public-service audio contexts.',
     scenarioExamples: ['Le locuteur semble préoccupé par les délais plutôt que par le coût.'],
     listeningMessage: "Le locuteur insiste sur les délais, mais laisse entendre une préoccupation secondaire liée à la qualité.",
     productionMode: 'mixed',
@@ -267,8 +268,8 @@ const CLB7_TOPICS: Topic[] = [
     focus: 'Justify decisions using criteria and trade-offs',
     vocabularyTargets: ['critère', 'prioriser', 'compromis', 'justifier', 'option'],
     grammarTargets: ['Conditionnel and comparative argument'],
-    scenarioTitle: 'Professional Decision Brief',
-    scenarioExplanation: 'CLB7 decisions should be justified with explicit criteria and trade-offs.',
+    scenarioTitle: 'Professional Decision Brief (Canadian Team Context)',
+    scenarioExplanation: 'CLB7 decisions should be justified with explicit criteria and trade-offs in Canadian team settings.',
     scenarioExamples: ['Je privilégierais cette option en raison du coût et du délai.'],
     listeningMessage: "Nous devons choisir entre trois options en tenant compte du budget, du délai et de la qualité.",
     productionMode: 'written',
@@ -284,8 +285,8 @@ const CLB7_TOPICS: Topic[] = [
     focus: 'Evaluate a public program with strengths, gaps, and recommendations',
     vocabularyTargets: ['évaluation', 'impact', 'lacune', 'priorité', 'amélioration'],
     grammarTargets: ['Analytical framing connectors'],
-    scenarioTitle: 'Settlement Program Evaluation',
-    scenarioExplanation: 'CLB7 requires concise analysis that balances achievements and limitations.',
+    scenarioTitle: 'Settlement Program Evaluation (Newcomer Services Canada)',
+    scenarioExplanation: 'CLB7 requires concise analysis that balances achievements and limitations in newcomer support programs.',
     scenarioExamples: ["Le programme a un impact positif, mais il présente une lacune sur l'accès en soirée."],
     listeningMessage: "Le programme répond à plusieurs besoins, toutefois l'accès reste limité pour les personnes qui travaillent tard.",
     productionMode: 'written',
@@ -301,8 +302,8 @@ const CLB7_TOPICS: Topic[] = [
     focus: 'Document an incident and justify corrective actions',
     vocabularyTargets: ['incident', 'constat', 'mesure', 'prévention', 'suivi'],
     grammarTargets: ['Formal reporting sequence'],
-    scenarioTitle: 'Workplace Incident Review',
-    scenarioExplanation: 'CLB7 tasks expect factual reporting plus rationale for preventive measures.',
+    scenarioTitle: 'Workplace Incident Review (Canadian Compliance Context)',
+    scenarioExplanation: 'CLB7 tasks expect factual reporting plus rationale for preventive measures and follow-up accountability.',
     scenarioExamples: ["L'incident s'est produit à 14h et a entraîné un retard opérationnel."],
     listeningMessage: "Suite à l'incident de mardi, nous proposons des mesures de prévention et un suivi hebdomadaire.",
     productionMode: 'mixed',
@@ -318,8 +319,8 @@ const CLB7_TOPICS: Topic[] = [
     focus: 'Summarize meeting outcomes and unresolved risks',
     vocabularyTargets: ['compte rendu', 'enjeu', 'risque', 'décision', 'prochaine étape'],
     grammarTargets: ['Summary + risk articulation'],
-    scenarioTitle: 'Multi-Party Meeting Debrief',
-    scenarioExplanation: 'CLB7 summaries should identify decisions and remaining risks clearly.',
+    scenarioTitle: 'Multi-Party Meeting Debrief (Community + Service Partners)',
+    scenarioExplanation: 'CLB7 summaries should identify decisions and remaining risks clearly for multi-stakeholder contexts.',
     scenarioExamples: ['La décision principale est adoptée, mais deux enjeux restent ouverts.'],
     listeningMessage: "La réunion a permis de valider le budget, cependant les risques liés au calendrier demeurent.",
     productionMode: 'written',
@@ -335,8 +336,8 @@ const CLB7_TOPICS: Topic[] = [
     focus: 'Compare options using weighted criteria and constraints',
     vocabularyTargets: ['contrainte', 'pondérer', 'cohérence', 'efficience', 'arbitrage'],
     grammarTargets: ['Nuanced recommendation language'],
-    scenarioTitle: 'Operational Choice Under Limits',
-    scenarioExplanation: 'CLB7 decisions often require balancing cost, quality, and timeline constraints.',
+    scenarioTitle: 'Operational Choice Under Limits (Canada Service Delivery)',
+    scenarioExplanation: 'CLB7 decisions often require balancing cost, quality, and timeline constraints in public-service delivery.',
     scenarioExamples: ["Compte tenu des contraintes, l'option B demeure la plus cohérente."],
     listeningMessage: "Nous devons arbitrer entre efficacité immédiate et qualité durable dans un contexte de contraintes budgétaires.",
     productionMode: 'spoken',
@@ -352,8 +353,8 @@ const CLB7_TOPICS: Topic[] = [
     focus: 'Decline a request diplomatically and propose alternatives',
     vocabularyTargets: ['refus', 'motif', 'alternative', 'viable', 'proposition'],
     grammarTargets: ['Diplomatic refusal register'],
-    scenarioTitle: 'Professional Response to Unfeasible Request',
-    scenarioExplanation: 'CLB7 requires tactful refusal while preserving collaboration.',
+    scenarioTitle: 'Professional Response to Unfeasible Request (Institutional Setting)',
+    scenarioExplanation: 'CLB7 requires tactful refusal while preserving collaboration and professional trust.',
     scenarioExamples: ['Nous ne pouvons pas accepter cette demande dans sa forme actuelle.'],
     listeningMessage: "Votre demande ne peut pas être acceptée actuellement, mais nous proposons une alternative viable.",
     productionMode: 'mixed',
@@ -369,8 +370,8 @@ const CLB7_TOPICS: Topic[] = [
     focus: 'Respond to consultation feedback with synthesis and positioning',
     vocabularyTargets: ['consultation', 'synthèse', 'position', 'préoccupation', 'ajustement'],
     grammarTargets: ['Synthesis and stance language'],
-    scenarioTitle: 'Community Feedback Integration',
-    scenarioExplanation: 'CLB7 responses should synthesize multiple viewpoints and present a coherent position.',
+    scenarioTitle: 'Community Feedback Integration (Municipal/Settlement Policy)',
+    scenarioExplanation: 'CLB7 responses should synthesize multiple viewpoints and present a coherent position in civic/service contexts.',
     scenarioExamples: ['La synthèse révèle des préoccupations sur l’accessibilité et la transparence.'],
     listeningMessage: "La consultation montre un soutien général, mais des préoccupations récurrentes sur la mise en œuvre.",
     productionMode: 'written',
@@ -391,24 +392,128 @@ function normalizeClbToken(token: string): string {
     .replace(/[’']/g, '');
 }
 
-function buildClbOptions(topic: Topic): [string, string, string, string] {
+function clbProgramSessionType(lessonNumber: number): ClbSessionType {
+  if (lessonNumber % 10 === 0) return 'benchmark';
+  if (lessonNumber % 7 === 0) return 'review';
+  if (lessonNumber % 5 === 0) return 'writing';
+  if (lessonNumber % 4 === 0) return 'speaking';
+  if (lessonNumber % 3 === 0) return 'listening';
+  return 'core';
+}
+
+function clbSessionTypeLabel(type: ClbSessionType): string {
+  switch (type) {
+    case 'core':
+      return 'Core Session';
+    case 'listening':
+      return 'Listening Session';
+    case 'speaking':
+      return 'Speaking Session';
+    case 'writing':
+      return 'Writing Session';
+    case 'review':
+      return 'Review Session';
+    case 'benchmark':
+      return 'Benchmark Session';
+  }
+}
+
+function buildClbOptions(topic: Topic, sessionType: ClbSessionType): [string, string, string, string] {
   const strongest = topic.scenarioExamples[0] ?? topic.productionSample;
-  const keywordA = topic.vocabularyTargets[0] ?? 'mot';
-  return [strongest, 'Bonjour, merci.', `${keywordA}.`, 'Je suis aide.'];
+  const nearMiss = topic.scenarioExamples[1] ?? topic.productionSample ?? 'Je comprends votre point.';
+  const generic =
+    sessionType === 'listening'
+      ? 'Pouvez-vous répéter le message plus lentement, s’il vous plaît ?'
+      : sessionType === 'speaking'
+        ? 'Je peux expliquer clairement et proposer une action concrète.'
+        : sessionType === 'writing'
+          ? 'Bonjour, je vous écris pour clarifier ce point et proposer une suite.'
+          : 'Merci pour votre retour, je prends note.';
+  const offTask =
+    sessionType === 'benchmark' ? 'Je ne sais pas quoi répondre pour cette tâche.' : "Je ne suis pas disponible aujourd'hui.";
+  return [strongest, nearMiss, generic, offTask];
+}
+
+function buildClbMiniTestOptions(topic: Topic, sessionType: ClbSessionType): [string, string, string, string] {
+  const strongest = topic.productionSample;
+  const partial = topic.scenarioExamples[0] ?? 'Merci pour votre message.';
+  const generic =
+    sessionType === 'writing'
+      ? 'Je comprends la situation et je vous répondrai avec une proposition structurée.'
+      : sessionType === 'listening'
+        ? "Je comprends l'idée principale et je confirme le point clé."
+        : 'Je comprends la situation et je vous répondrai bientôt.';
+  const offTask = sessionType === 'review' ? 'Merci pour votre temps.' : 'Bonjour et bonne journée.';
+  return [strongest, partial, generic, offTask];
+}
+
+function buildClbShortPrompt(topic: Topic, sessionType: ClbSessionType): string {
+  if (sessionType === 'listening') {
+    return `Type one key word you heard (${topic.focus.toLowerCase()}).`;
+  }
+  if (sessionType === 'speaking') {
+    return `Type one phrase you can say for ${topic.focus.toLowerCase()}.`;
+  }
+  if (sessionType === 'writing') {
+    return `Type one keyword for a written response (${topic.focus.toLowerCase()}).`;
+  }
+  if (sessionType === 'review') {
+    return `Type one review keyword (${topic.title.toLowerCase()}).`;
+  }
+  if (sessionType === 'benchmark') {
+    return `Type one benchmark keyword (${topic.focus.toLowerCase()}).`;
+  }
+  return 'Type one key term from this task.';
+}
+
+function buildClbSentencePuzzle(topic: Topic): { tokens: string[]; correctOrder: string[] } {
+  const source = (topic.scenarioExamples[0] ?? topic.productionSample ?? 'Je propose une solution claire.')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const cleaned = source.replace(/[.?!]/g, '');
+  const tokens = cleaned.split(' ').filter(Boolean).slice(0, 12);
+  return {
+    tokens,
+    correctOrder: [...tokens]
+  };
 }
 
 function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): StructuredLessonContent {
   const idb = `${track}l${lessonNumber}`;
   const titlePrefix = track === 'clb5' ? 'CLB 5' : 'CLB 7';
+  const sessionType = clbProgramSessionType(lessonNumber);
+  const sessionLabel = clbSessionTypeLabel(sessionType);
   const masteryThresholdPercent = track === 'clb5' ? 82 : 85;
   const writingMinWords = track === 'clb5' ? 28 : 42;
   const speakingMinWords = track === 'clb5' ? 20 : 28;
+  const productionMode: Topic['productionMode'] =
+    sessionType === 'speaking'
+      ? 'spoken'
+      : sessionType === 'writing'
+        ? 'written'
+        : sessionType === 'review' || sessionType === 'benchmark'
+          ? 'mixed'
+          : topic.productionMode;
+  const productionPromptTail =
+    sessionType === 'review'
+      ? ' Add one correction from a past mistake.'
+      : sessionType === 'benchmark'
+        ? ' Keep it complete and benchmark-ready.'
+        : '';
+  const grammarAnchor = topic.grammarTargets[0] ?? 'task language pattern';
+  const sentencePuzzle = buildClbSentencePuzzle(topic);
+  const scenarioExplanation =
+    sessionType === 'review'
+      ? `Review: reinforce ${topic.focus.toLowerCase()} and fix one recurring mistake.`
+      : sessionType === 'benchmark'
+        ? `Benchmark: apply ${topic.focus.toLowerCase()} with minimal hints and full completion.`
+        : topic.scenarioExplanation;
   return {
     id: `${track}-structured-${lessonNumber}`,
     curriculumLessonId: `${track}-lesson-${lessonNumber}`,
     levelId: track,
     moduleId: `${track}-target-module-1`,
-    title: `${titlePrefix} Lesson ${lessonNumber}: ${topic.title}`,
+    title: `${titlePrefix} Lesson ${lessonNumber}: ${topic.title} (${sessionLabel})`,
     estimatedMinutes: 25,
     mode: 'exam-bridge',
     outcomes: [
@@ -429,9 +534,19 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
           {
             id: `${idb}-seg1`,
             title: topic.scenarioTitle,
-            explanation: topic.scenarioExplanation,
+            explanation: scenarioExplanation,
             examples: topic.scenarioExamples,
             companionTip: 'Focus on task purpose, then add precise details.'
+          },
+          {
+            id: `${idb}-seg2`,
+            title: 'Benchmark Mistakes to Avoid',
+            explanation: `${titlePrefix} responses lose points when they are vague. Keep ${grammarAnchor.toLowerCase()} clear and add one concrete detail.`,
+            examples: [
+              topic.scenarioExamples[0] ?? topic.productionSample,
+              topic.productionSample
+            ],
+            companionTip: 'Use this order: context -> action/request -> detail.'
           }
         ],
         requiresCompletionToAdvance: true
@@ -439,24 +554,27 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
       {
         id: `${idb}-practice`,
         type: 'practice',
-        title: 'Practice: Benchmark-aligned drills',
+        title: 'Practice: Benchmark Drills',
         targetMinutes: 8,
         objectives: ['Perform with clarity under time pressure'],
         exercises: [
           {
             id: `${idb}-p1`,
             kind: 'multipleChoice',
-            prompt: `Pick the best ${titlePrefix} response for this scenario.`,
-            options: buildClbOptions(topic),
+            prompt:
+              sessionType === 'benchmark'
+                ? `Pick the most complete ${titlePrefix} benchmark response.`
+                : `Pick the best ${titlePrefix} response.`,
+            options: buildClbOptions(topic, sessionType),
             correctOptionIndex: 0,
-            explanationOnWrong: 'Benchmark responses require context plus actionable detail.',
+            explanationOnWrong: 'Use context plus one clear action/detail.',
             skillFocus: 'reading',
             points: 8
           },
           {
             id: `${idb}-p2`,
             kind: 'shortAnswer',
-            prompt: 'Type one key functional term from this task.',
+            prompt: buildClbShortPrompt(topic, sessionType),
             acceptedAnswers: Array.from(
               new Set([
                 ...topic.vocabularyTargets.slice(0, 4).map((item) => item.toLowerCase()),
@@ -464,9 +582,43 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
               ])
             ),
             normalizeAccents: true,
-            explanationOnWrong: 'Use one of the high-frequency task words from this lesson.',
+            explanationOnWrong: 'Use one core task word from this lesson.',
             skillFocus: 'writing',
             points: 6
+          },
+          {
+            id: `${idb}-p2b`,
+            kind: 'sentenceOrderPuzzle',
+            prompt: 'Rebuild the response in the best order.',
+            instructions: 'Tap tiles in order.',
+            tokens: sentencePuzzle.tokens,
+            correctOrder: sentencePuzzle.correctOrder,
+            explanationOnWrong: 'Use this order: context first, then action/detail.',
+            skillFocus: 'writing',
+            points: 8,
+            hint: { message: 'Start with context, then complete the action.' }
+          },
+          {
+            id: `${idb}-p2c`,
+            kind: 'memoryMatch',
+            prompt: 'Memory Match: connect key terms to function.',
+            instructions: 'Tap two cards to find a match.',
+            pairs: [
+              {
+                id: `${idb}-mm1`,
+                left: topic.vocabularyTargets[0] ?? 'enjeu',
+                right: 'key benchmark term'
+              },
+              {
+                id: `${idb}-mm2`,
+                left: topic.vocabularyTargets[1] ?? 'position',
+                right: 'supporting task term'
+              }
+            ],
+            explanationOnWrong: 'Match each term to its role before submitting.',
+            skillFocus: 'reading',
+            points: 8,
+            hint: { message: 'Review key terms from teach block and pair by function.' }
           },
           {
             id: `${idb}-p3`,
@@ -474,7 +626,7 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
             prompt: 'What is the speaker’s main purpose?',
             options: ['Greeting only', 'Request/analysis with practical detail', 'Casual conversation', 'Ending call'],
             correctOptionIndex: 1,
-            explanationOnWrong: 'Identify purpose first, then details.',
+            explanationOnWrong: 'Find the purpose first, then details.',
             skillFocus: 'listening',
             points: 10,
             audioText: topic.listeningMessage
@@ -483,7 +635,7 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
             id: `${idb}-p4`,
             kind: 'quickClassification',
             prompt: 'Classify each line by task function.',
-            instructions: 'Choose category, then assign each statement.',
+            instructions: 'Choose category, then assign each line.',
             categories: [
               { id: 'context', label: 'Context' },
               { id: 'action', label: 'Action / Request' },
@@ -494,7 +646,7 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
               { id: 'i2', label: topic.productionPrompt, correctCategoryId: 'action' },
               { id: 'i3', label: topic.productionSample, correctCategoryId: 'support' }
             ],
-            explanationOnWrong: 'Strong benchmark responses are structured by function.',
+            explanationOnWrong: 'Strong responses use clear function-based structure.',
             skillFocus: 'reading',
             points: 8
           }
@@ -504,22 +656,22 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
       {
         id: `${idb}-production`,
         type: 'production',
-        title: 'Production: Timed performance task',
+        title: 'Production: Timed Task',
         targetMinutes: 6,
         objectives: ['Produce complete task response with benchmark quality'],
         productionTask: {
           id: `${idb}-prod`,
           title: `${titlePrefix} Performance Task`,
-          instructions: 'Complete the full task in structured order: context, action, support.',
-          mode: topic.productionMode,
+          instructions: 'Complete in order: context, action, support.',
+          mode: productionMode,
           mandatory: true,
           targetMinutes: 6,
           exercise:
-            topic.productionMode === 'spoken'
+            productionMode === 'spoken'
               ? {
                   id: `${idb}-prod-ex`,
                   kind: 'speakingPrompt',
-                  prompt: topic.productionPrompt,
+                  prompt: `${topic.productionPrompt}${productionPromptTail}`,
                   expectedPatterns: topic.productionExpected,
                   minWords: speakingMinWords,
                   rubricFocus: ['taskCompletion', 'fluency', 'grammar', 'pronunciation'],
@@ -531,7 +683,10 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
               : {
                   id: `${idb}-prod-ex`,
                   kind: 'writingPrompt',
-                  prompt: topic.productionPrompt,
+                  prompt:
+                    productionMode === 'written'
+                      ? `${topic.productionPrompt}${productionPromptTail} Include purpose, one concrete detail, and a clear action.`
+                      : `${topic.productionPrompt}${productionPromptTail}`,
                   expectedElements: topic.productionExpected,
                   minWords: writingMinWords,
                   rubricFocus: ['taskCompletion', 'grammar', 'coherence', 'vocabulary'],
@@ -545,22 +700,40 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
       {
         id: `${idb}-test`,
         type: 'miniTest',
-        title: 'Mini Test: Benchmark rubric check',
+        title: 'Mini Test: Benchmark Check',
         targetMinutes: 6,
         objectives: ['Confirm readiness against benchmark expectations'],
         exercises: [
           {
             id: `${idb}-t1`,
             kind: 'multipleChoice',
-            prompt: 'Pick the response that best meets clarity, detail, and task purpose.',
-            options: [topic.productionSample, 'Merci.', `${topic.vocabularyTargets[0] ?? 'mot'}.`, 'Je veux aide.'],
+            prompt:
+              sessionType === 'benchmark'
+                ? 'Pick the response that best meets benchmark quality.'
+                : 'Pick the response with best clarity and task purpose.',
+            options: buildClbMiniTestOptions(topic, sessionType),
             correctOptionIndex: 0,
-            explanationOnWrong: 'Benchmark scoring rewards complete task response, not isolated phrases.',
+            explanationOnWrong: 'Benchmark scoring rewards complete responses, not fragments.',
             skillFocus: 'reading',
             points: 8
           },
           {
             id: `${idb}-t2`,
+            kind: 'shortAnswer',
+            prompt: 'Type one benchmark keyword.',
+            acceptedAnswers: Array.from(
+              new Set([
+                ...topic.vocabularyTargets.slice(0, 4).map((item) => item.toLowerCase()),
+                ...topic.vocabularyTargets.slice(0, 4).map((item) => normalizeClbToken(item))
+              ])
+            ),
+            normalizeAccents: true,
+            explanationOnWrong: 'Use one core benchmark keyword from this lesson.',
+            skillFocus: 'writing',
+            points: 8
+          },
+          {
+            id: `${idb}-t3`,
             kind: 'writingPrompt',
             prompt: topic.writingPrompt,
             expectedElements: topic.writingExpected,

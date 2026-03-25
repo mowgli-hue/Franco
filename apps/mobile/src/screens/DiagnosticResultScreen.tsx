@@ -216,7 +216,7 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
 
   const calendarDays = Array.from({ length: 7 }, (_, i) => i + 1);
   const recommendedCta =
-    diagnosticReport && diagnosticReport.scorePercent >= 70 ? 'Continue to Billing' : "Start Recommended Path";
+    diagnosticReport && diagnosticReport.scorePercent >= 70 ? 'Continue to Plan' : 'Start Recommended Plan';
 
   return (
     <View style={styles.root}>
@@ -225,7 +225,7 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
           {stage === 'preparing' ? (
             <>
               <Text style={styles.step}>Step 5 of 5</Text>
-              <Text style={styles.title}>{diagnosticReport ? "Reviewing today's answers..." : 'Preparing your journey...'}</Text>
+              <Text style={styles.title}>{diagnosticReport ? "Reviewing today's results..." : 'Preparing your plan...'}</Text>
               <Text style={styles.subtitle}>
                 {diagnosticReport
                   ? 'Analyzing your performance across each tested level.'
@@ -258,7 +258,7 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
           {stage === 'ready' ? (
             <>
               <Text style={styles.step}>Step 5 of 5</Text>
-              <Text style={styles.title}>Your plan is ready</Text>
+              <Text style={styles.title}>Your training plan is ready</Text>
               {diagnosticReport ? (
                 <View style={styles.aiSummaryCard}>
                   <Text style={styles.aiSummaryTitle}>AI Placement Summary</Text>
@@ -329,7 +329,7 @@ export function DiagnosticResultScreen({ navigation, route }: Props) {
               <Button label={recommendedCta} onPress={handleStartTraining} loading={saving} />
               <View style={styles.secondaryActions}>
                 <Pressable onPress={() => navigation.navigate('PathMapScreen')}>
-                  <Text style={styles.secondaryActionText}>View Full Path</Text>
+                  <Text style={styles.secondaryActionText}>View Full Path Map</Text>
                 </Pressable>
               </View>
             </>

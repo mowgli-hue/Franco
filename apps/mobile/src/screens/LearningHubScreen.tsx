@@ -178,7 +178,7 @@ export function LearningHubScreen({ navigation }: Props) {
     <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Learning Hub</Text>
-        <Text style={styles.subtitle}>Engine-driven curriculum progression and session planning.</Text>
+        <Text style={styles.subtitle}>Your level, plan, and next lesson.</Text>
 
         <Card>
           <View style={styles.focusHeaderRow}>
@@ -189,8 +189,8 @@ export function LearningHubScreen({ navigation }: Props) {
               <Text style={styles.focusMeta}>
                 Roadmap Day {roadmapProgress.currentDay} / {roadmapProgress.totalSessions} • {roadmapProgress.today.title}
               </Text>
-              <Text style={styles.focusMeta}>Roadmap Focus: {roadmapProgress.today.focusSummary}</Text>
-              <Text style={styles.focusMeta}>Session readiness: {sessionReadiness}</Text>
+              <Text style={styles.focusMeta}>Focus: {roadmapProgress.today.focusSummary}</Text>
+              <Text style={styles.focusMeta}>Status: {sessionReadiness}</Text>
               <Text style={styles.focusMeta}>Recommended skill: {formatSkillFocus(todayFocusSkill)}</Text>
             </View>
           </View>
@@ -198,7 +198,7 @@ export function LearningHubScreen({ navigation }: Props) {
 
           {canChooseStartingLevel ? (
             <View style={styles.startLevelWrap}>
-              <Text style={styles.startLevelLabel}>Choose your starting level (one-time setup)</Text>
+              <Text style={styles.startLevelLabel}>Choose your starting level (one time)</Text>
               <View style={styles.startLevelButtons}>
                 {START_LEVEL_OPTIONS.map((option) => (
                   <AnimatedButton key={option.id} label={option.label} variant="outline" onPress={() => setStartingLevel(option.id)} />
@@ -208,8 +208,8 @@ export function LearningHubScreen({ navigation }: Props) {
           ) : null}
 
           <View style={styles.sessionActionRow}>
-            <Button label="Generate Strict Session" onPress={() => generateTodaySession({ strictMode: true })} />
-            <Button label="Generate Flexible Session" variant="outline" onPress={() => generateTodaySession({ strictMode: false })} />
+            <Button label="Strict Session" onPress={() => generateTodaySession({ strictMode: true })} />
+            <Button label="Flexible Session" variant="outline" onPress={() => generateTodaySession({ strictMode: false })} />
           </View>
 
           {todaySessionPlan ? (
@@ -219,10 +219,10 @@ export function LearningHubScreen({ navigation }: Props) {
                 {todaySessionPlan.strictMode ? 'Strict Mode' : 'Flexible Mode'} • {formatSkillFocus(todaySessionPlan.skillFocus)} • {todaySessionPlan.totalMinutes} minutes
               </Text>
               <Text style={styles.sessionGeneratedText}>
-                Roadmap Session Type: {roadmapProgress.today.title}
+                Session Type: {roadmapProgress.today.title}
               </Text>
               <Text style={styles.sessionGeneratedHint}>
-                Scroll down to view the full 25-minute plan blocks.
+                Scroll down to view all 25-minute blocks.
               </Text>
             </View>
           ) : null}
@@ -255,7 +255,7 @@ export function LearningHubScreen({ navigation }: Props) {
               <Text style={styles.roadmapNextTitle}>Next Sessions</Text>
               {roadmapProgress.next.map((item) => (
                 <Text key={item.id} style={styles.roadmapNextItem}>
-                  • Day {item.globalDay}: {item.title} ({item.levelTitle}) - {item.focusSummary}
+                  • Day {item.globalDay}: {item.title} ({item.levelTitle}) • {item.focusSummary}
                 </Text>
               ))}
             </View>
@@ -272,7 +272,7 @@ export function LearningHubScreen({ navigation }: Props) {
               <AnimatedLessonCard
                 key={item.lesson.id}
                 title={item.lesson.id}
-                subtitle={item.lesson.objectives[0] ?? 'Lesson objective'}
+                subtitle={item.lesson.objectives[0] ?? 'Objective'}
                 statusText={item.locked ? 'Locked' : item.passed ? 'Passed' : item.isCurrent ? 'Current lesson' : 'Unlocked'}
                 locked={item.locked}
                 current={item.isCurrent}

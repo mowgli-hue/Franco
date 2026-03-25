@@ -1362,7 +1362,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
             setRecordingBase64ByExercise((prev) => ({ ...prev, [exerciseId]: base64 }));
             setAiSummaryByExercise((prev) => ({
               ...prev,
-              [exerciseId]: 'Recording captured (web). Press Check Answer for AI speaking analysis.'
+              [exerciseId]: 'Recording saved (web). Tap Check.'
             }));
           };
           reader.readAsDataURL(blob);
@@ -1377,7 +1377,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
         mediaRecorder.start();
         setWebRecordingExerciseId(exerciseId);
-        setAiSummaryByExercise((prev) => ({ ...prev, [exerciseId]: 'Recording in progress (web)...' }));
+        setAiSummaryByExercise((prev) => ({ ...prev, [exerciseId]: 'Recording (web)...' }));
       } catch {
         setFeedback({ tone: 'warning', message: 'Could not start browser recording. Check microphone permission.' });
       }
@@ -1392,7 +1392,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
     await recorder.prepareToRecordAsync();
     recorder.record();
-    setAiSummaryByExercise((prev) => ({ ...prev, [exerciseId]: 'Recording in progress...' }));
+    setAiSummaryByExercise((prev) => ({ ...prev, [exerciseId]: 'Recording...' }));
   };
 
   const stopRecording = async (exerciseId: string) => {
@@ -1415,7 +1415,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     }
 
     setRecordingUriByExercise((prev) => ({ ...prev, [exerciseId]: uri }));
-    setAiSummaryByExercise((prev) => ({ ...prev, [exerciseId]: 'Recording captured. Press Check Answer for AI speaking analysis.' }));
+    setAiSummaryByExercise((prev) => ({ ...prev, [exerciseId]: 'Recording saved. Tap Check.' }));
   };
 
   const onContinueAfterExercise = (ignoreAiNote = false) => {
@@ -1432,7 +1432,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       if (!currentCorrect) {
         setFeedback({
           tone: 'warning',
-          message: `${selectedCompanion.name}: This item is still incorrect. Review the hint and try it again.`
+          message: `${selectedCompanion.name}: Still not correct. Review the hint and retry.`
         });
         return;
       }
@@ -1651,7 +1651,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         </Text>
       ) : null}
       <Pressable onPress={() => void playPronunciation(prompt)} style={styles.promptActionChip}>
-        <Text style={styles.promptActionChipText}>Hear this question</Text>
+        <Text style={styles.promptActionChipText}>Play Prompt</Text>
       </Pressable>
     </View>
   );
@@ -1668,7 +1668,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
             </Text>
             <Text style={styles.contextLine}>{activeAiCorrection.text}</Text>
           </View>
-          <Text style={styles.hintText}>Read this once, then continue to the next step.</Text>
+          <Text style={styles.hintText}>Read once, then continue.</Text>
         </View>
       );
     }
@@ -1728,13 +1728,13 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       return (
         <View style={styles.centeredStep}>
           <Text style={styles.bigTitle}>{lesson.title}</Text>
-          <Text style={styles.bodyText}>This session follows 25-minute performance rhythm: Activation, Core, Practice, Production, Mastery.</Text>
+          <Text style={styles.bodyText}>25-min flow: Warm-up, Learn, Practice, Produce, Review.</Text>
           {canadaTemplate ? (
             <View style={styles.contextCard}>
-              <Text style={styles.contextTitle}>Real-Life Context</Text>
+              <Text style={styles.contextTitle}>Context</Text>
               <Text style={styles.contextLine}>Objective: {canadaTemplate.objective}</Text>
               <Text style={styles.contextLine}>Scenario: {canadaTemplate.context}</Text>
-              <Text style={styles.contextLine}>Pronunciation focus: {canadaTemplate.pronunciationFocus}</Text>
+              <Text style={styles.contextLine}>Pronunciation: {canadaTemplate.pronunciationFocus}</Text>
               <Text style={styles.contextLine}>Common mistake: {canadaTemplate.commonMistake}</Text>
             </View>
           ) : null}
@@ -1760,7 +1760,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         <View style={styles.centeredStep}>
           <Text style={styles.bigTitle}>{segment.title}</Text>
           <Text style={styles.bodyText}>{segment.explanation}</Text>
-          {!!segment.funFact ? <Text style={styles.hintText}>Fun Fact: {segment.funFact}</Text> : null}
+          {!!segment.funFact ? <Text style={styles.hintText}>Tip: {segment.funFact}</Text> : null}
           {cues.length ? (
             <View style={styles.cueGrid}>
               {cues.map((cue) => {
@@ -1806,9 +1806,9 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
           >
             <Text style={styles.audioText}>Play Audio</Text>
           </Pressable>
-          {canadaTemplate ? <Text style={styles.hintText}>Functional task: {canadaTemplate.functionalTask}</Text> : null}
+          {canadaTemplate ? <Text style={styles.hintText}>Task: {canadaTemplate.functionalTask}</Text> : null}
           {segment.companionTip ? <Text style={styles.tipText}>{selectedCompanion.emoji} {segment.companionTip}</Text> : null}
-          {!interacted ? <Text style={styles.hintText}>Tap an example or audio to unlock continue.</Text> : null}
+          {!interacted ? <Text style={styles.hintText}>Tap an example or audio to continue.</Text> : null}
         </View>
       );
     }
@@ -1853,7 +1853,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
                 }}
                 style={styles.audioBtn}
               >
-                <Text style={styles.audioText}>Play Listening Audio</Text>
+                <Text style={styles.audioText}>Play Audio</Text>
               </Pressable>
             ) : null}
           </View>
@@ -1877,7 +1877,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
                 <Text style={styles.promptCardText}>{nextUnmatchedLeft.label}</Text>
               </View>
             ) : (
-              <Text style={styles.hintText}>All pairs selected. Press Check Answer.</Text>
+              <Text style={styles.hintText}>All pairs ready. Tap Check.</Text>
             )}
             <View style={styles.optionsWrap}>
               {currentExercise.rightItems.map((item) => (
@@ -1944,7 +1944,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
                   </View>
                 ))
               ) : (
-                <Text style={styles.hintText}>Tap words in order to build the sentence.</Text>
+                <Text style={styles.hintText}>Tap words in order.</Text>
               )}
             </View>
             <View style={styles.tokenWrap}>
@@ -2113,15 +2113,15 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
               <Pressable
                 onPress={() => {
                   void playPronunciation(currentExercise.sampleAnswer);
-                  setFeedback({ tone: 'neutral', message: 'Model pronunciation played. Listen, then repeat and record.' });
+                  setFeedback({ tone: 'neutral', message: 'Model played. Repeat, then record.' });
                 }}
                 style={styles.inlineBtn}
               >
-                <Text style={styles.inlineBtnText}>Play Model Audio</Text>
+                <Text style={styles.inlineBtnText}>Play Model</Text>
               </Pressable>
               {!isRecording ? (
                 <Pressable onPress={() => void startRecording(currentExercise.id)} style={styles.inlineBtn}>
-                  <Text style={styles.inlineBtnText}>Start Recording</Text>
+                  <Text style={styles.inlineBtnText}>Record</Text>
                 </Pressable>
               ) : (
                 <Pressable onPress={() => void stopRecording(currentExercise.id)} style={styles.inlineBtn}>
@@ -2132,11 +2132,11 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
               )}
               {recordingUri ? (
                 <View style={styles.recordedBadge}>
-                  <Text style={styles.recordedBadgeText}>Audio Ready</Text>
+                  <Text style={styles.recordedBadgeText}>Recorded</Text>
                 </View>
               ) : null}
             </View>
-            <Text style={styles.hintText}>Record first for pronunciation score, then press Check Answer.</Text>
+            <Text style={styles.hintText}>Record first, then tap Check.</Text>
             {needsPronunciationRetry ? (
               <Pressable
                 onPress={() => {
@@ -2154,7 +2154,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
                   setAiSummaryByExercise((prev) => ({
                     ...prev,
                     [currentExercise.id]:
-                      'Pronunciation needs improvement. Play model audio, then record again slowly.'
+                      'Need clearer pronunciation. Play model and record again slowly.'
                   }));
                   setFeedback({
                     tone: 'warning',
@@ -2192,7 +2192,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
           <View style={styles.interactiveStep}>
             {renderExercisePromptCard(currentExercise.prompt, currentExercise.kind)}
             <InputField
-              label="Write your answer"
+              label="Your answer"
               value={textValue}
               onChangeText={(value) => setTextInputs((prev) => ({ ...prev, [currentExercise.id]: value }))}
               placeholder="Write 4-6 sentences..."
@@ -2202,7 +2202,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
               style={styles.multiInput}
             />
             <Text style={styles.acceptedExamples}>Word count: {wordCount}</Text>
-            <Text style={styles.hintText}>Target: at least {currentExercise.minWords} words.</Text>
+            <Text style={styles.hintText}>Target: {currentExercise.minWords}+ words.</Text>
             {aiSummary ? <Text style={styles.hintText}>{aiSummary}</Text> : null}
             {performanceFeedback ? (
               <PerformanceFeedbackPanel
@@ -2225,7 +2225,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         <View style={styles.interactiveStep}>
           {renderExercisePromptCard(currentExercise.prompt, currentExercise.kind)}
           <InputField
-            label="Write your answer"
+            label="Your answer"
             value={textValue}
             onChangeText={(value) => setTextInputs((prev) => ({ ...prev, [currentExercise.id]: value }))}
             placeholder="Type your response..."
@@ -2316,15 +2316,15 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
     return (
       <View style={styles.centeredStep}>
-        <Text style={styles.bigTitle}>Ready to finish</Text>
-        <Text style={styles.bodyText}>Practice: {practicePercent}%  •  Mastery check complete. Submit session result.</Text>
+        <Text style={styles.bigTitle}>Finish Lesson</Text>
+        <Text style={styles.bodyText}>Practice {practicePercent}% • Review done. Submit result.</Text>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Session Summary</Text>
+          <Text style={styles.summaryTitle}>Summary</Text>
           <Text style={styles.summaryMeta}>
-            Practice correct: {practiceCorrectCount}/{practiceSummaryItems.length} • Mastery: {masteryScore}/{masteryQuestions.length}
+            Practice {practiceCorrectCount}/{practiceSummaryItems.length} • Review {masteryScore}/{masteryQuestions.length}
           </Text>
           <Pressable onPress={() => setShowSessionSummary((prev) => !prev)} style={styles.summaryToggleBtn}>
-            <Text style={styles.summaryToggleText}>{showSessionSummary ? 'Hide detailed results' : 'Show detailed results'}</Text>
+            <Text style={styles.summaryToggleText}>{showSessionSummary ? 'Hide details' : 'Show details'}</Text>
           </Pressable>
 
           {showSessionSummary ? (
@@ -2343,12 +2343,12 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         </View>
         {Platform.OS === 'web' ? (
           <Pressable onPress={downloadLessonNotes} style={styles.downloadBtn}>
-            <Text style={styles.downloadBtnText}>Download Lesson Notes</Text>
+            <Text style={styles.downloadBtnText}>Download Notes</Text>
           </Pressable>
         ) : null}
         {canadaTemplate ? (
           <View style={styles.contextCard}>
-            <Text style={styles.contextTitle}>Avatar Recap</Text>
+            <Text style={styles.contextTitle}>Recap</Text>
             <Text style={styles.contextLine}>{selectedCompanion.emoji} {canadaTemplate.avatarRecap}</Text>
           </View>
         ) : null}
@@ -2360,15 +2360,15 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
   const ctaLabel = (() => {
     if (activeAiCorrection) return 'Continue';
-    if (currentStep.kind === 'activation') return activationChecked ? 'Continue' : 'Check Warm-up';
+    if (currentStep.kind === 'activation') return activationChecked ? 'Continue' : 'Check';
     if (currentStep.kind === 'intro') return 'Continue';
     if (currentStep.kind === 'learn_segment') return 'Continue';
-    if (currentStep.kind === 'exercise') return currentStepSubmitted ? 'Continue' : 'Check Answer';
+    if (currentStep.kind === 'exercise') return currentStepSubmitted ? 'Continue' : 'Check';
     if (currentStep.kind === 'review_block') {
-      if (reviewMode === 'retry') return retryChecked ? 'Continue' : 'Check Retry Round';
-      return masteryChecked ? 'Continue' : 'Check Mastery';
+      if (reviewMode === 'retry') return retryChecked ? 'Continue' : 'Check Retry';
+      return masteryChecked ? 'Continue' : 'Check Review';
     }
-    return 'Finish Block';
+    return 'Finish';
   })();
 
   const ctaDisabled = (() => {
@@ -2825,7 +2825,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
             <View style={styles.reflexNudgeCard}>
               <Text style={styles.reflexNudgeTitle}>Need an energy reset?</Text>
               <Text style={styles.reflexNudgeText}>
-                Try a 2-minute Reflex Run in Practice tab, then return and finish this lesson stronger.
+                Try a 2-minute Reflex Run, then come back and finish this lesson.
               </Text>
             </View>
           ) : null}

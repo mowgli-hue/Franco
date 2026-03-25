@@ -43,8 +43,8 @@ export function SubscriptionScreen() {
     ? 'Your one-time Pro preview is already used.'
     : 'You still have one Pro lesson preview available.';
   const nextStepLine = isActive
-    ? 'You have full access. Continue your path and manage billing any time.'
-    : 'Upgrade to unlock full A1 to CLB7 training and AI evaluations.';
+    ? 'You have full access. Continue training and manage billing any time.'
+    : 'Upgrade to unlock full A1 to CLB7 training, AI checks, and exam-focused practice.';
 
   const handleOpenPortal = async () => {
     try {
@@ -52,11 +52,11 @@ export function SubscriptionScreen() {
       setStatusMessage(null);
       const result = await openBillingPortal({ returnUrl: `${env.webAppBaseUrl}/subscription/account` });
       if (!result.ok || !result.portalUrl) {
-        setStatusMessage('Billing portal unavailable right now. If you just subscribed, try again in 1 minute.');
+        setStatusMessage('Billing portal is unavailable right now. If you just subscribed, try again in 1 minute.');
         return;
       }
       await Linking.openURL(result.portalUrl);
-      setStatusMessage('Billing portal opened in browser.');
+      setStatusMessage('Billing portal opened in your browser.');
     } finally {
       setPortalLoading(false);
     }
@@ -71,11 +71,11 @@ export function SubscriptionScreen() {
         cancelUrl: `${env.webAppBaseUrl}/subscription/cancel`
       });
       if (!result.ok || !result.checkoutUrl) {
-        setStatusMessage(result.message ?? 'Checkout unavailable right now. Try again in 1 minute.');
+        setStatusMessage(result.message ?? 'Checkout is unavailable right now. Try again in 1 minute.');
         return;
       }
       await Linking.openURL(result.checkoutUrl);
-      setStatusMessage('Checkout opened in browser.');
+      setStatusMessage('Checkout opened in your browser.');
     } finally {
       setCheckoutLoading(null);
     }
@@ -85,8 +85,8 @@ export function SubscriptionScreen() {
     <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Card>
-          <Text style={styles.title}>Subscription</Text>
-          <Text style={styles.subtitle}>Manage billing, renewals, and your premium access.</Text>
+          <Text style={styles.title}>Subscription & Billing</Text>
+          <Text style={styles.subtitle}>Manage plan status, payments, and premium access.</Text>
 
           <View style={styles.planCardCurrent}>
             <View style={styles.currentHeader}>
@@ -116,16 +116,16 @@ export function SubscriptionScreen() {
           <View style={styles.planCard}>
             <Text style={styles.planTitle}>Founder Plan</Text>
             <Text style={styles.planName}>Limited seats</Text>
-            <Text style={styles.planMeta}>• Discounted legacy pricing</Text>
+            <Text style={styles.planMeta}>• Founding member pricing</Text>
             <Text style={styles.planMeta}>• Same premium feature access</Text>
             <Text style={styles.planMeta}>Seats remaining: {founderSeatsRemaining}</Text>
           </View>
 
           <View style={styles.securityCard}>
             <Text style={styles.securityTitle}>Security & Privacy</Text>
-            <Text style={styles.securityLine}>• Billing is handled on Stripe-hosted encrypted checkout (PCI-compliant).</Text>
-            <Text style={styles.securityLine}>• Card details are not stored in Franco app servers.</Text>
-            <Text style={styles.securityLine}>• You can manage renewal/cancel from Stripe customer portal.</Text>
+            <Text style={styles.securityLine}>• Billing runs on Stripe-hosted encrypted checkout (PCI-compliant).</Text>
+            <Text style={styles.securityLine}>• Card details are not stored on Franco app servers.</Text>
+            <Text style={styles.securityLine}>• You can manage renewal or cancellation in Stripe customer portal.</Text>
           </View>
 
           <View style={styles.supportCard}>
@@ -148,13 +148,13 @@ export function SubscriptionScreen() {
             {!isActive ? (
               <>
                 <Button
-                  label="Subscribe Pro ($99/mo)"
+                  label="Subscribe Pro ($99/month)"
                   onPress={() => void handleCheckout('pro')}
                   disabled={loading || portalLoading || checkoutLoading !== null}
                   loading={checkoutLoading === 'pro'}
                 />
                 <Button
-                  label="Get Founder Plan"
+                  label="Get Founding Plan"
                   variant="outline"
                   onPress={() => void handleCheckout('founder')}
                   disabled={loading || portalLoading || checkoutLoading !== null || founderSeatsRemaining <= 0}
@@ -163,7 +163,7 @@ export function SubscriptionScreen() {
               </>
             ) : null}
             <Button
-              label={isActive ? 'Manage Billing in Stripe' : 'Open Billing Portal'}
+              label={isActive ? 'Manage Billing in Stripe' : 'Open Billing Portal (Active only)'}
               onPress={() => void handleOpenPortal()}
               disabled={loading || portalLoading || subscriptionProfile.subscriptionStatus !== 'active'}
               loading={portalLoading}

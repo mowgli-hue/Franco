@@ -100,7 +100,7 @@ export function LoginScreen({ navigation, route }: Props) {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         <View style={styles.header}>
           <Text style={styles.title}>Welcome back</Text>
-          <Text style={styles.subtitle}>Sign in to continue your French immigration training path.</Text>
+          <Text style={styles.subtitle}>Sign in to continue your structured French training.</Text>
         </View>
 
         <Card>
@@ -138,7 +138,7 @@ export function LoginScreen({ navigation, route }: Props) {
             <Button label="Login" onPress={handleLogin} disabled={!canSubmit} loading={loading} />
             <Button label="Register" onPress={() => navigation.navigate('RegisterScreen')} variant="outline" disabled={loading} />
             <Button
-              label="Resend Verification Email"
+              label="Resend Verification"
               onPress={handleResendVerification}
               variant="text"
               disabled={loading || resending}

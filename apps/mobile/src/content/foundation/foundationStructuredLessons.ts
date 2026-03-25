@@ -10,9 +10,9 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
     estimatedMinutes: 25,
     mode: 'foundation',
     outcomes: [
-      'Recognize the French alphabet structure',
-      'Notice basic pronunciation differences from English',
-      'Identify common beginner sound patterns'
+      'Recognize French letters with confidence',
+      'Hear basic sound differences from English',
+      'Use a few easy French words clearly'
     ],
     vocabularyTargets: ['alphabet', 'lettre', 'son', 'bonjour', 'je'],
     grammarTargets: ['Sound-symbol recognition', 'Pronunciation awareness'],
@@ -22,15 +22,15 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
         type: 'teach',
         title: 'Teach: Alphabet Awareness',
         targetMinutes: 7,
-        objectives: ['Introduce A-Z and common beginner sound habits'],
+        objectives: ['Learn letters and the first core sounds step by step'],
         teachingSegments: [
           {
             id: 'alpha-1',
             title: 'Same Alphabet, Different Sounds',
             explanation:
-              'French uses the same 26 letters as English, but letter names and pronunciation patterns can sound different.',
+              'French uses the same 26 letters as English, but many sounds are pronounced differently.',
             examples: ['French alphabet = 26 letters', 'Final consonants are often not pronounced in basic words'],
-            companionTip: 'Focus on listening and repeating, not speed.',
+            companionTip: 'Listen first, then repeat slowly. Do not rush.',
             funFact: 'French rhythm is syllable-based, so clarity matters more than stress.',
             pronunciationCues: ['A', 'B', 'C', 'D', 'E', 'F', 'G']
           },
@@ -38,17 +38,17 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
             id: 'alpha-2',
             title: 'Beginner Sound Patterns',
             explanation:
-              'Some combinations like ai, ou, and au appear often in beginner French. Train your ear to notice them.',
+              'Sound groups like ai, ou, and au appear often. Train your ear early.',
             examples: ['ai', 'ou', 'au'],
-            companionTip: 'When you see a new combination, repeat it three times slowly before using it in a word.',
+            companionTip: 'Repeat each sound group three times before moving on.',
             pronunciationCues: ['ai', 'ou', 'au']
           },
           {
             id: 'alpha-3',
             title: 'Mini Vocabulary: Fruits',
-            explanation: 'Learn a few easy fruit words to make French feel practical early.',
+            explanation: 'Learn a few easy fruit words so French feels practical from day one.',
             examples: ['une pomme', 'une banane', 'une orange'],
-            companionTip: 'Tap and repeat each fruit slowly. Keep the vowel sounds clear.',
+            companionTip: 'Tap and repeat each word. Keep vowels clear.',
             pronunciationCues: ['pomme', 'banane', 'orange']
           }
         ],
@@ -59,7 +59,7 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
         type: 'practice',
         title: 'Practice: Recognition and Matching',
         targetMinutes: 7,
-        objectives: ['Recognize alphabet facts and sound combinations'],
+        objectives: ['Recognize letters, sound groups, and easy words'],
         exercises: [
           {
             id: 'alpha-p1',
@@ -78,7 +78,7 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
             options: ['ai', 'kr', 'pt', 'zx'],
             correctOptionIndex: 0,
             explanationOnWrong: 'ai is a common beginner French sound group.',
-            skillFocus: 'listening',
+            skillFocus: 'reading',
             points: 5
           },
           {
@@ -112,11 +112,11 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
         type: 'production',
         title: 'Produce: Sound Awareness Practice',
         targetMinutes: 5,
-        objectives: ['Say beginner sounds and one greeting clearly'],
+        objectives: ['Say simple sounds and one greeting clearly'],
         productionTask: {
           id: 'alpha-prod',
           title: 'Say alphabet and greeting sounds',
-          instructions: 'Say A-B-C slowly, then say Bonjour clearly once.',
+          instructions: 'Say A-B-C slowly, then say Bonjour once clearly.',
           mode: 'spoken',
           mandatory: true,
           targetMinutes: 5,
@@ -131,7 +131,7 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
             fallbackTextEvaluationAllowed: true,
             skillFocus: 'speaking',
             points: 15,
-            hint: { message: 'Keep it simple: A, B, C, then Bonjour.' }
+            hint: { message: 'Say each part clearly: A, B, C, Bonjour.' }
           }
         },
         requiresCompletionToAdvance: true
@@ -169,7 +169,7 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
             options: ['Repeat slowly and clearly', 'Speak very fast', 'Skip listening', 'Only read silently'],
             correctOptionIndex: 0,
             explanationOnWrong: 'Slow clear repetition is best for beginners.',
-            skillFocus: 'speaking',
+            skillFocus: 'reading',
             points: 10
           }
         ],
@@ -192,9 +192,9 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
     estimatedMinutes: 25,
     mode: 'foundation',
     outcomes: [
-      'Use Bonjour/Bonsoir appropriately',
-      'Use Merci in everyday interactions',
-      'Recognize polite opening and closing language'
+      'Use Bonjour and Bonsoir in the right moment',
+      'Use Merci and S’il vous plaît naturally',
+      'Build a short polite interaction'
     ],
     vocabularyTargets: ['bonjour', 'bonsoir', 'merci', "s'il vous plaît", 'au revoir'],
     grammarTargets: ['Politeness routines', 'Greeting formulas'],
@@ -204,21 +204,21 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
         type: 'teach',
         title: 'Teach: Polite Greeting Routine',
         targetMinutes: 7,
-        objectives: ['Teach common greetings for Canadian daily contexts'],
+        objectives: ['Learn greeting routine for daily life in Canada'],
         teachingSegments: [
           {
             id: 'greet-1',
             title: 'Daytime and Evening Greetings',
             explanation: 'Use Bonjour during the day and Bonsoir in the evening.',
             examples: ['Bonjour (daytime)', 'Bonsoir (evening greeting)'],
-            companionTip: 'When unsure, Bonjour is the safest default during the day.'
+            companionTip: 'If it is daytime and you are unsure, use Bonjour.'
           },
           {
             id: 'greet-2',
             title: 'Politeness Core',
             explanation: 'Merci and s’il vous plaît help make your French respectful and natural.',
             examples: ['Merci = thank you', 'S’il vous plaît = please'],
-            companionTip: 'Politeness is especially important in service and immigration settings.'
+            companionTip: 'Use polite words early. They build confidence fast.'
           }
         ],
         requiresCompletionToAdvance: true
@@ -228,7 +228,7 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
         type: 'practice',
         title: 'Practice: Greeting Choice and Matching',
         targetMinutes: 7,
-        objectives: ['Choose correct greeting by context'],
+        objectives: ['Choose greeting and polite words correctly'],
         exercises: [
           {
             id: 'greet-p1',
@@ -364,9 +364,9 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
     estimatedMinutes: 25,
     mode: 'foundation',
     outcomes: [
-      'Say your name using Je m’appelle',
-      'Say where you are from using Je viens de/du',
-      'Say a short self-introduction'
+      'Say your name with Je m’appelle',
+      'Say where you are from with Je viens de/du',
+      'Deliver a short self-introduction confidently'
     ],
     vocabularyTargets: ["je m'appelle", 'je viens de', 'Canada', 'Maroc', 'bonjour'],
     grammarTargets: ['Je m’appelle ...', 'Je viens de/du ...'],
@@ -376,21 +376,21 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
         type: 'teach',
         title: 'Teach: Name and Origin',
         targetMinutes: 7,
-        objectives: ['Teach self-introduction structures'],
+        objectives: ['Learn two core self-introduction structures'],
         teachingSegments: [
           {
             id: 'intro-name',
             title: 'Name Structure',
             explanation: 'Use Je m’appelle + your name to introduce yourself.',
             examples: ["Je m'appelle Sara.", "Je m'appelle Ali."],
-            companionTip: 'Keep this expression together. Do not change the verb part.'
+            companionTip: 'Treat Je m’appelle as one fixed expression.'
           },
           {
             id: 'intro-origin',
             title: 'Origin Structure',
             explanation: 'Use Je viens de/du + place to say where you are from.',
             examples: ['Je viens du Maroc.', 'Je viens du Canada.'],
-            companionTip: 'Think of this as “I come from …”.'
+            companionTip: 'Think of this as: I come from...'
           }
         ],
         requiresCompletionToAdvance: true
@@ -400,7 +400,7 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
         type: 'practice',
         title: 'Practice: Identity Sentence Recognition',
         targetMinutes: 7,
-        objectives: ['Recognize correct self-introduction sentences'],
+        objectives: ['Recognize and build correct intro sentences'],
         exercises: [
           {
             id: 'intro-p1',
@@ -440,11 +440,11 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
         type: 'production',
         title: 'Produce: 2-Line Self Introduction',
         targetMinutes: 5,
-        objectives: ['Produce name + origin in one response'],
+        objectives: ['Produce greeting + name + origin'],
         productionTask: {
           id: 'intro-prod',
           title: 'Spoken Self Intro',
-          instructions: 'Say your name and origin in two short lines.',
+          instructions: 'Say your name and origin in short clear lines.',
           mode: 'spoken',
           mandatory: true,
           targetMinutes: 5,
@@ -515,8 +515,8 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
     mode: 'foundation',
     outcomes: [
       'Recognize numbers 0-20 in French',
-      'Map spoken/written number words to digits',
-      'Use numbers for simple age or quantity statements'
+      'Match number words to digits quickly',
+      'Use numbers in age, price, and simple daily phrases'
     ],
     vocabularyTargets: ['zéro', 'un', 'deux', 'dix', 'dix-sept', 'vingt'],
     grammarTargets: ['Number recognition', 'Basic quantity expressions'],
@@ -526,14 +526,14 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
         type: 'teach',
         title: 'Teach: Number Families 0-20',
         targetMinutes: 7,
-        objectives: ['Teach core numbers and teen formation patterns'],
+        objectives: ['Learn number families clearly from 0 to 20'],
         teachingSegments: [
           {
             id: 'num-1',
             title: 'Flash Cards: 0-10',
             explanation: 'Tap each number card. Hear it in French. Repeat once before moving to the next card.',
             examples: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-            companionTip: 'Start slow. Accuracy first, speed later.',
+            companionTip: 'Start slow. Accuracy first.',
             pronunciationCues: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
           },
           {
@@ -549,7 +549,7 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
             title: 'Numbers in Daily Life',
             explanation: 'Use numbers in short phrases you will say in Canada.',
             examples: ['J’ai 20 ans.', 'Numéro 12', '17 dollars'],
-            companionTip: 'After each phrase, repeat only the number one more time.',
+            companionTip: 'After each phrase, repeat the number once.',
             pronunciationCues: ['20', '12', '17', 'vingt ans', 'numéro douze', 'dix-sept dollars']
           }
         ],
@@ -560,7 +560,7 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
         type: 'practice',
         title: 'Practice: Number Recognition',
         targetMinutes: 7,
-        objectives: ['Match French words to digits 0-20'],
+        objectives: ['Match French number words to digits 0-20'],
         exercises: [
           {
             id: 'num-p1',
@@ -613,11 +613,11 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
         type: 'production',
         title: 'Produce: Number Use',
         targetMinutes: 5,
-        objectives: ['Say numbers clearly in a simple phrase'],
+        objectives: ['Say numbers clearly in simple daily phrases'],
         productionTask: {
           id: 'num-prod',
           title: 'Simple Number Speaking',
-          instructions: 'Say two numbers between 0 and 20, then one short phrase.',
+          instructions: 'Say two numbers between 0 and 20, then one short phrase with a number.',
           mode: 'spoken',
           mandatory: true,
           targetMinutes: 5,
@@ -632,7 +632,7 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
             fallbackTextEvaluationAllowed: true,
             skillFocus: 'speaking',
             points: 15,
-            hint: { message: 'Keep it simple: say three numbers clearly.' }
+            hint: { message: 'Say three numbers clearly, one by one.' }
           }
         },
         requiresCompletionToAdvance: true
@@ -674,7 +674,7 @@ export const foundationStructuredLessons: StructuredLessonContent[] = [
             fallbackTextEvaluationAllowed: true,
             skillFocus: 'speaking',
             points: 15,
-            hint: { message: 'Say two number words clearly, for example: dix, vingt.' }
+            hint: { message: 'Say both number words clearly: dix, vingt.' }
           }
         ],
         requiresCompletionToAdvance: true

@@ -16,6 +16,8 @@
     "check:backend": "npx tsc --noEmit -p apps/backend/tsconfig.json",
     "check:diagnostic-quality": "node scripts/checkDiagnosticQuality.cjs",
     "check:diagnostic-quality:strict": "node scripts/checkDiagnosticQuality.cjs --strict",
+    "check:lesson-quality": "node scripts/checkLessonQuality.cjs",
+    "check:lesson-quality:strict": "node scripts/checkLessonQuality.cjs --strict",
     "check:stability": "npm run check:mobile && npm run check:backend && npm run check:diagnostic-quality:strict && npm run lint --workspace @clb/mobile && npm run test --workspace @clb/mobile -- --watchAll=false --passWithNoTests",
     "lint": "npm run lint --workspaces",
     "test": "npm run test --workspaces",

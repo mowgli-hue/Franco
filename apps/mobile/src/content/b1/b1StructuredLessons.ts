@@ -42,6 +42,7 @@ type B1Spec = {
 
 function makeB1Lesson(spec: B1Spec): StructuredLessonContent {
   const idb = `b1l${spec.lessonNumber}`;
+  const grammarAnchor = spec.grammarTargets[0] ?? 'target structure';
   return {
     id: `b1-structured-${spec.lessonNumber}`,
     curriculumLessonId: `b1-lesson-${spec.lessonNumber}`,
@@ -74,6 +75,16 @@ function makeB1Lesson(spec: B1Spec): StructuredLessonContent {
             explanation: spec.scenarioExplanation,
             examples: spec.scenarioExamples,
             companionTip: 'Imagine this as a real workplace or service conversation in Canada.'
+          },
+          {
+            id: `${idb}-seg3`,
+            title: 'Common Mistakes to Avoid',
+            explanation: `At B1, learners often lose precision when adding too many clauses. Keep ${grammarAnchor.toLowerCase()} visible and support each claim with one concrete detail.`,
+            examples: [
+              spec.teachExamples[0] ?? "J'ai eu un retard de bus, donc je suis arrivé plus tard.",
+              spec.scenarioExamples[0] ?? 'Je propose une solution pratique.'
+            ],
+            companionTip: 'Structure: context -> action -> support detail.'
           }
         ],
         requiresCompletionToAdvance: true
@@ -217,7 +228,38 @@ function makeB1Lesson(spec: B1Spec): StructuredLessonContent {
             points: 5
           },
           {
+            id: `${idb}-t1b`,
+            kind: 'listeningPrompt',
+            prompt: 'Select the best interpretation of this B1 message.',
+            options: [
+              'General greeting only',
+              'Situation explained with practical need',
+              'No clear purpose',
+              'Conversation ending'
+            ],
+            correctOptionIndex: 1,
+            explanationOnWrong: 'At B1, identify purpose + practical detail in the message.',
+            audioText: spec.listeningMessage,
+            skillFocus: 'listening',
+            points: 5
+          },
+          {
             id: `${idb}-t2`,
+            kind: 'shortAnswer',
+            prompt: 'Type one connector or key functional term from this B1 lesson.',
+            acceptedAnswers: Array.from(
+              new Set([
+                ...spec.shortAnswers.map((entry) => entry.toLowerCase()),
+                ...spec.vocabularyTargets.slice(0, 3).map((entry) => entry.toLowerCase())
+              ])
+            ),
+            normalizeAccents: true,
+            explanationOnWrong: 'Use one of the core connectors/terms practiced in this lesson.',
+            skillFocus: 'writing',
+            points: 5
+          },
+          {
+            id: `${idb}-t3`,
             kind: 'writingPrompt',
             prompt: spec.writingPrompt,
             expectedElements: spec.writingExpected,
@@ -283,9 +325,9 @@ const B1_SPECS: B1Spec[] = [
     mcqPrompt: 'Choose the strongest workplace message.',
     mcqOptions: [
       "J'ai un retard de bus, donc je serai en retard de 10 minutes.",
-      'Bus retard. Merci.',
-      'Je suis bus retard problème.',
-      'Bonjour au revoir.'
+      'Merci, je vous écris plus tard.',
+      'Je suis en retard sans préciser la cause.',
+      'Bonjour, bonne journée.'
     ],
     mcqCorrect: 0,
     mcqWrong: 'At B1, include the problem and a concrete detail.',
@@ -296,7 +338,12 @@ const B1_SPECS: B1Spec[] = [
     productionExpected: ['problème', 'donc'],
     productionSample: "Bonjour, j'ai un problème de transport ce matin, donc je serai en retard. Je peux finir plus tard ce soir.",
     testPrompt: 'Which line shows a cause and a result clearly?',
-    testOptions: ['Je suis retard.', 'Bus donc.', 'Le train est annulé, donc je vais arriver plus tard.', 'Merci au revoir.'],
+    testOptions: [
+      "J'arrive plus tard.",
+      "Le bus est en retard.",
+      'Le train est annulé, donc je vais arriver plus tard.',
+      'Merci pour votre compréhension.'
+    ],
     testCorrect: 2,
     testWrong: 'Use a full cause clause plus donc + result.',
     writingPrompt: 'Write a short message to a supervisor explaining a delay and proposing a solution.',
@@ -339,9 +386,9 @@ const B1_SPECS: B1Spec[] = [
     mcqPrompt: 'Choose the best short background summary.',
     mcqOptions: [
       "Avant, j'ai travaillé dans un café. Ensuite, j'ai étudié au collège.",
-      'Travail café collège merci.',
-      'Je suis avant café.',
-      'Ensuite avant après.'
+      "J'ai travaillé dans un café.",
+      "Ensuite, j'ai étudié.",
+      'Merci pour votre message.'
     ],
     mcqCorrect: 0,
     mcqWrong: 'At B1, use sequence words and complete past sentences.',
@@ -395,9 +442,9 @@ const B1_SPECS: B1Spec[] = [
     mcqPrompt: 'Choose the clearest direction instruction.',
     mcqOptions: [
       'Continuez tout droit, puis tournez à droite au coin.',
-      'Banque droite coin.',
-      'Je suis direction.',
-      'Merci à droite.'
+      'Tournez à droite.',
+      'La banque est près de la station.',
+      'Merci pour ces directions.'
     ],
     mcqCorrect: 0,
     mcqWrong: 'B1 directions should be sequential and specific.',
@@ -451,9 +498,9 @@ const B1_SPECS: B1Spec[] = [
     mcqPrompt: 'Choose the strongest comparison + reason statement.',
     mcqOptions: [
       'Je préfère le bus parce que c’est moins cher et plus pratique.',
-      'Bus plus.',
-      'Je suis bus choix.',
-      'Moins plus train bus.'
+      'Je préfère le bus.',
+      'Le train est plus rapide.',
+      'Merci pour la suggestion.'
     ],
     mcqCorrect: 0,
     mcqWrong: 'B1 comparisons should include a choice and a clear reason.',
@@ -507,9 +554,9 @@ const B1_SPECS: B1Spec[] = [
     mcqPrompt: 'Choose the best short problem-solution narrative.',
     mcqOptions: [
       "Au début, j'ai eu un problème, mais finalement le bureau m'a aidé.",
-      'Problème bureau merci.',
-      'Je suis problème solution.',
-      'Au début finalement.'
+      "J'ai eu un problème au bureau.",
+      'Finalement, le dossier a été corrigé.',
+      'Merci pour votre aide.'
     ],
     mcqCorrect: 0,
     mcqWrong: 'A B1 narrative should mention both the problem and the resolution.',
@@ -520,7 +567,7 @@ const B1_SPECS: B1Spec[] = [
     productionExpected: ['au début', 'finalement'],
     productionSample: "Au début, j'ai eu un problème de rendez-vous. Finalement, la réceptionniste a changé la date.",
     testPrompt: 'Which sentence clearly indicates a resolution?',
-    testOptions: ['Il y avait un problème.', 'Finalement, on a trouvé une solution.', 'Je suis problème.', 'Dossier.'],
+    testOptions: ['Il y avait un problème.', 'Finalement, on a trouvé une solution.', "L'agent a vérifié le dossier.", 'Merci.'],
     testCorrect: 1,
     testWrong: 'Resolution language should show what happened in the end.',
     writingPrompt: 'Write a short past problem-solution message (3-4 lines).',
@@ -564,7 +611,7 @@ const B1_SPECS: B1Spec[] = [
     mcqOptions: [
       'Serait-il possible de changer mon horaire ? Je peux commencer plus tôt.',
       'Changer horaire.',
-      'Je suis horaire solution.',
+      'Je propose de travailler samedi matin.',
       'Merci.'
     ],
     mcqCorrect: 0,
@@ -675,9 +722,9 @@ const B1_SPECS: B1Spec[] = [
     mcqPrompt: 'Choose the strongest opinion statement.',
     mcqOptions: [
       "Je pense que ce programme est utile parce qu'il aide les étudiants.",
-      'Programme utile.',
-      'Je suis opinion.',
-      'Parce que utile.'
+      'Je pense que ce programme est utile.',
+      'Par exemple, il aide les étudiants.',
+      'Merci pour votre opinion.'
     ],
     mcqCorrect: 0,
     mcqWrong: 'A good B1 opinion includes the opinion and a reason.',
@@ -732,7 +779,7 @@ const B1_SPECS: B1Spec[] = [
     mcqOptions: [
       "Bonjour, je vous écris concernant mon rendez-vous de lundi.",
       'Bonjour rendez-vous lundi.',
-      'Je suis email.',
+      'Je vous écris pour une question.',
       'Cordialement.'
     ],
     mcqCorrect: 0,
@@ -843,9 +890,9 @@ const B1_SPECS: B1Spec[] = [
     mcqPrompt: 'Choose the strongest short opinion response.',
     mcqOptions: [
       "Je pense que ce programme est utile parce qu'il aide les nouveaux arrivants.",
-      'Programme utile.',
-      'Je suis opinion.',
-      'Parce que programme.'
+      "Je pense que ce programme est utile.",
+      "Par exemple, il aide les nouveaux arrivants.",
+      'Merci pour votre idée.'
     ],
     mcqCorrect: 0,
     mcqWrong: 'B1 opinion responses need the opinion and a supporting reason.',
@@ -903,9 +950,9 @@ const B1_SPECS: B1Spec[] = [
     mcqPrompt: 'Choose the strongest integrated B1 response opening.',
     mcqOptions: [
       "Bonjour, j'ai un problème avec mon horaire et je voudrais proposer une solution.",
-      'Horaire problème solution.',
-      'Bonjour merci.',
-      'Je suis horaire.'
+      "J'ai un problème avec mon horaire.",
+      'Bonjour, merci.',
+      'Je voudrais proposer une solution.'
     ],
     mcqCorrect: 0,
     mcqWrong: 'An integrated B1 response should explain the issue and state the request/proposal.',
@@ -1220,36 +1267,131 @@ function normalizeB1Token(token: string): string {
     .replace(/[’']/g, '');
 }
 
-function buildB1McqOptions(topic: (typeof B1_GENERATED_TOPICS)[number]): [string, string, string, string] {
-  const correct = topic.teachExamples[0] ?? topic.scenarioExamples[0] ?? topic.productionSample;
-  const keywordA = topic.vocabularyTargets[0] ?? 'mot';
-  const keywordB = topic.vocabularyTargets[1] ?? 'mot';
-  return [correct, 'Bonjour, merci.', `${keywordA}, ${keywordB}.`, `Je suis ${keywordA}.`];
+type B1SessionType = 'core' | 'listening' | 'speaking' | 'writing' | 'review' | 'benchmark';
+
+function b1ProgramSessionType(lessonNumber: number): B1SessionType {
+  if (lessonNumber % 10 === 0) return 'benchmark';
+  if (lessonNumber % 7 === 0) return 'review';
+  if (lessonNumber % 5 === 0) return 'writing';
+  if (lessonNumber % 4 === 0) return 'speaking';
+  if (lessonNumber % 3 === 0) return 'listening';
+  return 'core';
 }
 
-function buildB1TestOptions(topic: (typeof B1_GENERATED_TOPICS)[number]): [string, string, string, string] {
+function b1SessionTypeLabel(type: B1SessionType): string {
+  switch (type) {
+    case 'core':
+      return 'Core Session';
+    case 'listening':
+      return 'Listening Session';
+    case 'speaking':
+      return 'Speaking Session';
+    case 'writing':
+      return 'Writing Session';
+    case 'review':
+      return 'Review Session';
+    case 'benchmark':
+      return 'Benchmark Session';
+  }
+}
+
+function buildB1McqOptions(
+  topic: (typeof B1_GENERATED_TOPICS)[number],
+  sessionType: B1SessionType
+): [string, string, string, string] {
+  const correct = topic.teachExamples[0] ?? topic.scenarioExamples[0] ?? topic.productionSample;
+  const nearMiss = topic.scenarioExamples[0] ?? topic.teachExamples[1] ?? 'Je comprends votre situation.';
+  const generic =
+    sessionType === 'listening'
+      ? 'Pouvez-vous répéter le message plus lentement, s’il vous plaît ?'
+      : sessionType === 'speaking'
+        ? 'Je peux expliquer la situation clairement et proposer une solution.'
+        : sessionType === 'writing'
+          ? 'Bonjour, je vous écris pour clarifier ce point et proposer une suite.'
+          : 'Merci pour ces informations. Je vais vérifier.';
+  const offTask =
+    sessionType === 'benchmark' ? 'Je ne sais pas quoi dire maintenant.' : "Je ne peux pas venir aujourd'hui.";
+  return [correct, nearMiss, generic, offTask];
+}
+
+function buildB1TestOptions(
+  topic: (typeof B1_GENERATED_TOPICS)[number],
+  sessionType: B1SessionType
+): [string, string, string, string] {
   const strongest = `${topic.teachExamples[0] ?? ''} ${topic.scenarioExamples[0] ?? ''}`.trim() || topic.productionSample;
-  const keywordA = topic.vocabularyTargets[0] ?? 'mot';
-  return [strongest, 'Merci.', `${keywordA}.`, 'Je veux aide.'];
+  const partial = topic.teachExamples[0] ?? 'Merci.';
+  const generic =
+    sessionType === 'writing'
+      ? 'Je prends note de votre message et je reviens vers vous avec une réponse structurée.'
+      : sessionType === 'listening'
+        ? 'Je comprends le message principal et je confirme le point clé.'
+        : 'Je prends note de votre message et je reviens vers vous.';
+  const offTask = sessionType === 'review' ? 'Merci, bonne journée.' : "Je suis malade cette semaine.";
+  return [strongest, partial, generic, offTask];
+}
+
+function buildB1ShortPrompt(topic: (typeof B1_GENERATED_TOPICS)[number], sessionType: B1SessionType): string {
+  if (sessionType === 'listening') {
+    return `Type one keyword you heard in this context (${topic.focus.toLowerCase()}).`;
+  }
+  if (sessionType === 'speaking') {
+    return `Type one expression you can say aloud for ${topic.focus.toLowerCase()}.`;
+  }
+  if (sessionType === 'writing') {
+    return `Type one keyword to include in a short written message for ${topic.focus.toLowerCase()}.`;
+  }
+  if (sessionType === 'review') {
+    return `Type one review keyword from this topic (${topic.title.toLowerCase()}).`;
+  }
+  if (sessionType === 'benchmark') {
+    return `Type one benchmark keyword from this task (${topic.focus.toLowerCase()}).`;
+  }
+  return 'Type one key B1 term from this lesson.';
 }
 
 function makeGeneratedB1Spec(lessonNumber: number, topicIndex: number): B1Spec {
   const topic = B1_GENERATED_TOPICS[topicIndex % B1_GENERATED_TOPICS.length];
+  const sessionType = b1ProgramSessionType(lessonNumber);
+  const sessionLabel = b1SessionTypeLabel(sessionType);
+  const productionMode: B1Spec['productionMode'] =
+    sessionType === 'speaking'
+      ? 'spoken'
+      : sessionType === 'writing'
+        ? 'written'
+        : sessionType === 'review' || sessionType === 'benchmark'
+          ? 'mixed'
+          : topic.productionMode;
+  const promptTail =
+    sessionType === 'review'
+      ? ' Include one correction from a previous mistake.'
+      : sessionType === 'benchmark'
+        ? ' Keep it clear, complete, and practical.'
+        : '';
+  const scenarioExplanation =
+    sessionType === 'review'
+      ? `Review cycle: reinforce ${topic.focus.toLowerCase()} and repair one recurring mistake from prior sessions.`
+      : sessionType === 'benchmark'
+        ? `Benchmark cycle: apply ${topic.focus.toLowerCase()} with minimal hints and full task completion.`
+        : topic.scenarioExplanation;
+  const tokenSource =
+    topic.teachExamples[0] ?? topic.scenarioExamples[0] ?? topic.productionSample ?? 'Je propose une solution claire.';
+  const cleanedTokens = tokenSource.replace(/[.,!?]/g, '').split(' ');
+
   return {
     lessonNumber,
-    title: topic.title,
+    title: `${topic.title} (${sessionLabel})`,
     focus: topic.focus,
     outcomes: topic.outcomes,
     vocabularyTargets: topic.vocabularyTargets,
     grammarTargets: topic.grammarTargets,
     teachExamples: topic.teachExamples,
     scenarioTitle: topic.scenarioTitle,
-    scenarioExplanation: topic.scenarioExplanation,
+    scenarioExplanation,
     scenarioExamples: topic.scenarioExamples,
     listeningMessage: topic.listeningMessage,
     sentencePuzzle: {
-      tokens: topic.teachExamples[0].replace(/[.,!?]/g, '').split(' '),
-      correctOrder: topic.teachExamples[0].replace(/[.,!?]/g, '').split(' '),
+      tokens: cleanedTokens,
+      correctOrder: cleanedTokens,
       hint: 'Keep the key structure in logical order: context -> request/reason.',
       explanationOnWrong: 'Rebuild the sentence by placing subject, key verb, and detail in sequence.'
     },
@@ -1271,26 +1413,33 @@ function makeGeneratedB1Spec(lessonNumber: number, topicIndex: number): B1Spec {
       ],
       explanationOnWrong: 'B1 responses should clearly separate context, action, and supporting reason.'
     },
-    mcqPrompt: `Pick the best B1 line for: ${topic.focus.toLowerCase()}.`,
-    mcqOptions: buildB1McqOptions(topic),
+    mcqPrompt:
+      sessionType === 'benchmark'
+        ? `Pick the most complete B1 response for this benchmark task (${topic.focus.toLowerCase()}).`
+        : `Pick the best B1 line for: ${topic.focus.toLowerCase()}.`,
+    mcqOptions: buildB1McqOptions(topic, sessionType),
     mcqCorrect: 0,
     mcqWrong: 'Strong B1 lines include purpose and detail.',
-    shortPrompt: 'Type one key word from this lesson.',
+    shortPrompt: buildB1ShortPrompt(topic, sessionType),
     shortAnswers: Array.from(
       new Set([
         ...topic.vocabularyTargets.slice(0, 4).map((item) => item.toLowerCase()),
         ...topic.vocabularyTargets.slice(0, 4).map((item) => normalizeB1Token(item))
       ])
     ),
-    productionMode: topic.productionMode,
-    productionPrompt: topic.productionPrompt,
+    productionMode,
+    productionPrompt: `${topic.productionPrompt}${promptTail}`,
     productionExpected: topic.productionExpected,
     productionSample: topic.productionSample,
-    testPrompt: 'Which response is most complete and professional?',
-    testOptions: buildB1TestOptions(topic),
+    testPrompt:
+      sessionType === 'benchmark'
+        ? 'Which response is most complete and professional under B1 benchmark conditions?'
+        : 'Which response is most complete and professional?',
+    testOptions: buildB1TestOptions(topic, sessionType),
     testCorrect: 0,
     testWrong: 'Professional B1 responses combine clarity, detail, and action.',
-    writingPrompt: topic.writingPrompt,
+    writingPrompt:
+      sessionType === 'writing' ? `${topic.writingPrompt} Include purpose, one concrete detail, and a clear action.` : topic.writingPrompt,
     writingExpected: topic.writingExpected,
     writingSample: topic.writingSample
   };

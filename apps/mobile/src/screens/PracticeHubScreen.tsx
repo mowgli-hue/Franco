@@ -24,15 +24,15 @@ export function PracticeHubScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.duration(260)}>
           <Text style={styles.title}>Practice</Text>
-          <Text style={styles.subtitle}>Wanna challenge? Pick a game and level up your French reflex.</Text>
+          <Text style={styles.subtitle}>Pick a drill and train your French reflex.</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(80).duration(260)}>
           <Card>
             <Text style={styles.sectionTitle}>Session Tools</Text>
             <View style={styles.quickButtons}>
-              <AnimatedButton label="Open AI Coach" onPress={() => navigation.navigate('AICoachScreen')} />
-              <AnimatedButton label="Open AI Teacher" variant="primary" onPress={() => navigation.navigate('AITeacherSessionScreen')} />
+              <AnimatedButton label="AI Coach" onPress={() => navigation.navigate('AICoachScreen')} />
+              <AnimatedButton label="AI Teacher" variant="primary" onPress={() => navigation.navigate('AITeacherSessionScreen')} />
             </View>
           </Card>
         </Animated.View>
@@ -40,22 +40,22 @@ export function PracticeHubScreen({ navigation }: Props) {
         <Animated.View entering={FadeInDown.delay(100).duration(260)}>
           <Card>
             <Text style={styles.sectionTitle}>Practice Lab</Text>
-            <Text style={styles.sectionSubtitle}>Choose your challenge mode:</Text>
+            <Text style={styles.sectionSubtitle}>Choose a challenge:</Text>
             <View style={styles.challengeGrid}>
               <Pressable style={[styles.challengeCard, styles.challengeCardBlue]} onPress={() => navigation.navigate('SpeedRecallScreen')}>
                 <Text style={styles.challengeEmoji}>⚡</Text>
                 <Text style={styles.challengeTitle}>Speed Recall</Text>
-                <Text style={styles.challengeMeta}>60-second fast memory race</Text>
+                <Text style={styles.challengeMeta}>60-second recall sprint</Text>
               </Pressable>
               <Pressable style={[styles.challengeCard, styles.challengeCardMint]} onPress={() => navigation.navigate('ErrorHunterScreen')}>
                 <Text style={styles.challengeEmoji}>🧩</Text>
                 <Text style={styles.challengeTitle}>Error Hunter</Text>
-                <Text style={styles.challengeMeta}>Catch grammar and vocab mistakes</Text>
+                <Text style={styles.challengeMeta}>Find grammar and vocab errors</Text>
               </Pressable>
               <Pressable style={[styles.challengeCard, styles.challengeCardPurple]} onPress={() => navigation.navigate('FrenchReflexRunScreen')}>
                 <Text style={styles.challengeEmoji}>🏃</Text>
                 <Text style={styles.challengeTitle}>French Reflex Run</Text>
-                <Text style={styles.challengeMeta}>Swipe lanes before collision</Text>
+                <Text style={styles.challengeMeta}>Swipe lanes before impact</Text>
               </Pressable>
             </View>
           </Card>
@@ -79,13 +79,13 @@ export function PracticeHubScreen({ navigation }: Props) {
                   return (
                     <View key={note.lessonId} style={styles.recentNoteItem}>
                       <Text style={styles.recentNoteLesson}>{note.lessonTitle ?? note.lessonId}</Text>
-                      <Text style={styles.recentNoteMeta}>{vocabulary.length} vocab • {errors.length} errors to review</Text>
+                      <Text style={styles.recentNoteMeta}>{vocabulary.length} vocab • {errors.length} errors</Text>
                     </View>
                   );
                 })}
               </View>
             ) : (
-              <Text style={styles.emptyState}>No notes yet. Complete a lesson to build your notebook.</Text>
+              <Text style={styles.emptyState}>No notes yet. Finish a lesson to create notes.</Text>
             )}
           </Card>
         </Animated.View>
