@@ -27,7 +27,7 @@ const FEATURES = [
   'Exam strategy workshop'
 ];
 
-export function UpgradeScreen({}: Props) {
+export function UpgradeScreen(_: Props) {
   const { user } = useAuth();
   const { founderSeatsRemaining, refreshFounderSeats, refreshSubscriptionStatus, setActivePlan } = useSubscription();
   const [loading, setLoading] = useState(false);

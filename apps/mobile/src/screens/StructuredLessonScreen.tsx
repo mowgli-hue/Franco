@@ -172,6 +172,8 @@ type ConversationScenario = {
   turns: ConversationTurn[];
 };
 
+type BeginnerConversationTier = 'starter' | 'guided' | 'full';
+
 const frenchNumberMap: Record<string, string> = {
   '0': 'zero',
   '1': 'un',
@@ -590,6 +592,30 @@ function buildActivationQuestions(lesson: StructuredLessonContent): QuizQuestion
     return distributeQuizQuestionOptions(questions, `${lesson.id}:activation`);
   }
 
+  if (lesson.levelId === 'a1' && getBeginnerLessonIndex(lesson) <= 3) {
+    questions = [
+      {
+        id: 'activation-1',
+        prompt: 'Choose the greeting word.',
+        options: ['Bonjour', 'Goodbye', 'Please', 'Thanks'],
+        correctIndex: 0
+      },
+      {
+        id: 'activation-2',
+        prompt: 'Choose the correct phrase for "thank you".',
+        options: ['Merci', 'Bonjour', 'Bonsoir', 'Pardon'],
+        correctIndex: 0
+      },
+      {
+        id: 'activation-3',
+        prompt: 'Choose the phrase for "My name is...".',
+        options: ["Je m'appelle", 'Je suis de', 'Je parle', 'Je vais'],
+        correctIndex: 0
+      }
+    ];
+    return distributeQuizQuestionOptions(questions, `${lesson.id}:activation`);
+  }
+
   questions = [
     {
       id: 'activation-1',
@@ -881,6 +907,32 @@ function isBeginnerTrack(lesson: StructuredLessonContent): boolean {
   return lesson.levelId === 'foundation' || lesson.levelId === 'a1';
 }
 
+function getBeginnerLessonIndex(lesson: StructuredLessonContent): number {
+  const currentId = lesson.curriculumLessonId ?? lesson.id;
+  const foundationOrder = ['alphabet-sounds', 'basic-greetings', 'introducing-yourself', 'numbers-0-20'];
+  const foundationIndex = foundationOrder.indexOf(currentId);
+  if (foundationIndex >= 0) {
+    return foundationIndex + 1;
+  }
+
+  const numbered = currentId.match(/^a1-lesson-(\d+)$/);
+  if (numbered) {
+    const lessonNum = Number(numbered[1]);
+    if (Number.isFinite(lessonNum)) {
+      return lessonNum;
+    }
+  }
+
+  return 1;
+}
+
+function getBeginnerConversationTier(lesson: StructuredLessonContent): BeginnerConversationTier {
+  const idx = getBeginnerLessonIndex(lesson);
+  if (idx <= 3) return 'starter';
+  if (idx <= 8) return 'guided';
+  return 'full';
+}
+
 function buildKickoffTracks(lesson: StructuredLessonContent): KickoffTrack[] {
   if (lesson.levelId === 'foundation') {
     return [
@@ -949,6 +1001,35 @@ function buildKickoffTracks(lesson: StructuredLessonContent): KickoffTrack[] {
 
 function buildConversationScenario(lesson: StructuredLessonContent): ConversationScenario | null {
   if (!(lesson.levelId === 'foundation' || lesson.levelId === 'a1')) return null;
+  const tier = getBeginnerConversationTier(lesson);
+
+  if (tier === 'starter') {
+    return {
+      id: `${lesson.id}-starter-scene`,
+      title: 'Starter Conversation',
+      sceneVisual: '🗣️☕',
+      turns: [
+        {
+          id: 'turn-1',
+          sceneText: 'You enter a small cafe. Someone looks at you and smiles.',
+          prompt: 'Choose your first French word.',
+          options: ['Bonjour', 'Au revoir', 'Merci', 'Oui'],
+          correctIndex: 0,
+          responseOnCorrect: 'Good start. Begin with a simple greeting.',
+          responseOnWrong: 'First step is greeting: "Bonjour".'
+        },
+        {
+          id: 'turn-2',
+          sceneText: 'The person gives you your drink.',
+          prompt: 'Choose the polite response.',
+          options: ['Merci', 'Bonjour', 'Pardon', 'Bonsoir'],
+          correctIndex: 0,
+          responseOnCorrect: 'Excellent. Keep this as a habit.',
+          responseOnWrong: 'Say "Merci" after service.'
+        }
+      ]
+    };
+  }
 
   const scenes: ConversationScenario[] = [
     {
@@ -1056,7 +1137,28 @@ function buildConversationScenario(lesson: StructuredLessonContent): Conversatio
   ];
 
   const sceneIndex = hashText(`${lesson.id}:${lesson.curriculumLessonId ?? lesson.id}`) % scenes.length;
-  return scenes[sceneIndex] ?? scenes[0];
+  const selected = scenes[sceneIndex] ?? scenes[0];
+
+  if (tier === 'guided') {
+    return {
+      ...selected,
+      title: `${selected.title} (Guided)`,
+      turns: selected.turns.map((turn, turnIndex) => {
+        if (turnIndex !== 1) return turn;
+        return {
+          ...turn,
+          prompt: 'Choose the correct polite pattern.',
+          options:
+            selected.id.includes('service-canada')
+              ? ['Je voudrais un rendez-vous, s’il vous plaît.', 'Rendez-vous.', 'Je veux papier.', 'Merci']
+              : ['Je voudrais un thé, s’il vous plaît.', 'Un thé.', 'Je veux maintenant.', 'Merci'],
+          correctIndex: 0
+        };
+      })
+    };
+  }
+
+  return selected;
 }
 
 function createSteps(lesson: StructuredLessonContent): RuntimeStep[] {
@@ -1064,45 +1166,25 @@ function createSteps(lesson: StructuredLessonContent): RuntimeStep[] {
   const beginnerTrack = isBeginnerTrack(lesson);
   const conversationScenario = buildConversationScenario(lesson);
   const steps: RuntimeStep[] = [];
+  let conversationInserted = false;
 
   if (beginnerTrack) {
-    steps.push({
-      id: `${lesson.id}-kickoff`,
-      kind: 'kickoff',
-      phase: 'learn',
-      title: 'What would you like to learn first?',
-      subtitle: 'Pick one focus. You can still complete the full lesson.',
-      kickoffOptions: buildKickoffTracks(lesson)
-    });
-  }
-
-  if (beginnerTrack) {
-    steps.push({
-      id: `${lesson.id}-activation`,
-      kind: 'activation',
-      phase: 'review',
-      title: isFoundation ? '⚡ Quick Quiz (Fast Start)' : '⚡ Quick Quiz (Confidence Start)',
-      subtitle: '2-3 fast checks. Keep it simple and win momentum.'
-    });
     steps.push({
       id: `${lesson.id}-intro`,
       kind: 'intro',
       phase: 'learn',
-      title: isFoundation ? 'Phase 2 - Core Teaching (6 min)' : 'Phase 2 - Guided Teaching (6 min)',
+      title: isFoundation ? 'Phase 1 - Core Teaching (Start Here)' : 'Phase 1 - Guided Teaching (Start Here)',
       subtitle: isFoundation
-        ? 'One rule, clear examples, immediate listening and speaking.'
-        : 'Teacher-style explanation: model, breakdown, then immediate practice.'
+        ? 'We teach first, then you do a short easy check.'
+        : 'First learn the pattern clearly, then do a short warm-up check.'
     });
-    if (conversationScenario) {
-      steps.push({
-        id: `${lesson.id}-conversation-game`,
-        kind: 'conversation_game',
-        phase: 'speak',
-        title: '🎮 Real Conversation',
-        subtitle: 'Use your phrase in a real scene and continue the dialogue.',
-        conversationScenario
-      });
-    }
+    steps.push({
+      id: `${lesson.id}-activation`,
+      kind: 'activation',
+      phase: 'review',
+      title: isFoundation ? '⚡ Easy Warm-up Check' : '⚡ Warm-up Check',
+      subtitle: 'Short simple checks based on what you just learned.'
+    });
   } else {
     steps.push({
       id: `${lesson.id}-intro`,
@@ -1162,6 +1244,21 @@ function createSteps(lesson: StructuredLessonContent): RuntimeStep[] {
         exercise
       });
     });
+
+    if (beginnerTrack && conversationScenario && !conversationInserted && block.type === 'practice') {
+      steps.push({
+        id: `${lesson.id}-conversation-game`,
+        kind: 'conversation_game',
+        phase: 'speak',
+        title: '🎮 Real Conversation',
+        subtitle:
+          getBeginnerConversationTier(lesson) === 'starter'
+            ? 'Short scenario: use 1-2 core words first.'
+            : 'Use your phrase in a real scene and continue the dialogue.',
+        conversationScenario
+      });
+      conversationInserted = true;
+    }
   });
 
   steps.push({

@@ -9,6 +9,7 @@ import {
   countCompletedCurriculumLessonsAsSessions,
   getRoadmapProgressFromCalendarDay
 } from '../content/program/sessionRoadmap';
+import { curriculumModulesByLevel } from '../curriculum/curriculumBlueprint';
 import { useAuth } from '../context/AuthContext';
 import { useCurriculumProgress } from '../context/CurriculumProgressContext';
 import { useLearningTelemetry } from '../context/LearningTelemetryContext';
@@ -194,6 +195,12 @@ export function HomeDashboardScreen({ navigation }: Props) {
 
   const currentLessonUi: LessonUiState | null =
     currentModuleLessons.find((item) => item.isCurrent) ?? currentModuleLessons.find((item) => !item.locked) ?? null;
+  const strictCurrentLessonId = useMemo(() => {
+    if (levelProgress.currentLessonId) return levelProgress.currentLessonId;
+    const ordered = curriculumModulesByLevel[curriculumState.currentLevelId].flatMap((module) => module.lessons);
+    const next = ordered.find((lesson) => levelProgress.unlockedLessonIds.includes(lesson.id) && !levelProgress.lessonRecords[lesson.id]?.passed);
+    return next?.id ?? ordered[0]?.id ?? null;
+  }, [curriculumState.currentLevelId, levelProgress.currentLessonId, levelProgress.lessonRecords, levelProgress.unlockedLessonIds]);
 
   const roadmapProgress = useMemo(() => {
     const completedSessions = countCompletedCurriculumLessonsAsSessions(curriculumState.levels as any);
@@ -296,9 +303,8 @@ export function HomeDashboardScreen({ navigation }: Props) {
   ]);
 
   const openCurrentLesson = () => {
-    if (!currentLessonUi) return;
-
-    const lessonId = currentLessonUi.lesson.id;
+    const lessonId = strictCurrentLessonId;
+    if (!lessonId) return;
     if (isProLessonId(lessonId)) {
       if (shouldRouteToUpgrade(subscriptionProfile)) {
         (navigation.navigate as any)('UpgradeScreen');
@@ -394,7 +400,7 @@ export function HomeDashboardScreen({ navigation }: Props) {
         <Text style={styles.cardLabel}>🎯 TODAY'S MISSION</Text>
         <Text style={styles.lessonTitle}>Complete your next step in French</Text>
         <Text style={styles.duration}>
-          {currentLessonUi ? formatLessonTitle(currentLessonUi.lesson.id) : 'Continue Learning'} • {todaySessionPlan?.totalMinutes ?? 25} min
+          {strictCurrentLessonId ? formatLessonTitle(strictCurrentLessonId) : 'Continue Learning'} • {todaySessionPlan?.totalMinutes ?? 25} min
         </Text>
 
         <View style={styles.progressTrackLarge}>
@@ -407,7 +413,7 @@ export function HomeDashboardScreen({ navigation }: Props) {
         </View>
 
         <Pressable onPress={openCurrentLesson} style={({ pressed }) => [styles.primaryButton, pressed && styles.primaryButtonPressed]}>
-          <Text style={styles.buttonText}>{currentLessonUi ? 'Continue Learning →' : "Start Today's Lesson →"}</Text>
+          <Text style={styles.buttonText}>{strictCurrentLessonId ? 'Continue Learning →' : "Start Today's Lesson →"}</Text>
         </Pressable>
 
         <Text style={styles.missionSupport}>You’re {completionPercent}% closer to CLB 5</Text>

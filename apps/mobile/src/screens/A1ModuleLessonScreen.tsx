@@ -62,7 +62,7 @@ export function A1ModuleLessonScreen({ route, navigation }: Props) {
     }
 
     if (lessonNumber >= 40) {
-      (navigation.navigate as any)('ModuleReviewScreen');
+      (navigation.navigate as any)('LevelTestScreen', { levelId: 'a1' });
       return;
     }
 
@@ -112,7 +112,7 @@ export function A1ModuleLessonScreen({ route, navigation }: Props) {
             </View>
             <View style={styles.actions}>
               {result.passed ? (
-                <Button label={isFinal ? 'Open Module Review' : `Continue to A1 Lesson ${lessonNumber + 1}`} onPress={openNext} />
+                <Button label={isFinal ? 'Start Level Test' : `Continue to A1 Lesson ${lessonNumber + 1}`} onPress={openNext} />
               ) : (
                 <Button label="Retry Lesson" onPress={() => setResult(null)} />
               )}
@@ -157,14 +157,18 @@ export function A1ModuleLessonScreen({ route, navigation }: Props) {
             }).catch(() => undefined);
           }
 
-          (navigation.navigate as any)('PathMapScreen', {
-            completionSummary: {
-              completedLessonId: lessonId,
-              completedLessonScore: scorePercent,
-              nextLessonId: nextLessonId ?? undefined,
-              minorCorrection
-            }
-          });
+          if (lessonNumber >= 40) {
+            (navigation.navigate as any)('LevelTestScreen', { levelId: 'a1' });
+          } else {
+            (navigation.navigate as any)('PathMapScreen', {
+              completionSummary: {
+                completedLessonId: lessonId,
+                completedLessonScore: scorePercent,
+                nextLessonId: nextLessonId ?? undefined,
+                minorCorrection
+              }
+            });
+          }
           return;
         }
 

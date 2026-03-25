@@ -1,6 +1,4 @@
 import {
-  curriculumLevelMap,
-  curriculumLevels,
   curriculumModulesByLevel,
   getCurriculumLevel
 } from '../curriculum/curriculumBlueprint';
@@ -40,7 +38,16 @@ export function createInitialLevelProgress(levelId: LevelId): LevelProgressState
     currentLessonId: firstLessonId,
     skillProgress: createEmptySkillProgress(),
     lessonRecords: {},
-    unlockedLessonIds: firstLessonId ? [firstLessonId] : []
+    unlockedLessonIds: firstLessonId ? [firstLessonId] : [],
+    remediationLessonIds: [],
+    levelCheckpoint: {
+      attempted: false,
+      passed: false,
+      quizScorePercent: 0,
+      conversationCompleted: false,
+      speakingAttempted: false,
+      weakLessonIds: []
+    }
   };
 }
 
@@ -130,6 +137,23 @@ function hasAllLessonsPassed(levelProgress: LevelProgressState, levelId: LevelId
   });
 }
 
+function getOrderedLessons(levelId: LevelId): Lesson[] {
+  return curriculumModulesByLevel[levelId].flatMap((module) => module.lessons);
+}
+
+function isFinalLessonOfLevel(levelId: LevelId, lessonId: string): boolean {
+  const ordered = getOrderedLessons(levelId);
+  return ordered[ordered.length - 1]?.id === lessonId;
+}
+
+function buildWeakLessonQueue(levelId: LevelId, levelProgress: LevelProgressState): string[] {
+  const ordered = getOrderedLessons(levelId);
+  const weakest = getWeakestSkill(levelProgress.skillProgress).skill;
+  const prioritized = ordered.filter((lesson) => lesson.skillFocus.includes(weakest)).map((lesson) => lesson.id);
+  const fallback = ordered.map((lesson) => lesson.id);
+  return Array.from(new Set([...prioritized, ...fallback])).slice(0, 3);
+}
+
 function meetsLevelSkillThresholds(level: Level, skillProgress: SkillProgress): string[] {
   const unmet: string[] = [];
   const thresholds = level.masteryThresholds;
@@ -179,6 +203,14 @@ export function evaluateLevelProgression(
     unmetRequirements.push('Not all lessons are passed with required production tasks completed.');
   }
 
+  if (!levelProgress.levelCheckpoint.passed) {
+    if (!levelProgress.levelCheckpoint.attempted) {
+      unmetRequirements.push('Level test is required before unlocking the next level.');
+    } else {
+      unmetRequirements.push('Level test not yet passed (minimum 70% + speaking attempt required).');
+    }
+  }
+
   // CLB advancement must be controlled by the weakest skill (explicit rule).
   if ((levelId === 'clb5' || levelId === 'clb7') && weakest.score < level.masteryThresholds.overallMinScore) {
     unmetRequirements.push(
@@ -190,7 +222,48 @@ export function evaluateLevelProgression(
     canAdvanceLevel: unmetRequirements.length === 0,
     weakestSkill: weakest.skill,
     weakestSkillScore: weakest.score,
+    checkpointPassed: levelProgress.levelCheckpoint.passed,
+    checkpointAttempted: levelProgress.levelCheckpoint.attempted,
+    remediationLessonIds: levelProgress.remediationLessonIds,
+    guidanceMessage: levelProgress.levelCheckpoint.guidanceMessage,
     unmetRequirements
+  };
+}
+
+export function applyLevelCheckpointResult(
+  levelProgress: LevelProgressState,
+  payload: {
+    quizScorePercent: number;
+    conversationCompleted: boolean;
+    speakingAttempted: boolean;
+  }
+): LevelProgressState {
+  const checkpointPassed =
+    payload.quizScorePercent >= 70 && payload.conversationCompleted && payload.speakingAttempted;
+
+  const weakLessonIds = checkpointPassed ? [] : buildWeakLessonQueue(levelProgress.levelId, levelProgress);
+  const remediationLessonIds = checkpointPassed
+    ? []
+    : weakLessonIds.filter((lessonId) => levelProgress.unlockedLessonIds.includes(lessonId));
+
+  return {
+    ...levelProgress,
+    currentLessonId: checkpointPassed
+      ? levelProgress.currentLessonId
+      : (remediationLessonIds[0] ?? levelProgress.currentLessonId),
+    remediationLessonIds,
+    levelCheckpoint: {
+      attempted: true,
+      passed: checkpointPassed,
+      quizScorePercent: Math.round(payload.quizScorePercent),
+      conversationCompleted: payload.conversationCompleted,
+      speakingAttempted: payload.speakingAttempted,
+      completedAt: Date.now(),
+      weakLessonIds: remediationLessonIds,
+      guidanceMessage: checkpointPassed
+        ? 'Level test passed. You are ready to unlock the next level.'
+        : 'Level test not passed. Review weak lessons and try again.'
+    }
   };
 }
 
@@ -213,6 +286,11 @@ export function applyLessonCompletion(
     strictModeCompleted: boolean;
     skillScoreUpdates?: Partial<SkillProgress>;
     timedPerformanceScore?: number;
+    checkpointEvidence?: {
+      quizScorePercent: number;
+      conversationCompleted: boolean;
+      speakingAttempted: boolean;
+    };
   }
 ): LevelProgressState {
   const passed = payload.masteryScore >= lesson.masteryThreshold && (!lesson.productionRequired || payload.productionCompleted);
@@ -241,8 +319,39 @@ export function applyLessonCompletion(
     [lesson.id]: record
   };
 
+  const isFinalLesson = isFinalLessonOfLevel(levelProgress.levelId, lesson.id);
+  const hasExplicitCheckpointEvidence = Boolean(payload.checkpointEvidence);
+  const checkpointQuizScore = payload.checkpointEvidence?.quizScorePercent ?? levelProgress.levelCheckpoint.quizScorePercent;
+  const checkpointConversationCompleted =
+    payload.checkpointEvidence?.conversationCompleted ?? levelProgress.levelCheckpoint.conversationCompleted;
+  const checkpointSpeakingAttempted =
+    payload.checkpointEvidence?.speakingAttempted ?? levelProgress.levelCheckpoint.speakingAttempted;
+  const checkpointPassed =
+    checkpointQuizScore >= 70 && checkpointConversationCompleted && checkpointSpeakingAttempted;
+
+  const nextCheckpoint = isFinalLesson && hasExplicitCheckpointEvidence
+    ? {
+        attempted: true,
+        passed: checkpointPassed,
+        quizScorePercent: Math.round(checkpointQuizScore),
+        conversationCompleted: checkpointConversationCompleted,
+        speakingAttempted: checkpointSpeakingAttempted,
+        completedAt: Date.now(),
+        weakLessonIds: checkpointPassed ? [] : buildWeakLessonQueue(levelProgress.levelId, levelProgress),
+        guidanceMessage: checkpointPassed
+          ? 'Level test passed. You are ready to unlock the next level.'
+          : 'Repeat your weak lessons, then retry the level test.'
+      }
+    : levelProgress.levelCheckpoint;
+
   const unlockedLessonIds = computeUnlockedLessons(levelProgress.levelId, updatedRecords);
-  const nextCurrentLessonId = pickNextUnlockedIncompleteLesson(levelProgress.levelId, unlockedLessonIds, updatedRecords);
+  const remediationLessonIds = nextCheckpoint.passed
+    ? []
+    : nextCheckpoint.weakLessonIds.filter((lessonId) => unlockedLessonIds.includes(lessonId));
+
+  const nextCurrentLessonId =
+    remediationLessonIds[0] ??
+    pickNextUnlockedIncompleteLesson(levelProgress.levelId, unlockedLessonIds, updatedRecords);
   const nextCurrentModuleId = findModuleIdForLesson(levelProgress.levelId, nextCurrentLessonId) ?? levelProgress.currentModuleId;
 
   return {
@@ -251,7 +360,9 @@ export function applyLessonCompletion(
     currentModuleId: nextCurrentModuleId,
     skillProgress: nextSkillProgress,
     lessonRecords: updatedRecords,
-    unlockedLessonIds
+    unlockedLessonIds,
+    remediationLessonIds,
+    levelCheckpoint: nextCheckpoint
   };
 }
 

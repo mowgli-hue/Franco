@@ -30,6 +30,7 @@ export function FoundationLessonScreen({ navigation, route }: Props) {
     'introducing-yourself': 'foundation-lesson-3',
     'numbers-0-20': 'foundation-lesson-4'
   };
+  const isFinalFoundationLesson = lessonId === 'numbers-0-20';
 
   if (completionResult) {
     return (
@@ -51,9 +52,19 @@ export function FoundationLessonScreen({ navigation, route }: Props) {
             </View>
             <View style={styles.actions}>
               <Button
-                label={completionResult.passed ? 'Back to Foundation' : 'Retry Lesson'}
+                label={
+                  completionResult.passed
+                    ? isFinalFoundationLesson
+                      ? 'Start Level Test'
+                      : 'Back to Foundation'
+                    : 'Retry Lesson'
+                }
                 onPress={() => {
                   if (completionResult.passed) {
+                    if (isFinalFoundationLesson) {
+                      (navigation.navigate as any)('LevelTestScreen', { levelId: 'foundation' });
+                      return;
+                    }
                     navigation.goBack();
                     return;
                   }

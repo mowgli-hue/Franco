@@ -21,6 +21,7 @@ export type PathStackRouteName =
   | 'A1Lesson3Screen'
   | 'UpgradeScreen'
   | 'ModuleReviewScreen'
+  | 'LevelTestScreen'
   | 'LevelUnlockScreen'
   | 'FoundationLessonScreen';
 export type PracticeStackRouteName =
@@ -98,6 +99,7 @@ const ALLOWED_NESTED = [
   'A1Lesson3Screen',
   'UpgradeScreen',
   'ModuleReviewScreen',
+  'LevelTestScreen',
   'LevelUnlockScreen',
   'FoundationLessonScreen',
   'TeacherScriptsScreen',
@@ -155,6 +157,19 @@ function isValidNested(name: string, params: unknown): boolean {
 
   if (name === 'CLBModuleLessonScreen') {
     return !!params && typeof (params as { lessonId?: unknown }).lessonId === 'string';
+  }
+
+  if (name === 'LevelTestScreen') {
+    const value = params as { levelId?: unknown } | undefined;
+    return (
+      value?.levelId === 'foundation' ||
+      value?.levelId === 'a1' ||
+      value?.levelId === 'a2' ||
+      value?.levelId === 'b1' ||
+      value?.levelId === 'clb5' ||
+      value?.levelId === 'clb7' ||
+      value?.levelId === 'tef-simulation'
+    );
   }
 
   if (name === 'FocusSessionScreen') {

@@ -59,7 +59,7 @@ export function CLBModuleLessonScreen({ route, navigation }: Props) {
       return;
     }
     if (parsed.lessonNumber >= 40) {
-      (navigation.navigate as any)('ModuleReviewScreen');
+      (navigation.navigate as any)('LevelTestScreen', { levelId: parsed.track });
       return;
     }
     (navigation.navigate as any)('CLBModuleLessonScreen', { lessonId: nextLessonId });
@@ -106,7 +106,7 @@ export function CLBModuleLessonScreen({ route, navigation }: Props) {
             <View style={styles.actions}>
               {result.passed ? (
                 <Button
-                  label={isFinal ? 'Open Module Review' : `Continue to ${titlePrefix} Lesson ${parsed.lessonNumber + 1}`}
+                  label={isFinal ? 'Start Level Test' : `Continue to ${titlePrefix} Lesson ${parsed.lessonNumber + 1}`}
                   onPress={openNext}
                 />
               ) : (
@@ -154,14 +154,18 @@ export function CLBModuleLessonScreen({ route, navigation }: Props) {
             }).catch(() => undefined);
           }
 
-          (navigation.navigate as any)('PathMapScreen', {
-            completionSummary: {
-              completedLessonId: lessonId,
-              completedLessonScore: scorePercent,
-              nextLessonId: nextLessonId ?? undefined,
-              minorCorrection
-            }
-          });
+          if (parsed.lessonNumber >= 40) {
+            (navigation.navigate as any)('LevelTestScreen', { levelId: parsed.track });
+          } else {
+            (navigation.navigate as any)('PathMapScreen', {
+              completionSummary: {
+                completedLessonId: lessonId,
+                completedLessonScore: scorePercent,
+                nextLessonId: nextLessonId ?? undefined,
+                minorCorrection
+              }
+            });
+          }
           return;
         }
 

@@ -1,5 +1,6 @@
 import { getCurriculumLevel } from '../curriculum/curriculumBlueprint';
 import type {
+  LessonCompletionRecord,
   Level,
   LevelId,
   SessionBlockTemplate,
@@ -12,6 +13,8 @@ type SessionGeneratorInput = {
   userLevel: LevelId;
   skillFocus: SkillFocus;
   strictMode: boolean;
+  lessonRecords?: Record<string, LessonCompletionRecord>;
+  weakestSkillScore?: number;
 };
 
 function getGoalsForBlock(level: Level, skillFocus: SkillFocus, block: SessionBlockTemplate): string[] {
@@ -97,6 +100,13 @@ function titleForBlock(type: SessionBlockTemplate['type']): string {
 
 export function generateSessionPlan(input: SessionGeneratorInput): SessionPlan {
   const level = getCurriculumLevel(input.userLevel);
+  const records = Object.values(input.lessonRecords ?? {});
+  const passedCount = records.filter((record) => record.passed).length;
+  const passRate = records.length ? Math.round((passedCount / records.length) * 100) : 100;
+  const weakestSkillScore = input.weakestSkillScore ?? 100;
+  const struggling = passRate < 70 || weakestSkillScore < level.masteryThresholds.overallMinScore;
+  const highPerformer = passRate >= 90 && weakestSkillScore >= level.masteryThresholds.overallMinScore;
+
   const blocks: SessionPlanBlock[] = level.sessionStructure.blocks.map((template) => ({
     type: template.type,
     title: titleForBlock(template.type),
@@ -117,8 +127,14 @@ export function generateSessionPlan(input: SessionGeneratorInput): SessionPlan {
     notes: [
       `Stage type: ${level.stageType}`,
       `Mastery threshold target: ${level.masteryThresholds.overallMinScore}% overall`,
+      'Daily content mix: 70% new lesson material, 30% spaced revision from previous lessons',
       'Timed performance is tracked separately from skill averages',
-      input.strictMode ? 'Strict Mode enabled: progression-safe session' : 'Flexible Mode enabled: training-focused session'
+      input.strictMode ? 'Strict Mode enabled: progression-safe session' : 'Flexible Mode enabled: training-focused session',
+      struggling
+        ? 'Adaptive mode: simplify prompts, provide hints, and slow progression pace until checkpoint readiness improves'
+        : highPerformer
+          ? 'Adaptive mode: increase scenario complexity and challenge while keeping checkpoint standards'
+          : 'Adaptive mode: maintain balanced progression with controlled challenge'
     ]
   };
 }

@@ -55,7 +55,7 @@ export function A2ModuleLessonScreen({ route, navigation }: Props) {
       return;
     }
     if (lessonNumber >= 40) {
-      (navigation.navigate as any)('ModuleReviewScreen');
+      (navigation.navigate as any)('LevelTestScreen', { levelId: 'a2' });
       return;
     }
     (navigation.navigate as any)('A2ModuleLessonScreen', { lessonId: nextLessonId });
@@ -99,7 +99,7 @@ export function A2ModuleLessonScreen({ route, navigation }: Props) {
             </View>
             <View style={styles.actions}>
               {result.passed ? (
-                <Button label={isFinal ? 'Open Module Review' : `Continue to A2 Lesson ${lessonNumber + 1}`} onPress={openNext} />
+                <Button label={isFinal ? 'Start Level Test' : `Continue to A2 Lesson ${lessonNumber + 1}`} onPress={openNext} />
               ) : (
                 <Button label="Retry Lesson" onPress={() => setResult(null)} />
               )}
@@ -144,14 +144,18 @@ export function A2ModuleLessonScreen({ route, navigation }: Props) {
             }).catch(() => undefined);
           }
 
-          (navigation.navigate as any)('PathMapScreen', {
-            completionSummary: {
-              completedLessonId: lessonId,
-              completedLessonScore: scorePercent,
-              nextLessonId: nextLessonId ?? undefined,
-              minorCorrection
-            }
-          });
+          if (lessonNumber >= 40) {
+            (navigation.navigate as any)('LevelTestScreen', { levelId: 'a2' });
+          } else {
+            (navigation.navigate as any)('PathMapScreen', {
+              completionSummary: {
+                completedLessonId: lessonId,
+                completedLessonScore: scorePercent,
+                nextLessonId: nextLessonId ?? undefined,
+                minorCorrection
+              }
+            });
+          }
           return;
         }
 

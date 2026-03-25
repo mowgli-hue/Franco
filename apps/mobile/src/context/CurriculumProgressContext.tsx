@@ -9,6 +9,7 @@ import {
   getModulesForLevel
 } from '../curriculum/curriculumBlueprint';
 import {
+  applyLevelCheckpointResult,
   applyLessonCompletion,
   canAccessLesson,
   createInitialCurriculumState,
@@ -36,6 +37,11 @@ type CompleteLessonPayload = {
   strictModeCompleted: boolean;
   skillScoreUpdates?: Partial<SkillProgress>;
   timedPerformanceScore?: number;
+  checkpointEvidence?: {
+    quizScorePercent: number;
+    conversationCompleted: boolean;
+    speakingAttempted: boolean;
+  };
 };
 
 type LessonUiState = {
@@ -68,6 +74,12 @@ type CurriculumProgressContextValue = {
   earnedCertificates: LevelCertificate[];
   canChooseStartingLevel: boolean;
   completeLesson: (payload: CompleteLessonPayload) => void;
+  submitLevelCheckpoint: (payload: {
+    levelId: LevelId;
+    quizScorePercent: number;
+    conversationCompleted: boolean;
+    speakingAttempted: boolean;
+  }) => ProgressionDecision;
   canUnlockNextLevel: () => ProgressionDecision;
   generateTodaySession: (input?: GenerateTodaySessionInput) => SessionPlan;
   setStartingLevel: (levelId: LevelId) => void;
@@ -81,9 +93,27 @@ const GUEST_USER_ID = 'guest';
 
 function normalizeCurriculumState(parsed: UserCurriculumState): UserCurriculumState {
   const fallback = createInitialCurriculumState();
+  const normalizedLevels = (Object.keys(fallback.levels) as LevelId[]).reduce((acc, levelId) => {
+    const source = parsed.levels?.[levelId] ?? fallback.levels[levelId];
+    const fallbackLevel = fallback.levels[levelId];
+
+    acc[levelId] = {
+      ...fallbackLevel,
+      ...source,
+      remediationLessonIds: source?.remediationLessonIds ?? fallbackLevel.remediationLessonIds,
+      levelCheckpoint: {
+        ...fallbackLevel.levelCheckpoint,
+        ...(source?.levelCheckpoint ?? {})
+      }
+    };
+
+    return acc;
+  }, {} as UserCurriculumState['levels']);
+
   return {
     ...parsed,
     journeyStartedAt: typeof parsed.journeyStartedAt === 'number' ? parsed.journeyStartedAt : fallback.journeyStartedAt,
+    levels: normalizedLevels,
     performanceCoach: parsed.performanceCoach ?? fallback.performanceCoach
   };
 }
@@ -312,17 +342,19 @@ export function CurriculumProgressProvider({ children }: { children: React.React
         return prev;
       }
 
+      // Strict progression: users can only complete lessons for their current unlocked level.
+      if (levelId !== prev.currentLevelId) {
+        return prev;
+      }
+
       if (!canAccessLesson(levelProgress, lesson.id)) {
         return prev;
       }
 
       const updatedLevelProgress = applyLessonCompletion(levelProgress, lesson, payload);
-      const currentLevelHasRecords = Object.keys(prev.levels[prev.currentLevelId].lessonRecords).length > 0;
-      const shouldAdoptLessonLevel = prev.currentLevelId !== levelId && !currentLevelHasRecords;
-      const baseCurrentLevelId = shouldAdoptLessonLevel ? levelId : prev.currentLevelId;
       const nextState: UserCurriculumState = {
         ...prev,
-        currentLevelId: baseCurrentLevelId,
+        currentLevelId: prev.currentLevelId,
         levels: {
           ...prev.levels,
           [levelId]: updatedLevelProgress
@@ -351,13 +383,89 @@ export function CurriculumProgressProvider({ children }: { children: React.React
         });
         return {
           ...nextState,
-          currentLevelId: baseCurrentLevelId === levelId ? nextLevelId : baseCurrentLevelId
+          currentLevelId: nextLevelId
         };
       }
 
       return nextState;
     });
   }, []);
+
+  const submitLevelCheckpoint = useCallback(
+    (payload: {
+      levelId: LevelId;
+      quizScorePercent: number;
+      conversationCompleted: boolean;
+      speakingAttempted: boolean;
+    }): ProgressionDecision => {
+      let nextDecision: ProgressionDecision = {
+        canAdvanceLevel: false,
+        weakestSkill: 'listening',
+        weakestSkillScore: 0,
+        checkpointPassed: false,
+        checkpointAttempted: true,
+        remediationLessonIds: [],
+        unmetRequirements: ['Checkpoint submission failed.']
+      };
+
+      setCurriculumState((prev) => {
+        if (payload.levelId !== prev.currentLevelId) {
+          nextDecision = evaluateLevelProgression(prev.currentLevelId, prev.levels[prev.currentLevelId]);
+          return prev;
+        }
+
+        const levelProgress = prev.levels[payload.levelId];
+        const updatedLevelProgress = applyLevelCheckpointResult(levelProgress, {
+          quizScorePercent: payload.quizScorePercent,
+          conversationCompleted: payload.conversationCompleted,
+          speakingAttempted: payload.speakingAttempted
+        });
+
+        const decision = evaluateLevelProgression(payload.levelId, updatedLevelProgress);
+        nextDecision = decision;
+        const nextLevelId = getNextLevelId(payload.levelId);
+
+        if (decision.canAdvanceLevel && nextLevelId) {
+          setEarnedCertificates((prevCertificates) => {
+            if (prevCertificates.some((c) => c.levelId === payload.levelId)) {
+              return prevCertificates;
+            }
+            const levelInfo = getCurriculumLevel(payload.levelId);
+            return [
+              {
+                id: `cert-${payload.levelId}-${Date.now()}`,
+                levelId: payload.levelId,
+                levelTitle: levelInfo.title,
+                issuedAt: Date.now(),
+                certificateLabel: `${levelInfo.title} Completion Certificate`
+              },
+              ...prevCertificates
+            ];
+          });
+
+          return {
+            ...prev,
+            currentLevelId: nextLevelId,
+            levels: {
+              ...prev.levels,
+              [payload.levelId]: updatedLevelProgress
+            }
+          };
+        }
+
+        return {
+          ...prev,
+          levels: {
+            ...prev.levels,
+            [payload.levelId]: updatedLevelProgress
+          }
+        };
+      });
+
+      return nextDecision;
+    },
+    []
+  );
 
   const generateTodaySession = useCallback(
     (input?: GenerateTodaySessionInput): SessionPlan => {
@@ -367,7 +475,9 @@ export function CurriculumProgressProvider({ children }: { children: React.React
       const plan = generateSessionPlan({
         userLevel: curriculumState.currentLevelId,
         skillFocus,
-        strictMode
+        strictMode,
+        lessonRecords: currentLevelProgress.lessonRecords,
+        weakestSkillScore: getWeakestSkill(currentLevelProgress.skillProgress).score
       });
 
       setTodaySessionPlan(plan);
@@ -422,6 +532,7 @@ export function CurriculumProgressProvider({ children }: { children: React.React
       earnedCertificates,
       canChooseStartingLevel,
       completeLesson,
+      submitLevelCheckpoint,
       canUnlockNextLevel,
       generateTodaySession,
       setStartingLevel,
@@ -436,6 +547,7 @@ export function CurriculumProgressProvider({ children }: { children: React.React
       earnedCertificates,
       canChooseStartingLevel,
       completeLesson,
+      submitLevelCheckpoint,
       canUnlockNextLevel,
       generateTodaySession,
       setStartingLevel,

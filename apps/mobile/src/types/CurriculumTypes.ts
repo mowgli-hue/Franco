@@ -107,6 +107,17 @@ export type LessonCompletionRecord = {
   completedAt?: number;
 };
 
+export type LevelCheckpointResult = {
+  attempted: boolean;
+  passed: boolean;
+  quizScorePercent: number;
+  conversationCompleted: boolean;
+  speakingAttempted: boolean;
+  completedAt?: number;
+  weakLessonIds: string[];
+  guidanceMessage?: string;
+};
+
 export type LevelProgressState = {
   levelId: LevelId;
   currentModuleId?: string;
@@ -114,6 +125,8 @@ export type LevelProgressState = {
   skillProgress: SkillProgress;
   lessonRecords: Record<string, LessonCompletionRecord>;
   unlockedLessonIds: string[];
+  remediationLessonIds: string[];
+  levelCheckpoint: LevelCheckpointResult;
 };
 
 export type UserCurriculumState = {
@@ -146,6 +159,10 @@ export type ProgressionDecision = {
   canAdvanceLevel: boolean;
   weakestSkill: Exclude<SkillFocus, 'integrated'>;
   weakestSkillScore: number;
+  checkpointPassed: boolean;
+  checkpointAttempted: boolean;
+  remediationLessonIds: string[];
+  guidanceMessage?: string;
   unmetRequirements: string[];
 };
 

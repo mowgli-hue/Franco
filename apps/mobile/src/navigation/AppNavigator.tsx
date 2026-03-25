@@ -25,6 +25,7 @@ import { FrenchReflexRunScreen } from '../screens/FrenchReflexRunScreen';
 import { FocusSessionScreen } from '../screens/FocusSessionScreen';
 import { FoundationLessonScreen } from '../screens/FoundationLessonScreen';
 import { HomeDashboardScreen } from '../screens/HomeDashboardScreen';
+import { LevelTestScreen } from '../screens/LevelTestScreen';
 import { LevelUnlockScreen } from '../screens/LevelUnlockScreen';
 import { LearningHubScreen } from '../screens/LearningHubScreen';
 import { ModuleReviewScreen } from '../screens/ModuleReviewScreen';
@@ -78,6 +79,10 @@ type LessonCompletionSummaryParams = {
   minorCorrection?: boolean;
 };
 
+type LevelTestParams = {
+  levelId: 'foundation' | 'a1' | 'a2' | 'b1' | 'clb5' | 'clb7' | 'tef-simulation';
+};
+
 export type OnboardingStackParamList = {
   WelcomeScreen: undefined;
   SelfAssessmentScreen: undefined;
@@ -128,6 +133,7 @@ export type OnboardingStackParamList = {
     | undefined;
   UpgradeScreen: undefined;
   ModuleReviewScreen: undefined;
+  LevelTestScreen: LevelTestParams;
   LevelUnlockScreen: undefined;
 };
 
@@ -167,6 +173,7 @@ export type PathStackParamList = {
     | undefined;
   UpgradeScreen: undefined;
   ModuleReviewScreen: undefined;
+  LevelTestScreen: LevelTestParams;
   LevelUnlockScreen: undefined;
   FoundationLessonScreen: { lessonId: string };
 };
@@ -327,6 +334,7 @@ function OnboardingRouteTracker({
       'A2ModuleLessonScreen',
       'B1ModuleLessonScreen',
       'CLBModuleLessonScreen',
+      'LevelTestScreen',
       'PathMapScreen',
       'FocusSessionScreen',
       'AITeacherSessionScreen'
@@ -476,6 +484,11 @@ function OnboardingStackNavigator({
           component={LevelUnlockScreen as React.ComponentType<any>}
           options={{ title: 'Level Unlock' }}
         />
+        <OnboardingStack.Screen
+          name="LevelTestScreen"
+          component={LevelTestScreen as React.ComponentType<any>}
+          options={{ title: 'Level Test' }}
+        />
       </OnboardingStack.Navigator>
       <OnboardingRouteTracker userId={userId} onCompleted={onCompleted} />
       <GlobalFocusTimerBar />
@@ -563,6 +576,7 @@ function PathStackNavigator() {
       <PathStack.Screen name="A1Lesson3Screen" component={A1Lesson3Screen as React.ComponentType<any>} options={{ title: 'A1 Lesson 3' }} />
       <PathStack.Screen name="UpgradeScreen" component={UpgradeScreen as React.ComponentType<any>} options={{ title: 'Franco Pro' }} />
       <PathStack.Screen name="ModuleReviewScreen" component={ModuleReviewScreen as React.ComponentType<any>} options={{ title: 'Module Review' }} />
+      <PathStack.Screen name="LevelTestScreen" component={LevelTestScreen as React.ComponentType<any>} options={{ title: 'Level Test' }} />
       <PathStack.Screen name="LevelUnlockScreen" component={LevelUnlockScreen as React.ComponentType<any>} options={{ title: 'Level Unlock' }} />
       <PathStack.Screen
         name="FoundationLessonScreen"
