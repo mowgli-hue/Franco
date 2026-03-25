@@ -1061,10 +1061,11 @@ function buildConversationScenario(lesson: StructuredLessonContent): Conversatio
 
 function createSteps(lesson: StructuredLessonContent): RuntimeStep[] {
   const isFoundation = lesson.levelId === 'foundation';
+  const beginnerTrack = isBeginnerTrack(lesson);
   const conversationScenario = buildConversationScenario(lesson);
   const steps: RuntimeStep[] = [];
 
-  if (isBeginnerTrack(lesson)) {
+  if (beginnerTrack) {
     steps.push({
       id: `${lesson.id}-kickoff`,
       kind: 'kickoff',
@@ -1075,8 +1076,15 @@ function createSteps(lesson: StructuredLessonContent): RuntimeStep[] {
     });
   }
 
-  steps.push(
-    {
+  if (beginnerTrack) {
+    steps.push({
+      id: `${lesson.id}-activation`,
+      kind: 'activation',
+      phase: 'review',
+      title: isFoundation ? '⚡ Quick Quiz (Fast Start)' : '⚡ Quick Quiz (Confidence Start)',
+      subtitle: '2-3 fast checks. Keep it simple and win momentum.'
+    });
+    steps.push({
       id: `${lesson.id}-intro`,
       kind: 'intro',
       phase: 'learn',
@@ -1084,8 +1092,28 @@ function createSteps(lesson: StructuredLessonContent): RuntimeStep[] {
       subtitle: isFoundation
         ? 'One rule, clear examples, immediate listening and speaking.'
         : 'Teacher-style explanation: model, breakdown, then immediate practice.'
-    },
-    {
+    });
+    if (conversationScenario) {
+      steps.push({
+        id: `${lesson.id}-conversation-game`,
+        kind: 'conversation_game',
+        phase: 'speak',
+        title: '🎮 Real Conversation',
+        subtitle: 'Use your phrase in a real scene and continue the dialogue.',
+        conversationScenario
+      });
+    }
+  } else {
+    steps.push({
+      id: `${lesson.id}-intro`,
+      kind: 'intro',
+      phase: 'learn',
+      title: isFoundation ? 'Phase 2 - Core Teaching (6 min)' : 'Phase 2 - Guided Teaching (6 min)',
+      subtitle: isFoundation
+        ? 'One rule, clear examples, immediate listening and speaking.'
+        : 'Teacher-style explanation: model, breakdown, then immediate practice.'
+    });
+    steps.push({
       id: `${lesson.id}-activation`,
       kind: 'activation',
       phase: 'review',
@@ -1093,17 +1121,6 @@ function createSteps(lesson: StructuredLessonContent): RuntimeStep[] {
       subtitle: isFoundation
         ? 'Quick recall from your previous learning.'
         : 'Interactive warm-up: quick checks before the core lesson.'
-    }
-  );
-
-  if (conversationScenario) {
-    steps.push({
-      id: `${lesson.id}-conversation-game`,
-      kind: 'conversation_game',
-      phase: 'speak',
-      title: 'Live Scenario: Chai Bar',
-      subtitle: 'Use short real-life lines and continue the conversation.',
-      conversationScenario
     });
   }
 
@@ -2179,10 +2196,27 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     }
 
     if (currentStep.kind === 'intro') {
+      const tutorPrompt = 'Bonjour 👋 repeat after me';
+      const beginnerPromptLine =
+        lesson.levelId === 'foundation' || lesson.levelId === 'a1'
+          ? 'Small step, big confidence. Say one clear French line now.'
+          : null;
       return (
         <View style={styles.centeredStep}>
           <Text style={styles.bigTitle}>{lesson.title}</Text>
           <Text style={styles.bodyText}>25-min flow: Warm-up, Learn, Practice, Produce, Review.</Text>
+          {beginnerPromptLine ? (
+            <View style={styles.contextCard}>
+              <Text style={styles.contextTitle}>AI Tutor Moment</Text>
+              <Text style={styles.contextLine}>{beginnerPromptLine}</Text>
+              <Pressable
+                onPress={() => void playPronunciation(tutorPrompt)}
+                style={[styles.promptActionChip, { alignSelf: 'flex-start', marginTop: spacing.xs }]}
+              >
+                <Text style={styles.promptActionChipText}>{tutorPrompt}</Text>
+              </Pressable>
+            </View>
+          ) : null}
           {canadaTemplate ? (
             <View style={styles.contextCard}>
               <Text style={styles.contextTitle}>Context</Text>
@@ -2784,6 +2818,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
             <Text style={styles.rewardLine}>XP gained: +{completionReward.xpGained}</Text>
             <Text style={styles.rewardLine}>Total XP: {completionReward.totalXp}</Text>
             <Text style={styles.rewardLine}>Daily streak: {completionReward.dailyStreak} day(s)</Text>
+            <Text style={styles.rewardUnlockLine}>You’re off to a great start 🔥 Unlock next lesson</Text>
           </View>
         ) : null}
         <View style={styles.summaryCard}>
@@ -3560,6 +3595,12 @@ const styles = StyleSheet.create({
   rewardLine: {
     ...typography.caption,
     color: colors.textPrimary
+  },
+  rewardUnlockLine: {
+    ...typography.caption,
+    color: '#1D4ED8',
+    fontWeight: '700',
+    marginTop: 2
   },
   interactiveStep: {
     flex: 1,
