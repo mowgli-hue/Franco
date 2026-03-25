@@ -39,11 +39,23 @@ type Round = {
   startedAt: number;
 };
 
+type RunnerAvatar = {
+  id: 'striker' | 'sprinter' | 'pilot';
+  emoji: string;
+  label: string;
+  tone: string;
+};
+
 const PANEL_HEIGHT = 68;
 const HORIZONTAL_PADDING = 22;
 const SWIPE_THRESHOLD = 20;
 const MAX_ROUNDS_PER_SESSION = 26;
 const MAX_LIVES = 3;
+const RUNNER_AVATARS: RunnerAvatar[] = [
+  { id: 'striker', emoji: '🧍‍♂️', label: 'Striker', tone: 'Balanced control' },
+  { id: 'sprinter', emoji: '🏃‍♀️', label: 'Sprinter', tone: 'Quick lane switching' },
+  { id: 'pilot', emoji: '🧑‍🚀', label: 'Pilot', tone: 'Precision under pressure' }
+];
 
 function randomItem<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
@@ -115,6 +127,7 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
   const [sessionMetrics, setSessionMetrics] = useState<ReflexSessionMetrics | null>(null);
   const [lives, setLives] = useState(MAX_LIVES);
   const [sessionOutcome, setSessionOutcome] = useState<SessionOutcome>('completed');
+  const [avatarId, setAvatarId] = useState<RunnerAvatar['id']>('striker');
 
   const runnerX = useRef(new Animated.Value(0)).current;
   const obstacleY = useRef(new Animated.Value(-PANEL_HEIGHT)).current;
@@ -431,6 +444,7 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
   const accuracy = score.total ? Math.round((score.correct / score.total) * 100) : 0;
   const avgReaction = reactionMs.length ? Math.round(reactionMs.reduce((a, b) => a + b, 0) / reactionMs.length) : 0;
   const speedLevel = Math.max(1, Math.round((speed - getReflexLevel(levelId).minSpeed) / 20));
+  const selectedAvatar = RUNNER_AVATARS.find((avatar) => avatar.id === avatarId) ?? RUNNER_AVATARS[0];
 
   const laneCenters = useMemo(() => {
     const w = laneWidthRef.current;
@@ -456,6 +470,23 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
                 >
                   <Text style={[styles.levelLabel, selected && styles.levelLabelActive]}>{level.label}</Text>
                   <Text style={styles.levelMeta}>{level.subtitle}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.avatarSectionTitle}>Choose runner style</Text>
+          <View style={styles.avatarRow}>
+            {RUNNER_AVATARS.map((avatar) => {
+              const selected = avatar.id === avatarId;
+              return (
+                <Pressable
+                  key={avatar.id}
+                  style={[styles.avatarCard, selected && styles.avatarCardActive]}
+                  onPress={() => setAvatarId(avatar.id)}
+                >
+                  <Text style={styles.avatarEmoji}>{avatar.emoji}</Text>
+                  <Text style={[styles.avatarLabel, selected && styles.avatarLabelActive]}>{avatar.label}</Text>
+                  <Text style={styles.avatarTone}>{avatar.tone}</Text>
                 </Pressable>
               );
             })}
@@ -507,6 +538,7 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
             <Text style={styles.scoreLine}>Speed L{speedLevel}</Text>
             <Text style={styles.scoreLine}>Rounds {score.total}/{MAX_ROUNDS_PER_SESSION}</Text>
             <Text style={styles.scoreLine}>Lives {'❤️'.repeat(lives)}</Text>
+            <Text style={styles.scoreLine}>Runner {selectedAvatar.label}</Text>
           </View>
         </View>
 
@@ -640,7 +672,7 @@ export function FrenchReflexRunScreen({ navigation }: Props) {
                 ]}
               />
             ))}
-            <Text style={styles.runnerHand}>🤚</Text>
+            <Text style={styles.runnerHand}>{selectedAvatar.emoji}</Text>
             <View style={styles.runnerBarrel} />
           </Animated.View>
           <Pressable style={styles.shootBtn} onPress={handleShoot}>
@@ -912,6 +944,49 @@ const styles = StyleSheet.create({
   },
   menuActions: {
     gap: spacing.sm
+  },
+  avatarSectionTitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs
+  },
+  avatarRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md
+  },
+  avatarCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+    alignItems: 'center'
+  },
+  avatarCardActive: {
+    borderColor: '#2563EB',
+    backgroundColor: '#EEF4FF'
+  },
+  avatarEmoji: {
+    fontSize: 20,
+    marginBottom: 2
+  },
+  avatarLabel: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    fontWeight: '700'
+  },
+  avatarLabelActive: {
+    color: colors.primary
+  },
+  avatarTone: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 2
   },
   summaryLine: {
     ...typography.body,

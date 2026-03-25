@@ -2801,6 +2801,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         : currentStep.kind === 'review_block'
           ? 'Focus and finish strong.'
           : 'Stay consistent. One step at a time.';
+  const showReflexNudge =
+    isQuestionStep &&
+    stepIndex >= 4 &&
+    (feedback?.tone === 'warning' || (liveStreak === 0 && bestStreak >= 3));
 
   return (
     <LessonStepEngine
@@ -2817,6 +2821,14 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       footer={
         <View style={styles.footerWrap}>
           {feedback ? <MicroFeedback message={feedback.message} tone={feedback.tone} /> : null}
+          {showReflexNudge ? (
+            <View style={styles.reflexNudgeCard}>
+              <Text style={styles.reflexNudgeTitle}>Need an energy reset?</Text>
+              <Text style={styles.reflexNudgeText}>
+                Try a 2-minute Reflex Run in Practice tab, then return and finish this lesson stronger.
+              </Text>
+            </View>
+          ) : null}
           <PrimaryCTAButton
             label={aiCheckLoading ? 'Checking...' : ctaLabel}
             onPress={onPrimaryPress}
@@ -2873,6 +2885,25 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
     fontSize: 12
+  },
+  reflexNudgeCard: {
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 10,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    marginBottom: spacing.xs
+  },
+  reflexNudgeTitle: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '700'
+  },
+  reflexNudgeText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 2
   },
   streakBadge: {
     alignSelf: 'flex-start',

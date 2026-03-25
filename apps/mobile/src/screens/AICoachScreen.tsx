@@ -56,6 +56,7 @@ const CHAT_HISTORY_KEY = 'clb:ai-coach-chat:v1';
 const MAX_CHAT_MESSAGES = 16;
 const DEFAULT_CHAT_SUGGESTIONS = [
   'How can I improve my speaking score this week?',
+  'Teach me: how do I say this in French? "I need an appointment tomorrow."',
   'Build me a 15-minute revision plan for today.',
   'Give me one fast drill for immigration interview French.'
 ];
@@ -441,7 +442,7 @@ export function AICoachScreen({ navigation }: Props) {
               <TextInput
                 value={chatInput}
                 onChangeText={setChatInput}
-                placeholder="Ask the coach..."
+                placeholder='Ask: "How do I say this in French?"'
                 placeholderTextColor="#64748B"
                 style={styles.chatInput}
                 multiline

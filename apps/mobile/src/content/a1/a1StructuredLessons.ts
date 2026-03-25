@@ -636,7 +636,8 @@ const detailedA1Lesson1: StructuredLessonContent = {
   outcomes: [
     'Recognize letters A-G and core vowel awareness',
     'Use Bonjour, Salut, Merci, Au revoir appropriately',
-    'Respond politely in a simple interaction'
+    'Respond politely in a simple interaction',
+    'Build confidence for first real French exchanges in Canada'
   ],
   vocabularyTargets: ['bonjour', 'salut', 'merci', 'au revoir', 'a', 'e', 'u'],
   grammarTargets: ['Greeting formulas', 'Politeness patterns'],
@@ -660,9 +661,14 @@ const detailedA1Lesson1: StructuredLessonContent = {
         {
           id: 'a1l1-seg2',
           title: 'Greetings for Real Situations',
-          explanation: 'Use Bonjour in most polite contexts. Salut is informal. Merci and Au revoir close interactions well.',
-          examples: ['Bonjour (polite hello)', 'Salut (informal hi)', 'Merci (thank you)', 'Au revoir (goodbye)'],
-          companionTip: 'When unsure, choose Bonjour + Merci. It sounds respectful and safe.'
+          explanation:
+            'Use Bonjour in most polite contexts in Canada (office, store, service desk). Salut is informal for friends. Merci and Au revoir close interactions respectfully.',
+          examples: [
+            'Service desk: Bonjour, merci.',
+            'Friend: Salut!',
+            'Closing politely: Merci, au revoir.'
+          ],
+          companionTip: 'When unsure, choose Bonjour + Merci + Au revoir. It is respectful and safe.'
         }
       ],
       requiresCompletionToAdvance: true
@@ -677,46 +683,64 @@ const detailedA1Lesson1: StructuredLessonContent = {
         {
           id: 'a1l1-p1',
           kind: 'multipleChoice',
-          prompt: 'Which expression means "thank you"?',
-          options: ['Bonjour', 'Salut', 'Merci', 'Au revoir'],
+          prompt: 'At a Service Canada desk, which expression means "thank you"?',
+          options: ['Bonjour', 'Salut', 'Merci', 'Bonne nuit'],
           correctOptionIndex: 2,
           explanationOnWrong: 'Merci is the basic expression for thank you.',
           skillFocus: 'reading',
-          points: 5
+          points: 6
         },
         {
           id: 'a1l1-p2',
           kind: 'listeningPrompt',
-          prompt: 'You hear a cashier greeting you. Which response is the best polite start?',
-          options: ['Salut!', 'Bonjour', 'Au revoir', 'Merci beaucoup goodbye'],
+          prompt: 'You hear: "Bonjour madame." Which response is the best polite start?',
+          options: ['Salut!', 'Bonjour', 'A demain', 'Merci beaucoup goodbye'],
           correctOptionIndex: 1,
           explanationOnWrong: 'Bonjour is the safest polite response in daily service situations.',
           audioText: 'Bonjour madame.',
           skillFocus: 'listening',
-          points: 5
+          points: 6
         },
         {
           id: 'a1l1-p3',
-          kind: 'matchingPairs',
-          prompt: 'Match the French expression to its use.',
-          leftItems: [
-            { id: 'g1', label: 'Bonjour' },
-            { id: 'g2', label: 'Merci' },
-            { id: 'g3', label: 'Au revoir' }
+          kind: 'sentenceOrderPuzzle',
+          prompt: 'Build a polite mini-dialog line in order.',
+          tokens: ['Bonjour', ',', 'merci', ',', 'au', 'revoir', '.'],
+          correctOrder: ['Bonjour', ',', 'merci', ',', 'au', 'revoir', '.'],
+          instructions: 'Tap tokens in order to build one polite line.',
+          explanationOnWrong: 'Use a clear polite sequence: greeting, thanks, goodbye.',
+          allowExtraPunctuation: true,
+          skillFocus: 'writing',
+          points: 8
+        },
+        {
+          id: 'a1l1-p4',
+          kind: 'quickClassification',
+          prompt: 'Classify each expression by register.',
+          instructions: 'Put expressions into Formal or Informal.',
+          categories: [
+            { id: 'formal', label: 'Formal / Polite' },
+            { id: 'informal', label: 'Informal' }
           ],
-          rightItems: [
-            { id: 'u1', label: 'Say thank you' },
-            { id: 'u2', label: 'Say hello politely' },
-            { id: 'u3', label: 'Say goodbye' }
+          items: [
+            { id: 'q1', label: 'Bonjour', correctCategoryId: 'formal' },
+            { id: 'q2', label: 'Salut', correctCategoryId: 'informal' },
+            { id: 'q3', label: 'Au revoir', correctCategoryId: 'formal' },
+            { id: 'q4', label: 'Merci', correctCategoryId: 'formal' }
           ],
-          correctPairs: [
-            { leftId: 'g1', rightId: 'u2' },
-            { leftId: 'g2', rightId: 'u1' },
-            { leftId: 'g3', rightId: 'u3' }
-          ],
-          explanationOnWrong: 'Match by function: hello / thank-you / goodbye.',
+          explanationOnWrong: 'For first-time or service situations, use formal language by default.',
           skillFocus: 'reading',
           points: 10
+        },
+        {
+          id: 'a1l1-p5',
+          kind: 'multipleChoice',
+          prompt: 'A clerk helps you find a form. What is the best closing?',
+          options: ['Salut!', 'Merci, au revoir.', 'Comment ca va?', 'Je m appelle Lina.'],
+          correctOptionIndex: 1,
+          explanationOnWrong: 'After help, say thanks and close politely.',
+          skillFocus: 'reading',
+          points: 5
         }
       ],
       requiresCompletionToAdvance: true
@@ -760,7 +784,7 @@ const detailedA1Lesson1: StructuredLessonContent = {
         {
           id: 'a1l1-t1',
           kind: 'multipleChoice',
-          prompt: 'Which greeting is usually informal?',
+          prompt: 'Which greeting is usually informal with friends?',
           options: ['Bonjour', 'Merci', 'Au revoir', 'Salut'],
           correctOptionIndex: 3,
           explanationOnWrong: 'Salut is the informal option.',
@@ -769,15 +793,26 @@ const detailedA1Lesson1: StructuredLessonContent = {
         },
         {
           id: 'a1l1-t2',
+          kind: 'listeningPrompt',
+          prompt: 'You hear: "Bonne journee, madame." Which phrase did you hear?',
+          options: ['Bonjour', 'Bonne journee', 'Au revoir', 'Merci'],
+          correctOptionIndex: 1,
+          explanationOnWrong: 'Bonne journee means have a good day.',
+          audioText: 'Bonne journee, madame.',
+          skillFocus: 'listening',
+          points: 5
+        },
+        {
+          id: 'a1l1-t3',
           kind: 'writingPrompt',
-          prompt: 'Write a 1-line polite greeting interaction in French.',
-          expectedElements: ['bonjour', 'merci'],
-          minWords: 3,
+          prompt: 'Write one short polite interaction in French (greet + thank + close).',
+          expectedElements: ['bonjour', 'merci', 'au revoir'],
+          minWords: 4,
           rubricFocus: ['taskCompletion', 'coherence', 'vocabulary'],
-          sampleAnswer: 'Bonjour, merci.',
+          sampleAnswer: 'Bonjour, merci, au revoir.',
           skillFocus: 'writing',
           points: 20,
-          hint: { message: 'Use Bonjour and Merci.' }
+          hint: { message: 'Use this structure: Bonjour ... Merci ... Au revoir.' }
         }
       ],
       requiresCompletionToAdvance: true
