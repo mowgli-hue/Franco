@@ -37,6 +37,34 @@ async function pickFrenchVoice(): Promise<{ language?: string; voice?: string }>
   }
 }
 
+async function pickEnglishVoice(): Promise<{ language?: string; voice?: string }> {
+  try {
+    const voices = await Speech.getAvailableVoicesAsync();
+    if (!voices?.length) {
+      return { language: 'en-US' };
+    }
+
+    const normalize = (language?: string) => (language ?? '').toLowerCase().replace('_', '-');
+
+    const preferred =
+      voices.find((voice) => normalize(voice.language) === 'en-us') ??
+      voices.find((voice) => normalize(voice.language) === 'en-ca') ??
+      voices.find((voice) => normalize(voice.language) === 'en-in') ??
+      voices.find((voice) => normalize(voice.language).startsWith('en'));
+
+    if (!preferred) {
+      return { language: 'en-US' };
+    }
+
+    return {
+      language: preferred.language,
+      voice: preferred.identifier
+    };
+  } catch {
+    return { language: 'en-US' };
+  }
+}
+
 const FRENCH_LETTER_NAMES: Record<string, string> = {
   a: 'a',
   b: 'bé',
@@ -167,6 +195,54 @@ function normalizeTextForFrenchTTS(text: string): string {
   return normalizeNumbersForFrenchTTS(cleaned);
 }
 
+function isLikelyEnglishText(text: string): boolean {
+  const raw = (text ?? '').trim();
+  if (!raw) return false;
+  const lowered = raw.toLowerCase();
+
+  const englishSignals = [
+    'hello',
+    'thank you',
+    'good morning',
+    'good evening',
+    'what is',
+    'choose',
+    'question',
+    'listen',
+    'write',
+    'speak',
+    'match',
+    'the ',
+    ' and ',
+    ' to '
+  ];
+
+  const frenchSignals = [
+    'bonjour',
+    'merci',
+    'salut',
+    'au revoir',
+    'je ',
+    'tu ',
+    'nous ',
+    'vous ',
+    'être',
+    'français',
+    'quatre',
+    'vingt'
+  ];
+
+  const englishHits = englishSignals.reduce((count, signal) => count + (lowered.includes(signal) ? 1 : 0), 0);
+  const frenchHits = frenchSignals.reduce((count, signal) => count + (lowered.includes(signal) ? 1 : 0), 0);
+
+  if (englishHits === 0 && frenchHits === 0) {
+    // Fallback heuristic: plain ASCII with common English function words.
+    return /\b(the|is|are|you|your|with|for|from)\b/i.test(raw);
+  }
+
+  return englishHits > frenchHits;
+}
+
 export async function playPronunciation(text: string): Promise<PlayPronunciationResult> {
   try {
     const available = await Speech.isSpeakingAsync();
@@ -175,11 +251,14 @@ export async function playPronunciation(text: string): Promise<PlayPronunciation
       Speech.stop();
     }
 
-    const voiceConfig = await pickFrenchVoice();
-    const normalizedText = normalizeTextForFrenchTTS(text);
+    const englishMode = isLikelyEnglishText(text);
+    const voiceConfig = englishMode ? await pickEnglishVoice() : await pickFrenchVoice();
+    const normalizedText = englishMode ? text.trim() : normalizeTextForFrenchTTS(text);
+    const speechRate = englishMode ? 0.9 : DEFAULT_SPEECH_OPTIONS.rate;
 
     Speech.speak(normalizedText, {
       ...DEFAULT_SPEECH_OPTIONS,
+      rate: speechRate,
       ...voiceConfig
     });
 

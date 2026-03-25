@@ -219,19 +219,24 @@ notificationsRouter.post('/jobs/send-weekly-reports', async (_req, res) => {
         text: [
           `Hi ${p.displayName?.trim() || 'there'}, 📊`,
           '',
-          'This is your weekly progress reminder from CLB French Trainer.',
-          'Open the app to review:',
-          '- Completed lessons',
-          '- Weak-skill focus',
-          '- Next session recommendations',
+          'Your weekly Franco report is ready.',
+          'Open the app to review and act:',
+          '- Session consistency and momentum',
+          '- Weakest skill focus for CLB growth',
+          '- Next high-impact 25-minute session',
           '',
           'Keep your 25:5 study routine consistent this week.'
         ].join('\n'),
         html: renderNotificationTemplate({
           title: '📊 Weekly Progress Check',
-          intro: `Hi ${p.displayName?.trim() || 'there'}, your weekly Franco review is ready. Use it to decide your next high-impact session.`,
-          bullets: ['Completed lessons', 'Weak-skill focus', 'Recommended next module'],
-          ctaLabel: 'Review Progress',
+          intro: `Hi ${p.displayName?.trim() || 'there'}, your weekly Franco review is ready. Use it to protect your PR timeline and keep CLB momentum.`,
+          bullets: [
+            'Session consistency this week',
+            'Weakest skill and correction focus',
+            'Next 25-minute session recommendation',
+            'One action to raise your CLB readiness'
+          ],
+          ctaLabel: 'Open My Weekly Review',
           ctaUrl: appUrl('/')
         })
       });

@@ -27,7 +27,7 @@ const FEATURES = [
   'Exam strategy workshop'
 ];
 
-export function UpgradeScreen({ navigation }: Props) {
+export function UpgradeScreen({}: Props) {
   const { user } = useAuth();
   const { founderSeatsRemaining, refreshFounderSeats, refreshSubscriptionStatus, setActivePlan } = useSubscription();
   const [loading, setLoading] = useState(false);
@@ -85,8 +85,14 @@ export function UpgradeScreen({ navigation }: Props) {
         <View style={styles.headerWrap}>
           <Text style={styles.headline}>To continue, please choose your plan.</Text>
           <Text style={styles.subtext}>
-            Continue your structured path from A2 to CLB 7 with full training access.
+            Your PR-focused training path is paused on Free. Activate Franco Pro to continue CLB 5/7 preparation without delay.
           </Text>
+          <View style={styles.urgencyStrip}>
+            <Text style={styles.urgencyTitle}>Keep your PR timeline on track</Text>
+            <Text style={styles.urgencyBody}>
+              Delaying structured weekly sessions can extend your CLB readiness window.
+            </Text>
+          </View>
         </View>
 
         <Card>
@@ -100,12 +106,9 @@ export function UpgradeScreen({ navigation }: Props) {
           </View>
           <View style={styles.priceStrip}>
             <Text style={styles.priceStripPrice}>$99 / month</Text>
-            <Text style={styles.priceStripMeta}>Cancel anytime</Text>
+            <Text style={styles.priceStripMeta}>Cancel anytime • Full CLB pathway unlock</Text>
           </View>
           <Button label={isGuest ? 'Create Account to Subscribe' : 'Choose Plan to Continue'} onPress={() => void handleSubscribe('pro')} loading={loading} />
-          <View style={styles.actions}>
-            <Button label="Continue Free" variant="outline" onPress={() => navigation.goBack()} disabled={loading} />
-          </View>
         </Card>
 
         <Card>
@@ -116,7 +119,7 @@ export function UpgradeScreen({ navigation }: Props) {
               <Text style={styles.planBadge}>FOUNDING MEMBER</Text>
             <Text style={styles.planTitle}>Franco Founding</Text>
             <Text style={styles.price}>$49/month</Text>
-            <Text style={styles.priceMeta}>Same full Pro features. Limited to first 50 learners.</Text>
+            <Text style={styles.priceMeta}>Same full Pro features. Limited founding offer for first 50 users.</Text>
             <Text style={styles.seatMeta}>{founderSeatsRemaining} seats remaining</Text>
             <Button label="Checkout Founding Plan" onPress={() => void handleSubscribe('founder')} loading={loading} />
           </View>
@@ -158,6 +161,23 @@ const styles = StyleSheet.create({
   subtext: {
     ...typography.body,
     color: colors.textSecondary
+  },
+  urgencyStrip: {
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    backgroundColor: '#FFFBEB',
+    borderRadius: 12,
+    padding: spacing.md
+  },
+  urgencyTitle: {
+    ...typography.bodyStrong,
+    color: '#92400E',
+    marginBottom: spacing.xs
+  },
+  urgencyBody: {
+    ...typography.caption,
+    color: '#B45309'
   },
   sectionTitle: {
     ...typography.bodyStrong,
@@ -231,8 +251,5 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.primary,
     marginBottom: spacing.md
-  },
-  actions: {
-    gap: spacing.sm
   }
 });

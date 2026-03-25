@@ -5,6 +5,14 @@ const ts = require('typescript');
 
 const FORBIDDEN_OPTION_PATTERNS = [/all of the above/i, /none of the above/i];
 const VAGUE_PROMPT_PATTERNS = [/choose the correct sentence\.?$/i, /select the correct sentence\.?$/i];
+const CANADA_CONTEXT_HINTS = [
+  /\bcanada\b/i,
+  /\btoronto\b/i,
+  /\bvancouver\b/i,
+  /\bserviceontario\b/i,
+  /\bimmigration\b/i,
+  /\bcommunity centre\b/i
+];
 
 function normalize(value) {
   return String(value)
@@ -39,6 +47,7 @@ function checkQuestion(tier, question) {
   const id = String(question.id || 'unknown-id');
   const options = Array.isArray(question.options) ? question.options : [];
   const prompt = String(question.prompt || '').trim();
+  const passage = String(question.passage || '').trim();
   const domain = String(question.domain || '').toLowerCase();
   const correct = Number(question.correctOption);
 
@@ -122,6 +131,19 @@ function checkQuestion(tier, question) {
     });
   }
 
+  if ((tier === 'A2' || tier === 'B1' || tier === 'B2') && domain !== 'grammar') {
+    const combined = `${prompt} ${passage}`;
+    const hasCanadaContext = CANADA_CONTEXT_HINTS.some((pattern) => pattern.test(combined));
+    if (!hasCanadaContext) {
+      findings.push({
+        severity: 'info',
+        tier,
+        questionId: id,
+        message: 'Add clearer Canadian life context to this question.'
+      });
+    }
+  }
+
   return findings;
 }
 
@@ -134,6 +156,27 @@ function main() {
     questions.forEach((question) => {
       findings.push(...checkQuestion(tier, question));
     });
+  });
+
+  const duplicatedPrompts = new Map();
+  Object.entries(data).forEach(([tier, questions]) => {
+    questions.forEach((q) => {
+      const key = normalize(q.prompt || '');
+      if (!key) return;
+      const entry = duplicatedPrompts.get(key) || [];
+      entry.push(`${tier}/${q.id}`);
+      duplicatedPrompts.set(key, entry);
+    });
+  });
+  duplicatedPrompts.forEach((refs, key) => {
+    if (refs.length > 1) {
+      findings.push({
+        severity: 'warning',
+        tier: 'all',
+        questionId: refs.join(', '),
+        message: `Repeated prompt phrasing detected: "${key}".`
+      });
+    }
   });
 
   const errors = findings.filter((f) => f.severity === 'error');

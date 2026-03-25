@@ -31,8 +31,8 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'a1-r1',
       tier: 'A1',
       domain: 'reading',
-      passage: 'Lundi: cours de français à 18 h.',
-      prompt: 'When is the class?',
+      passage: 'Vancouver Community Centre: cours de français le lundi à 18 h.',
+      prompt: 'According to the notice, when is the French class?',
       options: ['Monday at 18:00', 'Tuesday at 18:00', 'Monday at 8:00', 'Friday at 18:00'],
       correctOption: 0
     },
@@ -72,8 +72,8 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'a1-r2',
       tier: 'A1',
       domain: 'reading',
-      passage: 'Je travaille le matin. Le soir, j’étudie le français.',
-      prompt: 'When does the person study French?',
+      passage: 'Je travaille le matin à Toronto. Le soir, j’étudie le français.',
+      prompt: 'When does this person study French?',
       options: ['In the morning', 'At noon', 'In the evening', 'On Monday only'],
       correctOption: 2
     }
@@ -91,7 +91,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'a2-v1',
       tier: 'A2',
       domain: 'vocabulary',
-      prompt: 'Choose the best word: Je prends le ___ pour aller au travail.',
+      prompt: 'Choose the best word (daily life in Canada): Je prends le ___ pour aller au travail.',
       options: ['bus', 'bureau', 'repas', 'stylo'],
       correctOption: 0
     },
@@ -99,8 +99,8 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'a2-r1',
       tier: 'A2',
       domain: 'reading',
-      passage: 'La réunion commence à 9 h. Apportez vos notes et votre badge.',
-      prompt: 'What should you bring?',
+      passage: 'Centre de services: La réunion commence à 9 h. Apportez vos notes et votre badge.',
+      prompt: 'What should you bring to the meeting?',
       options: ['Passport only', 'Notebook and badge', 'Lunch', 'Laptop charger only'],
       correctOption: 1
     },
@@ -145,7 +145,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'a2-r2',
       tier: 'A2',
       domain: 'reading',
-      passage: 'Bonjour, je ne peux pas venir mardi. Je suis disponible jeudi après-midi.',
+      passage: 'Bonjour, je ne peux pas venir mardi au bureau. Je suis disponible jeudi après-midi.',
       prompt: 'When is the person available?',
       options: ['Tuesday morning', 'Thursday afternoon', 'Wednesday evening', 'Friday afternoon'],
       correctOption: 1
@@ -173,7 +173,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       tier: 'B1',
       domain: 'reading',
       passage:
-        'Le service client répond aux courriels en 48 heures. Pour les demandes urgentes, utilisez le téléphone.',
+        'ServiceOntario: le service client répond aux courriels en 48 heures. Pour les demandes urgentes, utilisez le téléphone.',
       prompt: 'What should you do for urgent requests?',
       options: ['Send another email', 'Use the phone', 'Wait 48 hours', 'Visit in person only'],
       correctOption: 1
@@ -214,7 +214,7 @@ export const diagnosticQuestionsByDifficulty: Record<DifficultyTier, DiagnosticQ
       id: 'b1-r2',
       tier: 'B1',
       domain: 'reading',
-      passage: 'Le service est fermé le lundi. Pour les urgences, appelez le numéro indiqué sur le site.',
+      passage: 'Le service d immigration est fermé le lundi. Pour les urgences, appelez le numéro indiqué sur le site.',
       prompt: 'What should users do in urgent situations?',
       options: ['Wait until Tuesday', 'Visit without appointment', 'Call the listed number', 'Send a letter'],
       correctOption: 2

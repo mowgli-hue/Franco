@@ -109,18 +109,23 @@ export async function runNotificationSchedulerTick(): Promise<{ reminders: numbe
           `Hi ${prefs.displayName?.trim() || 'there'}, 📈`,
           '',
           'Your weekly Franco report is ready.',
-          'This week, review:',
-          '- sessions completed',
-          '- weakest skill focus',
-          '- next module recommendation',
+          'This week, review and act:',
+          '- Sessions completed and momentum trend',
+          '- Your weakest skill and why it matters for CLB',
+          '- Your next high-impact 25-minute block',
           '',
           'Keep the 25:5 rhythm next week for measurable progress.'
         ].join('\n'),
         html: renderNotificationTemplate({
           title: '📈 Weekly Franco Report',
-          intro: `Hi ${prefs.displayName?.trim() || 'there'}, your weekly summary is ready. Review performance and set the next target.`,
-          bullets: ['Sessions completed', 'Weakest skill trend', 'Next module recommendation'],
-          ctaLabel: 'Open Weekly Review',
+          intro: `Hi ${prefs.displayName?.trim() || 'there'}, your weekly summary is ready. Use it to protect your PR timeline and keep CLB momentum.`,
+          bullets: [
+            'Session consistency this week',
+            'Weakest skill and correction focus',
+            'Next 25-minute session recommendation',
+            'One action to raise your CLB readiness'
+          ],
+          ctaLabel: 'Open My Weekly Review',
           ctaUrl: appUrl('/')
         })
       });

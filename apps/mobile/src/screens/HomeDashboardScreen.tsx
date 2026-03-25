@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { AIReviewCard } from '../components/AIReviewCard';
@@ -146,6 +146,8 @@ export function HomeDashboardScreen({ navigation }: Props) {
     0,
     Math.min(100, Math.round((roadmapProgress.currentDay / roadmapProgress.totalSessions) * 100))
   );
+  const sessionsRemaining = Math.max(0, roadmapProgress.totalSessions - roadmapProgress.currentDay);
+  const weeksRemaining = Math.max(0, Math.ceil(sessionsRemaining / 7));
 
   const passedInModule = currentModuleLessons.filter((item) => item.passed).length;
   const moduleTotal = Math.max(1, currentModuleLessons.length);
@@ -165,6 +167,19 @@ export function HomeDashboardScreen({ navigation }: Props) {
     (coach.lastEstimatedClb != null
       ? 'Keep building clarity and consistency across speaking and writing tasks.'
       : 'Complete exercises to unlock personalized AI review.');
+  const confidenceScore = Math.round(
+    Math.max(
+      0,
+      Math.min(
+        100,
+        (levelProgress.skillProgress.listeningScore +
+          levelProgress.skillProgress.speakingScore +
+          levelProgress.skillProgress.writingScore +
+          levelProgress.skillProgress.readingScore) /
+          4
+      )
+    )
+  );
 
   useEffect(() => {
     const key = `${WEEKLY_COACH_KEY}:${user?.uid ?? 'guest'}`;
@@ -341,6 +356,27 @@ export function HomeDashboardScreen({ navigation }: Props) {
         <Text style={styles.goalSub}>Projected: Sept 2026</Text>
       </View>
 
+      <View style={styles.prJourneyCard}>
+        <Text style={styles.prJourneyTitle}>PR Journey Timeline</Text>
+        <Text style={styles.prJourneyMeta}>
+          {currentLevel.title} now • Target CLB {coach.targetClb} • ~{weeksRemaining} weeks remaining
+        </Text>
+        <View style={styles.prJourneyProgressTrack}>
+          <View style={[styles.prJourneyProgressFill, { width: `${completionPercent}%` }]} />
+        </View>
+        <Text style={styles.prJourneyConfidence}>Confidence: {confidenceScore}% (based on current skill trend)</Text>
+        <Pressable
+          onPress={() => {
+            const shareText =
+              'I am training my French daily for CLB goals on Franco. Join me: https://franco.app';
+            void Linking.openURL(`mailto:?subject=Join me on Franco&body=${encodeURIComponent(shareText)}`);
+          }}
+          style={styles.shareButton}
+        >
+          <Text style={styles.shareButtonText}>Invite a Friend</Text>
+        </Pressable>
+      </View>
+
       <View style={styles.skillsRow}>
         <Skill label="Listening" percent={`${Math.round(levelProgress.skillProgress.listeningScore)}%`} />
         <Skill label="Speaking" percent={`${Math.round(levelProgress.skillProgress.speakingScore)}%`} />
@@ -490,6 +526,51 @@ const styles = StyleSheet.create({
   goalSub: {
     color: '#475569',
     marginTop: 6
+  },
+  prJourneyCard: {
+    backgroundColor: '#EEF4FF',
+    padding: 20,
+    borderRadius: 18,
+    marginBottom: 24
+  },
+  prJourneyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E3A8A',
+    marginBottom: 6
+  },
+  prJourneyMeta: {
+    fontSize: 13,
+    color: '#334155',
+    marginBottom: 10
+  },
+  prJourneyProgressTrack: {
+    height: 8,
+    backgroundColor: '#C7D2FE',
+    borderRadius: 8,
+    overflow: 'hidden'
+  },
+  prJourneyProgressFill: {
+    height: 8,
+    backgroundColor: '#2563EB'
+  },
+  prJourneyConfidence: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#475569'
+  },
+  shareButton: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+    backgroundColor: '#1E3A8A',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12
+  },
+  shareButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 13
   },
   skillsRow: {
     flexDirection: 'row',
