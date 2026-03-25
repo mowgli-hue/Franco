@@ -1,6 +1,8 @@
 export type LessonPhase = 'learn' | 'listen' | 'speak' | 'practice' | 'review';
 
 export type LessonStepKind =
+  | 'kickoff'
+  | 'conversation_game'
   | 'activation'
   | 'intro'
   | 'learn_segment'

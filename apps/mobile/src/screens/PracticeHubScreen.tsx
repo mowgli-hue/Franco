@@ -5,8 +5,11 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { AnimatedButton } from '../components/AnimatedButton';
 import { Card } from '../components/Card';
+import { FrenchCoachCharacter } from '../components/FrenchCoachCharacter';
+import { useCompanion } from '../context/CompanionContext';
 import { useLessonNotes } from '../context/LessonNotesContext';
 import type { MainStackParamList } from '../navigation/AppNavigator';
+import { playPronunciation } from '../services/audio/pronunciationAudio';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
@@ -15,6 +18,7 @@ type Props = NativeStackScreenProps<MainStackParamList, 'PracticeHubScreen'>;
 
 export function PracticeHubScreen({ navigation }: Props) {
   const { getRecentNotes } = useLessonNotes();
+  const { selectedCompanion } = useCompanion();
   const recentNotes = getRecentNotes().slice(0, 3);
 
   return (
@@ -25,6 +29,21 @@ export function PracticeHubScreen({ navigation }: Props) {
         <Animated.View entering={FadeInDown.duration(260)}>
           <Text style={styles.title}>Practice</Text>
           <Text style={styles.subtitle}>Pick a drill and train your French reflex.</Text>
+          <View style={styles.coachWrap}>
+            <FrenchCoachCharacter
+              emoji={selectedCompanion.emoji}
+              name={selectedCompanion.name}
+              mode="compact"
+              tips={[
+                'Say one short sentence out loud before each drill.',
+                'Focus on speed first, then accuracy.',
+                'Missed item? Repeat it twice and continue.'
+              ]}
+              onSpeakTip={(tip) => {
+                void playPronunciation(tip);
+              }}
+            />
+          </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(80).duration(260)}>
@@ -131,6 +150,9 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textSecondary,
     marginTop: spacing.xs
+  },
+  coachWrap: {
+    marginTop: spacing.sm
   },
   sectionTitle: {
     ...typography.bodyStrong,

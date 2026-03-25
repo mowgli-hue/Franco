@@ -11,6 +11,7 @@ import {
 } from 'expo-audio';
 
 import { AnimatedSuccess } from '../components/lesson/AnimatedSuccess';
+import { FrenchCoachCharacter } from '../components/FrenchCoachCharacter';
 import { PerformanceFeedbackPanel } from '../components/PerformanceFeedbackPanel';
 import { LessonStepEngine } from '../components/lesson/LessonStepEngine';
 import { MicroFeedback } from '../components/lesson/MicroFeedback';
@@ -58,6 +59,8 @@ type Props = {
 type RuntimeStep = LessonStep & {
   segment?: TeachingSegment;
   exercise?: Exercise;
+  kickoffOptions?: KickoffTrack[];
+  conversationScenario?: ConversationScenario;
 };
 
 type QuizQuestion = {
@@ -85,6 +88,11 @@ type LessonDraftSnapshot = {
   activationSelections: Record<string, number>;
   activationChecked: boolean;
   activationQuestionIndex: number;
+  kickoffSelectionId?: string;
+  kickoffInteracted?: boolean;
+  conversationTurnIndex?: number;
+  conversationSelections?: Record<string, number>;
+  conversationChecked?: boolean;
   masterySelections: Record<string, number>;
   masteryChecked: boolean;
   masteryScore: number;
@@ -131,6 +139,39 @@ type AiCorrectionNote = {
 
 type RetryCategory = 'articles' | 'verbTense' | 'wordOrder' | 'listening' | 'vocabulary';
 
+type KickoffTrack = {
+  id: string;
+  icon: string;
+  title: string;
+  subtitle: string;
+  sample: string;
+};
+
+type CompletionRewardState = {
+  xpGained: number;
+  totalXp: number;
+  dailyStreak: number;
+  progressPercent: number;
+  message: string;
+};
+
+type ConversationTurn = {
+  id: string;
+  sceneText: string;
+  prompt: string;
+  options: string[];
+  correctIndex: number;
+  responseOnCorrect: string;
+  responseOnWrong: string;
+};
+
+type ConversationScenario = {
+  id: string;
+  title: string;
+  sceneVisual: string;
+  turns: ConversationTurn[];
+};
+
 const frenchNumberMap: Record<string, string> = {
   '0': 'zero',
   '1': 'un',
@@ -157,6 +198,17 @@ const frenchNumberMap: Record<string, string> = {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function dateKeyLocal(date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function previousDateKey(dateKey: string): string {
+  const [year, month, day] = dateKey.split('-').map((v) => Number.parseInt(v, 10));
+  const date = new Date(year, (month ?? 1) - 1, day ?? 1);
+  date.setDate(date.getDate() - 1);
+  return dateKeyLocal(date);
 }
 
 function inferAudioContentTypeFromUri(uri: string): string {
@@ -825,18 +877,205 @@ function derivePreviousLessonId(lesson: StructuredLessonContent): string | null 
   return null;
 }
 
+function isBeginnerTrack(lesson: StructuredLessonContent): boolean {
+  return lesson.levelId === 'foundation' || lesson.levelId === 'a1';
+}
+
+function buildKickoffTracks(lesson: StructuredLessonContent): KickoffTrack[] {
+  if (lesson.levelId === 'foundation') {
+    return [
+      {
+        id: 'alphabet',
+        icon: '🔤',
+        title: 'Alphabet & Sounds',
+        subtitle: 'Tap letters and hear clear French sounds.',
+        sample: 'Bonjour, A B C'
+      },
+      {
+        id: 'greetings',
+        icon: '💬',
+        title: 'Greetings',
+        subtitle: 'Practice day-to-day greetings for Canada.',
+        sample: 'Bonjour, merci, au revoir'
+      },
+      {
+        id: 'numbers',
+        icon: '🔢',
+        title: 'Numbers',
+        subtitle: 'Build counting confidence step by step.',
+        sample: 'un, deux, trois'
+      },
+      {
+        id: 'introduce',
+        icon: '🙋',
+        title: 'Introduce Yourself',
+        subtitle: 'Say your name and where you are from.',
+        sample: "Je m'appelle Alex."
+      }
+    ];
+  }
+
+  return [
+    {
+      id: 'speaking',
+      icon: '🗣',
+      title: 'Speak Better',
+      subtitle: 'Practice short, clear spoken French lines.',
+      sample: 'Je parle français.'
+    },
+    {
+      id: 'listening',
+      icon: '🎧',
+      title: 'Listen Better',
+      subtitle: 'Catch key words and meaning quickly.',
+      sample: 'Écoute et répète.'
+    },
+    {
+      id: 'grammar',
+      icon: '🧠',
+      title: 'Grammar Basics',
+      subtitle: 'Lock one grammar pattern at a time.',
+      sample: 'Je suis, tu es'
+    },
+    {
+      id: 'writing',
+      icon: '✍️',
+      title: 'Write Clearly',
+      subtitle: 'Write short useful French for daily life.',
+      sample: 'Bonjour, je confirme...'
+    }
+  ];
+}
+
+function buildConversationScenario(lesson: StructuredLessonContent): ConversationScenario | null {
+  if (!(lesson.levelId === 'foundation' || lesson.levelId === 'a1')) return null;
+
+  const scenes: ConversationScenario[] = [
+    {
+      id: `${lesson.id}-chai-bar`,
+      title: 'Chai Bar Conversation',
+      sceneVisual: '☕🧑‍🍳',
+      turns: [
+        {
+          id: 'turn-1',
+          sceneText: 'You enter a chai bar in Toronto. The staff smiles at you.',
+          prompt: 'What do you say first?',
+          options: ['Bonjour', 'Au revoir', 'Merci beaucoup', 'Je suis un café'],
+          correctIndex: 0,
+          responseOnCorrect: 'Great start. A simple greeting builds confidence.',
+          responseOnWrong: 'Start with a greeting. In this scene: "Bonjour".'
+        },
+        {
+          id: 'turn-2',
+          sceneText: 'The staff asks what you want to drink.',
+          prompt: 'How do you order one chai politely?',
+          options: ['Je voudrais un chai, s’il vous plaît.', 'Un chai maintenant.', 'Je veux eau.', 'Merci, au revoir.'],
+          correctIndex: 0,
+          responseOnCorrect: 'Perfect. Polite and clear.',
+          responseOnWrong: 'Use the full polite line: "Je voudrais un chai, s’il vous plaît."'
+        },
+        {
+          id: 'turn-3',
+          sceneText: 'You receive your chai.',
+          prompt: 'What do you say now?',
+          options: ['Merci', 'Bonjour', 'Je suis chai', 'Un autre chai'],
+          correctIndex: 0,
+          responseOnCorrect: 'Excellent. Conversation complete.',
+          responseOnWrong: 'After receiving it, say "Merci".'
+        }
+      ]
+    },
+    {
+      id: `${lesson.id}-restaurant`,
+      title: 'Restaurant Conversation',
+      sceneVisual: '🍽️👩‍🍳',
+      turns: [
+        {
+          id: 'turn-1',
+          sceneText: 'You arrive at a small restaurant in Montreal.',
+          prompt: 'How do you greet the server?',
+          options: ['Bonjour', 'Bonne nuit', 'Je suis faim', 'Merci beaucoup'],
+          correctIndex: 0,
+          responseOnCorrect: 'Good opening. Natural and polite.',
+          responseOnWrong: 'Use a simple greeting first: "Bonjour".'
+        },
+        {
+          id: 'turn-2',
+          sceneText: 'The server asks your order.',
+          prompt: 'How do you order one tea politely?',
+          options: ['Je voudrais un thé, s’il vous plaît.', 'Un thé vite.', 'Je veux le thé maintenant.', 'Bonsoir merci.'],
+          correctIndex: 0,
+          responseOnCorrect: 'Excellent. This is polite and clear.',
+          responseOnWrong: 'Use: "Je voudrais un thé, s’il vous plaît."'
+        },
+        {
+          id: 'turn-3',
+          sceneText: 'Your tea arrives at the table.',
+          prompt: 'How do you respond?',
+          options: ['Merci', 'Bonjour', 'Je suis thé', 'Un autre'],
+          correctIndex: 0,
+          responseOnCorrect: 'Perfect close. Keep this habit.',
+          responseOnWrong: 'Say "Merci" when service is completed.'
+        }
+      ]
+    },
+    {
+      id: `${lesson.id}-service-canada`,
+      title: 'Service Counter Conversation',
+      sceneVisual: '🏢🧑‍💼',
+      turns: [
+        {
+          id: 'turn-1',
+          sceneText: 'You walk to a Service Canada counter.',
+          prompt: 'What is the best opening line?',
+          options: ['Bonjour', 'Je suis retard', 'Merci au revoir', 'Je veux tout'],
+          correctIndex: 0,
+          responseOnCorrect: 'Good. Start polite at service counters.',
+          responseOnWrong: 'Open with "Bonjour" before your request.'
+        },
+        {
+          id: 'turn-2',
+          sceneText: 'The officer asks how they can help.',
+          prompt: 'How do you ask for an appointment politely?',
+          options: ['Je voudrais un rendez-vous, s’il vous plaît.', 'Rendez-vous maintenant.', 'Je veux papier.', 'Bonsoir.'],
+          correctIndex: 0,
+          responseOnCorrect: 'Great. Polite request + clear intent.',
+          responseOnWrong: 'Use: "Je voudrais un rendez-vous, s’il vous plaît."'
+        },
+        {
+          id: 'turn-3',
+          sceneText: 'The officer gives you the date and time.',
+          prompt: 'How do you close the interaction?',
+          options: ['Merci', 'Je suis fini', 'Bonjour encore', 'Un papier'],
+          correctIndex: 0,
+          responseOnCorrect: 'Strong close. Very natural.',
+          responseOnWrong: 'A clear close here is "Merci".'
+        }
+      ]
+    }
+  ];
+
+  const sceneIndex = hashText(`${lesson.id}:${lesson.curriculumLessonId ?? lesson.id}`) % scenes.length;
+  return scenes[sceneIndex] ?? scenes[0];
+}
+
 function createSteps(lesson: StructuredLessonContent): RuntimeStep[] {
   const isFoundation = lesson.levelId === 'foundation';
-  const steps: RuntimeStep[] = [
-    {
-      id: `${lesson.id}-activation`,
-      kind: 'activation',
-      phase: 'review',
-      title: isFoundation ? 'Phase 1 - Activation (3 min)' : 'Phase 1 - Teacher Warm-up (3 min)',
-      subtitle: isFoundation
-        ? 'Quick recall from your previous learning.'
-        : 'Interactive warm-up: quick checks before the core lesson.'
-    },
+  const conversationScenario = buildConversationScenario(lesson);
+  const steps: RuntimeStep[] = [];
+
+  if (isBeginnerTrack(lesson)) {
+    steps.push({
+      id: `${lesson.id}-kickoff`,
+      kind: 'kickoff',
+      phase: 'learn',
+      title: 'What would you like to learn first?',
+      subtitle: 'Pick one focus. You can still complete the full lesson.',
+      kickoffOptions: buildKickoffTracks(lesson)
+    });
+  }
+
+  steps.push(
     {
       id: `${lesson.id}-intro`,
       kind: 'intro',
@@ -845,8 +1084,28 @@ function createSteps(lesson: StructuredLessonContent): RuntimeStep[] {
       subtitle: isFoundation
         ? 'One rule, clear examples, immediate listening and speaking.'
         : 'Teacher-style explanation: model, breakdown, then immediate practice.'
+    },
+    {
+      id: `${lesson.id}-activation`,
+      kind: 'activation',
+      phase: 'review',
+      title: isFoundation ? 'Phase 1 - Activation (3 min)' : 'Phase 1 - Teacher Warm-up (3 min)',
+      subtitle: isFoundation
+        ? 'Quick recall from your previous learning.'
+        : 'Interactive warm-up: quick checks before the core lesson.'
     }
-  ];
+  );
+
+  if (conversationScenario) {
+    steps.push({
+      id: `${lesson.id}-conversation-game`,
+      kind: 'conversation_game',
+      phase: 'speak',
+      title: 'Live Scenario: Chai Bar',
+      subtitle: 'Use short real-life lines and continue the conversation.',
+      conversationScenario
+    });
+  }
 
   lesson.blocks.forEach((block, blockIndex) => {
     (block.teachingSegments ?? []).forEach((segment) => {
@@ -953,6 +1212,11 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const [activationSelections, setActivationSelections] = useState<Record<string, number>>({});
   const [activationChecked, setActivationChecked] = useState(false);
   const [activationQuestionIndex, setActivationQuestionIndex] = useState(0);
+  const [kickoffSelectionId, setKickoffSelectionId] = useState<string | null>(null);
+  const [kickoffInteracted, setKickoffInteracted] = useState(false);
+  const [conversationTurnIndex, setConversationTurnIndex] = useState(0);
+  const [conversationSelections, setConversationSelections] = useState<Record<string, number>>({});
+  const [conversationChecked, setConversationChecked] = useState(false);
 
   const masteryQuestions = useMemo(() => (lesson ? buildMasteryQuestions(lesson) : []), [lesson]);
   const [masterySelections, setMasterySelections] = useState<Record<string, number>>({});
@@ -970,6 +1234,10 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const [practiceRecoveryCursor, setPracticeRecoveryCursor] = useState(0);
   const [practiceRecoveryActive, setPracticeRecoveryActive] = useState(false);
   const [showSessionSummary, setShowSessionSummary] = useState(false);
+  const [completionReward, setCompletionReward] = useState<CompletionRewardState | null>(null);
+  const [finalizePayload, setFinalizePayload] = useState<{ passed: boolean; scorePercent: number; minorCorrection: boolean } | null>(null);
+  const [dailyStreakDisplay, setDailyStreakDisplay] = useState(0);
+  const [totalXpDisplay, setTotalXpDisplay] = useState(0);
   const [liveStreak, setLiveStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [aiCorrectionByExercise, setAiCorrectionByExercise] = useState<Record<string, AiCorrectionNote>>({});
@@ -986,6 +1254,7 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
   const steps = useMemo(() => (lesson ? createSteps(lesson) : []), [lesson]);
   const lessonDraftKey = useMemo(() => `clb:lesson-draft:${user?.uid ?? 'guest'}:${lessonId}`, [lessonId, user?.uid]);
+  const rewardStorageKey = useMemo(() => `clb:reward-progress:${user?.uid ?? 'guest'}`, [user?.uid]);
   const canadaTemplate = useMemo(() => (lesson ? resolveCanadianPhaseTemplate(lesson) : null), [lesson]);
   const currentStep = steps[Math.min(stepIndex, Math.max(0, steps.length - 1))];
   const exerciseStepIndexByExerciseId = useMemo(() => {
@@ -997,6 +1266,33 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     });
     return map;
   }, [steps]);
+
+  useEffect(() => {
+    setCompletionReward(null);
+    setFinalizePayload(null);
+    setConversationTurnIndex(0);
+    setConversationSelections({});
+    setConversationChecked(false);
+  }, [lessonId]);
+
+  useEffect(() => {
+    let mounted = true;
+    void (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(rewardStorageKey);
+        if (!mounted) return;
+        if (!raw) return;
+        const parsed = JSON.parse(raw) as { totalXp?: number; streak?: number };
+        setTotalXpDisplay(typeof parsed.totalXp === 'number' ? parsed.totalXp : 0);
+        setDailyStreakDisplay(typeof parsed.streak === 'number' ? parsed.streak : 0);
+      } catch {
+        // Ignore invalid reward cache.
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [rewardStorageKey]);
 
   useEffect(() => {
     if (!lesson) return;
@@ -1075,6 +1371,11 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         if (draft.activationSelections) setActivationSelections(draft.activationSelections);
         if (typeof draft.activationChecked === 'boolean') setActivationChecked(draft.activationChecked);
         if (typeof draft.activationQuestionIndex === 'number') setActivationQuestionIndex(draft.activationQuestionIndex);
+        if (typeof draft.kickoffSelectionId === 'string') setKickoffSelectionId(draft.kickoffSelectionId);
+        if (typeof draft.kickoffInteracted === 'boolean') setKickoffInteracted(draft.kickoffInteracted);
+        if (typeof draft.conversationTurnIndex === 'number') setConversationTurnIndex(draft.conversationTurnIndex);
+        if (draft.conversationSelections) setConversationSelections(draft.conversationSelections);
+        if (typeof draft.conversationChecked === 'boolean') setConversationChecked(draft.conversationChecked);
         if (draft.masterySelections) setMasterySelections(draft.masterySelections);
         if (typeof draft.masteryChecked === 'boolean') setMasteryChecked(draft.masteryChecked);
         if (typeof draft.masteryScore === 'number') setMasteryScore(draft.masteryScore);
@@ -1122,6 +1423,11 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         activationSelections,
         activationChecked,
         activationQuestionIndex,
+        kickoffSelectionId: kickoffSelectionId ?? undefined,
+        kickoffInteracted,
+        conversationTurnIndex,
+        conversationSelections,
+        conversationChecked,
         masterySelections,
         masteryChecked,
         masteryScore,
@@ -1159,6 +1465,11 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
     activationSelections,
     activationChecked,
     activationQuestionIndex,
+    kickoffSelectionId,
+    kickoffInteracted,
+    conversationTurnIndex,
+    conversationSelections,
+    conversationChecked,
     masterySelections,
     masteryChecked,
     masteryScore,
@@ -1590,6 +1901,56 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
     if (passed) {
       markLessonComplete({ lessonId: lesson.id });
+      const baseXp = 40;
+      const scoreBonus = Math.round(blended / 5);
+      const correctionBonus = minorCorrection ? 10 : 0;
+      const streakBonus = liveStreak >= 3 ? 5 : 0;
+      const xpGained = baseXp + scoreBonus + correctionBonus + streakBonus;
+
+      void (async () => {
+        const today = dateKeyLocal();
+        try {
+          const raw = await AsyncStorage.getItem(rewardStorageKey);
+          const parsed = raw
+            ? (JSON.parse(raw) as { totalXp?: number; streak?: number; lastDate?: string })
+            : { totalXp: 0, streak: 0, lastDate: '' };
+          const prevTotal = typeof parsed.totalXp === 'number' ? parsed.totalXp : 0;
+          const prevStreak = typeof parsed.streak === 'number' ? parsed.streak : 0;
+          const lastDate = typeof parsed.lastDate === 'string' ? parsed.lastDate : '';
+
+          let nextStreak = prevStreak;
+          if (lastDate !== today) {
+            nextStreak = lastDate === previousDateKey(today) ? prevStreak + 1 : 1;
+          }
+          const nextTotalXp = prevTotal + xpGained;
+          const payload = {
+            totalXp: nextTotalXp,
+            streak: nextStreak,
+            lastDate: today
+          };
+          await AsyncStorage.setItem(rewardStorageKey, JSON.stringify(payload));
+          setTotalXpDisplay(nextTotalXp);
+          setDailyStreakDisplay(nextStreak);
+          setCompletionReward({
+            xpGained,
+            totalXp: nextTotalXp,
+            dailyStreak: nextStreak,
+            progressPercent: blended,
+            message: minorCorrection ? 'Passed with one minor correction. Solid work.' : 'You did it today. Strong lesson completion.'
+          });
+          setFinalizePayload({ passed, scorePercent: blended, minorCorrection });
+        } catch {
+          setCompletionReward({
+            xpGained,
+            totalXp: totalXpDisplay + xpGained,
+            dailyStreak: dailyStreakDisplay || 1,
+            progressPercent: blended,
+            message: minorCorrection ? 'Passed with one minor correction. Solid work.' : 'You did it today. Strong lesson completion.'
+          });
+          setFinalizePayload({ passed, scorePercent: blended, minorCorrection });
+        }
+      })();
+      return;
     }
 
     void AsyncStorage.removeItem(lessonDraftKey);
@@ -1669,6 +2030,99 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
             <Text style={styles.contextLine}>{activeAiCorrection.text}</Text>
           </View>
           <Text style={styles.hintText}>Read once, then continue.</Text>
+        </View>
+      );
+    }
+
+    if (currentStep.kind === 'kickoff') {
+      const options = currentStep.kickoffOptions ?? [];
+      const selectedOption = options.find((opt) => opt.id === kickoffSelectionId) ?? null;
+      return (
+        <View style={styles.centeredStep}>
+          <Text style={styles.bigTitle}>What do you want to learn now?</Text>
+          <Text style={styles.bodyText}>Pick your focus. We will guide the full lesson in a clear order.</Text>
+          <View style={styles.kickoffGrid}>
+            {options.map((option) => {
+              const selected = kickoffSelectionId === option.id;
+              return (
+                <Pressable
+                  key={option.id}
+                  onPress={() => {
+                    setKickoffSelectionId(option.id);
+                    setKickoffInteracted(true);
+                    void playPronunciation(option.sample);
+                  }}
+                  style={[styles.kickoffCard, selected ? styles.kickoffCardSelected : null]}
+                >
+                  <Text style={styles.kickoffIcon}>{option.icon}</Text>
+                  <Text style={styles.kickoffTitle}>{option.title}</Text>
+                  <Text style={styles.kickoffSubtitle}>{option.subtitle}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View style={styles.kickoffSampleWrap}>
+            <Text style={styles.kickoffSampleLabel}>Try this line:</Text>
+            <Pressable
+              style={styles.kickoffSampleChip}
+              onPress={() => {
+                if (selectedOption) {
+                  setKickoffInteracted(true);
+                  void playPronunciation(selectedOption.sample);
+                }
+              }}
+            >
+              <Text style={styles.kickoffSampleText}>{selectedOption?.sample ?? 'Select a focus card above'}</Text>
+            </Pressable>
+          </View>
+        </View>
+      );
+    }
+
+    if (currentStep.kind === 'conversation_game' && currentStep.conversationScenario) {
+      const scenario = currentStep.conversationScenario;
+      const turn = scenario.turns[conversationTurnIndex] ?? scenario.turns[0];
+      const selected = turn ? conversationSelections[turn.id] : undefined;
+      return (
+        <View style={styles.centeredStep}>
+          <Text style={styles.bigTitle}>{scenario.title}</Text>
+          <View style={styles.sceneCard}>
+            <Text style={styles.sceneVisual}>{scenario.sceneVisual}</Text>
+            <Text style={styles.sceneText}>{turn?.sceneText}</Text>
+          </View>
+          <Text style={styles.questionCounter}>Scene {conversationTurnIndex + 1} / {scenario.turns.length}</Text>
+          <View style={styles.reviewQuestionWrap}>
+            <Text style={styles.reviewPrompt}>{turn?.prompt}</Text>
+            <View style={styles.optionsWrap}>
+              {(turn?.options ?? []).map((option, idx) => {
+                let correctness: 'correct' | 'wrong' | null = null;
+                if (conversationChecked && idx === turn?.correctIndex) correctness = 'correct';
+                if (conversationChecked && idx === selected && idx !== turn?.correctIndex) correctness = 'wrong';
+                return (
+                  <OptionButton
+                    key={`${turn?.id}-${idx}`}
+                    label={option}
+                    selected={selected === idx}
+                    disabled={conversationChecked}
+                    correctness={correctness}
+                    onPress={() => {
+                      if (!turn) return;
+                      setConversationSelections((prev) => ({ ...prev, [turn.id]: idx }));
+                      void playPronunciation(option);
+                    }}
+                  />
+                );
+              })}
+            </View>
+          </View>
+          {conversationChecked ? (
+            <View style={styles.contextCard}>
+              <Text style={styles.contextTitle}>Conversation Feedback</Text>
+              <Text style={styles.contextLine}>
+                {selected === turn?.correctIndex ? turn?.responseOnCorrect : turn?.responseOnWrong}
+              </Text>
+            </View>
+          ) : null}
         </View>
       );
     }
@@ -2316,8 +2770,22 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
     return (
       <View style={styles.centeredStep}>
-        <Text style={styles.bigTitle}>Finish Lesson</Text>
-        <Text style={styles.bodyText}>Practice {practicePercent}% • Review done. Submit result.</Text>
+        <Text style={styles.bigTitle}>{completionReward ? 'Lesson Completed' : 'Finish Lesson'}</Text>
+        <Text style={styles.bodyText}>
+          {completionReward
+            ? 'You learned something today. Keep the momentum.'
+            : `Practice ${practicePercent}% • Review done. Submit result.`}
+        </Text>
+        {completionReward ? (
+          <View style={styles.rewardCard}>
+            <Text style={styles.rewardTitle}>You did it today 👏</Text>
+            <Text style={styles.rewardLine}>{completionReward.message}</Text>
+            <Text style={styles.rewardLine}>Progress: {completionReward.progressPercent}%</Text>
+            <Text style={styles.rewardLine}>XP gained: +{completionReward.xpGained}</Text>
+            <Text style={styles.rewardLine}>Total XP: {completionReward.totalXp}</Text>
+            <Text style={styles.rewardLine}>Daily streak: {completionReward.dailyStreak} day(s)</Text>
+          </View>
+        ) : null}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Summary</Text>
           <Text style={styles.summaryMeta}>
@@ -2360,6 +2828,13 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
 
   const ctaLabel = (() => {
     if (activeAiCorrection) return 'Continue';
+    if (currentStep.kind === 'kickoff') return 'Start Learning';
+    if (currentStep.kind === 'conversation_game') {
+      const scenario = currentStep.conversationScenario;
+      const isLastTurn = !scenario || conversationTurnIndex >= scenario.turns.length - 1;
+      if (!conversationChecked) return 'Check';
+      return isLastTurn ? 'Continue' : 'Next Scene';
+    }
     if (currentStep.kind === 'activation') return activationChecked ? 'Continue' : 'Check';
     if (currentStep.kind === 'intro') return 'Continue';
     if (currentStep.kind === 'learn_segment') return 'Continue';
@@ -2368,11 +2843,22 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       if (reviewMode === 'retry') return retryChecked ? 'Continue' : 'Check Retry';
       return masteryChecked ? 'Continue' : 'Check Review';
     }
+    if (completionReward) return 'Let’s Go';
     return 'Finish';
   })();
 
   const ctaDisabled = (() => {
     if (activeAiCorrection) return false;
+    if (currentStep.kind === 'kickoff') {
+      return !kickoffSelectionId || !kickoffInteracted;
+    }
+    if (currentStep.kind === 'conversation_game') {
+      const scenario = currentStep.conversationScenario;
+      const turn = scenario?.turns[conversationTurnIndex];
+      if (!turn) return true;
+      if (conversationChecked) return false;
+      return conversationSelections[turn.id] == null;
+    }
     if (currentStep.kind === 'activation') {
       if (activationChecked) return false;
       return activationQuestions.some((q) => activationSelections[q.id] == null);
@@ -2448,6 +2934,51 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
         if (correct >= 2) triggerSuccess();
         return;
       }
+      advanceStep();
+      return;
+    }
+
+    if (currentStep.kind === 'kickoff') {
+      setFeedback({
+        tone: 'success',
+        message: 'Great choice. Let us build this lesson step by step.'
+      });
+      triggerSuccess();
+      advanceStep();
+      return;
+    }
+
+    if (currentStep.kind === 'conversation_game') {
+      const scenario = currentStep.conversationScenario;
+      const turn = scenario?.turns[conversationTurnIndex];
+      if (!turn || !scenario) {
+        advanceStep();
+        return;
+      }
+
+      if (!conversationChecked) {
+        const selected = conversationSelections[turn.id];
+        const correct = selected === turn.correctIndex;
+        setConversationChecked(true);
+        setFeedback({
+          tone: correct ? 'success' : 'warning',
+          message: correct ? 'Great response. Continue the scene.' : 'Good try. Use the correction and continue.'
+        });
+        if (correct) {
+          triggerSuccess();
+          void playCorrectAnswerSound();
+        } else {
+          void playWrongAnswerSound();
+        }
+        return;
+      }
+
+      if (conversationTurnIndex < scenario.turns.length - 1) {
+        setConversationTurnIndex((prev) => prev + 1);
+        setConversationChecked(false);
+        return;
+      }
+
       advanceStep();
       return;
     }
@@ -2784,10 +3315,22 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       return;
     }
 
+    if (completionReward && finalizePayload) {
+      void AsyncStorage.removeItem(lessonDraftKey);
+      onComplete?.({
+        passed: finalizePayload.passed,
+        scorePercent: finalizePayload.scorePercent,
+        lesson,
+        minorCorrection: finalizePayload.minorCorrection
+      });
+      return;
+    }
+
     finishLesson();
   };
 
   const isQuestionStep =
+    currentStep.kind === 'conversation_game' ||
     currentStep.kind === 'exercise' ||
     currentStep.kind === 'review_block' ||
     currentStep.kind === 'activation';
@@ -2796,11 +3339,18 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
   const coachMessage =
     currentStep.kind === 'learn_segment'
       ? 'Listen once, repeat once, then continue.'
+      : currentStep.kind === 'conversation_game'
+        ? 'Respond like real life. Short, clear, confident.'
       : currentStep.kind === 'exercise'
         ? 'Answer clearly. You will get instant correction.'
         : currentStep.kind === 'review_block'
           ? 'Focus and finish strong.'
           : 'Stay consistent. One step at a time.';
+  const coachTips = [
+    coachMessage,
+    'Keep answers short and clear first, then add one detail.',
+    'If you miss a question, fix the pattern and continue.'
+  ];
   const showReflexNudge =
     isQuestionStep &&
     stepIndex >= 4 &&
@@ -2838,18 +3388,25 @@ export function StructuredLessonScreen({ lessonId, onComplete }: Props) {
       }
     >
       <AnimatedSuccess visible={showSuccess} />
-      {!isQuestionStep ? (
-        <Animated.View style={[styles.coachBubble, { transform: [{ scale: coachPulse }] }]}>
-          <Text style={styles.coachText} numberOfLines={1} ellipsizeMode="tail">
-            {selectedCompanion.emoji} {coachMessage}
-          </Text>
-        </Animated.View>
-      ) : null}
+      <Animated.View style={{ transform: [{ scale: coachPulse }] }}>
+        <FrenchCoachCharacter
+          emoji={selectedCompanion.emoji}
+          name={selectedCompanion.name}
+          mode={isQuestionStep ? 'compact' : 'full'}
+          tips={coachTips}
+          onSpeakTip={(tip) => {
+            void playPronunciation(tip);
+          }}
+        />
+      </Animated.View>
       {liveStreak > 0 ? (
         <View style={styles.streakBadge}>
           <Text style={styles.streakBadgeText}>Streak {liveStreak} • Best {bestStreak}</Text>
         </View>
       ) : null}
+      <View style={styles.metaBadge}>
+        <Text style={styles.metaBadgeText}>XP {totalXpDisplay} • Daily {dailyStreakDisplay}</Text>
+      </View>
       {renderStepContent()}
     </LessonStepEngine>
   );
@@ -2872,19 +3429,72 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
     gap: spacing.sm
   },
-  coachBubble: {
-    borderRadius: 10,
+  kickoffGrid: {
+    gap: spacing.sm
+  },
+  kickoffCard: {
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#BFDBFE',
     backgroundColor: '#EFF6FF',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    marginBottom: spacing.xs
+    padding: spacing.sm
   },
-  coachText: {
+  kickoffCardSelected: {
+    borderColor: '#2563EB',
+    backgroundColor: '#DBEAFE'
+  },
+  kickoffIcon: {
+    fontSize: 22,
+    marginBottom: 2
+  },
+  kickoffTitle: {
+    ...typography.bodyStrong,
+    color: colors.textPrimary
+  },
+  kickoffSubtitle: {
     ...typography.caption,
     color: colors.textSecondary,
-    fontSize: 12
+    marginTop: 2
+  },
+  kickoffSampleWrap: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    padding: spacing.sm
+  },
+  kickoffSampleLabel: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '700'
+  },
+  kickoffSampleChip: {
+    marginTop: spacing.xs,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs
+  },
+  kickoffSampleText: {
+    ...typography.caption,
+    color: colors.textPrimary
+  },
+  sceneCard: {
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#F0F9FF',
+    borderRadius: 12,
+    padding: spacing.sm
+  },
+  sceneVisual: {
+    fontSize: 26,
+    marginBottom: 4
+  },
+  sceneText: {
+    ...typography.body,
+    color: colors.textPrimary
   },
   reflexNudgeCard: {
     borderWidth: 1,
@@ -2919,6 +3529,37 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: '#0C4A6E',
     fontWeight: '700'
+  },
+  metaBadge: {
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4
+  },
+  metaBadgeText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '700'
+  },
+  rewardCard: {
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 12,
+    padding: spacing.sm,
+    gap: 4
+  },
+  rewardTitle: {
+    ...typography.bodyStrong,
+    color: colors.primary
+  },
+  rewardLine: {
+    ...typography.caption,
+    color: colors.textPrimary
   },
   interactiveStep: {
     flex: 1,
