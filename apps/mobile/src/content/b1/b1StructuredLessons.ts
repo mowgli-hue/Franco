@@ -40,9 +40,64 @@ type B1Spec = {
   writingSample: string;
 };
 
+type B1DifficultyProfile = {
+  masteryThresholdPercent: number;
+  speakingMinWords: number;
+  writingMinWords: number;
+  miniTestWritingMinWords: number;
+  productionInstruction: string;
+};
+
+function b1DifficultyProfile(lessonNumber: number): B1DifficultyProfile {
+  if (lessonNumber <= 4) {
+    return {
+      masteryThresholdPercent: 75,
+      speakingMinWords: 12,
+      writingMinWords: 18,
+      miniTestWritingMinWords: 22,
+      productionInstruction: 'Start with short clear sentences: context -> action -> one reason.'
+    };
+  }
+  if (lessonNumber <= 8) {
+    return {
+      masteryThresholdPercent: 78,
+      speakingMinWords: 14,
+      writingMinWords: 20,
+      miniTestWritingMinWords: 24,
+      productionInstruction: 'Add one connector and one concrete detail.'
+    };
+  }
+  if (lessonNumber <= 12) {
+    return {
+      masteryThresholdPercent: 80,
+      speakingMinWords: 16,
+      writingMinWords: 24,
+      miniTestWritingMinWords: 28,
+      productionInstruction: 'Use full B1 structure with purpose, detail, and polite follow-up.'
+    };
+  }
+  if (lessonNumber <= 20) {
+    return {
+      masteryThresholdPercent: 80,
+      speakingMinWords: 17,
+      writingMinWords: 25,
+      miniTestWritingMinWords: 30,
+      productionInstruction: 'Keep responses practical and organized with at least one connector.'
+    };
+  }
+  return {
+    masteryThresholdPercent: 82,
+    speakingMinWords: 18,
+    writingMinWords: 28,
+    miniTestWritingMinWords: 32,
+    productionInstruction: 'Demonstrate stable B1 control with clear logic and consistent detail.'
+  };
+}
+
 function makeB1Lesson(spec: B1Spec): StructuredLessonContent {
   const idb = `b1l${spec.lessonNumber}`;
   const grammarAnchor = spec.grammarTargets[0] ?? 'target structure';
+  const difficulty = b1DifficultyProfile(spec.lessonNumber);
   return {
     id: `b1-structured-${spec.lessonNumber}`,
     curriculumLessonId: `b1-lesson-${spec.lessonNumber}`,
@@ -178,7 +233,7 @@ function makeB1Lesson(spec: B1Spec): StructuredLessonContent {
         productionTask: {
           id: `${idb}-prod`,
           title: 'B1 Production Task',
-          instructions: 'Respond clearly with purpose, detail, and a polite or logical follow-up.',
+          instructions: `${difficulty.productionInstruction} Respond clearly with purpose, detail, and a polite or logical follow-up.`,
           mode: spec.productionMode,
           mandatory: true,
           targetMinutes: 5,
@@ -189,7 +244,7 @@ function makeB1Lesson(spec: B1Spec): StructuredLessonContent {
                   kind: 'speakingPrompt',
                   prompt: spec.productionPrompt,
                   expectedPatterns: spec.productionExpected,
-                  minWords: 16,
+                  minWords: difficulty.speakingMinWords,
                   rubricFocus: ['taskCompletion', 'fluency', 'grammar', 'pronunciation'],
                   sampleAnswer: spec.productionSample,
                   fallbackTextEvaluationAllowed: true,
@@ -201,7 +256,7 @@ function makeB1Lesson(spec: B1Spec): StructuredLessonContent {
                   kind: 'writingPrompt',
                   prompt: spec.productionPrompt,
                   expectedElements: spec.productionExpected,
-                  minWords: 24,
+                  minWords: difficulty.writingMinWords,
                   rubricFocus: ['taskCompletion', 'grammar', 'coherence', 'vocabulary'],
                   sampleAnswer: spec.productionSample,
                   skillFocus: 'writing',
@@ -263,7 +318,7 @@ function makeB1Lesson(spec: B1Spec): StructuredLessonContent {
             kind: 'writingPrompt',
             prompt: spec.writingPrompt,
             expectedElements: spec.writingExpected,
-            minWords: 28,
+            minWords: difficulty.miniTestWritingMinWords,
             rubricFocus: ['taskCompletion', 'grammar', 'coherence', 'vocabulary'],
             sampleAnswer: spec.writingSample,
             skillFocus: 'writing',
@@ -274,7 +329,7 @@ function makeB1Lesson(spec: B1Spec): StructuredLessonContent {
       }
     ],
     assessment: {
-      masteryThresholdPercent: 80,
+      masteryThresholdPercent: difficulty.masteryThresholdPercent,
       productionRequired: true,
       retryIncorrectLater: true,
       strictSequential: true
@@ -1353,6 +1408,7 @@ function makeGeneratedB1Spec(lessonNumber: number, topicIndex: number): B1Spec {
   const topic = B1_GENERATED_TOPICS[topicIndex % B1_GENERATED_TOPICS.length];
   const sessionType = b1ProgramSessionType(lessonNumber);
   const sessionLabel = b1SessionTypeLabel(sessionType);
+  const isEarlyGeneratedRamp = lessonNumber <= 20;
   const productionMode: B1Spec['productionMode'] =
     sessionType === 'speaking'
       ? 'spoken'
@@ -1362,13 +1418,17 @@ function makeGeneratedB1Spec(lessonNumber: number, topicIndex: number): B1Spec {
           ? 'mixed'
           : topic.productionMode;
   const promptTail =
-    sessionType === 'review'
+    isEarlyGeneratedRamp
+      ? ' Keep it short and clear (2-3 sentences) with one useful connector.'
+      : sessionType === 'review'
       ? ' Include one correction from a previous mistake.'
       : sessionType === 'benchmark'
         ? ' Keep it clear, complete, and practical.'
         : '';
   const scenarioExplanation =
-    sessionType === 'review'
+    isEarlyGeneratedRamp
+      ? `Bridge lesson: practice ${topic.focus.toLowerCase()} with simple, practical communication before full benchmark intensity.`
+      : sessionType === 'review'
       ? `Review cycle: reinforce ${topic.focus.toLowerCase()} and repair one recurring mistake from prior sessions.`
       : sessionType === 'benchmark'
         ? `Benchmark cycle: apply ${topic.focus.toLowerCase()} with minimal hints and full task completion.`
@@ -1424,7 +1484,9 @@ function makeGeneratedB1Spec(lessonNumber: number, topicIndex: number): B1Spec {
     shortAnswers: Array.from(
       new Set([
         ...topic.vocabularyTargets.slice(0, 4).map((item) => item.toLowerCase()),
-        ...topic.vocabularyTargets.slice(0, 4).map((item) => normalizeB1Token(item))
+        ...topic.vocabularyTargets.slice(0, 4).map((item) => normalizeB1Token(item)),
+        ...topic.productionExpected.slice(0, 3).map((item) => item.toLowerCase()),
+        ...topic.productionExpected.slice(0, 3).map((item) => normalizeB1Token(item))
       ])
     ),
     productionMode,
