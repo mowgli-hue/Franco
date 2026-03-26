@@ -478,14 +478,80 @@ function buildClbSentencePuzzle(topic: Topic): { tokens: string[]; correctOrder:
   };
 }
 
+type ClbDifficultyProfile = {
+  masteryThresholdPercent: number;
+  speakingMinWords: number;
+  writingMinWords: number;
+  productionInstruction: string;
+  testWritingInstruction: string;
+};
+
+function clbDifficultyProfile(track: ClbTrack, lessonNumber: number): ClbDifficultyProfile {
+  if (track === 'clb5') {
+    if (lessonNumber <= 6) {
+      return {
+        masteryThresholdPercent: 78,
+        speakingMinWords: 16,
+        writingMinWords: 22,
+        productionInstruction: 'Bridge mode: keep it practical and concise with 2-3 clear sentences.',
+        testWritingInstruction: 'Write a short practical response with purpose + one detail.'
+      };
+    }
+    if (lessonNumber <= 14) {
+      return {
+        masteryThresholdPercent: 80,
+        speakingMinWords: 18,
+        writingMinWords: 26,
+        productionInstruction: 'Use context -> action -> support detail in a clear order.',
+        testWritingInstruction: 'Include purpose, one concrete detail, and one clear action.'
+      };
+    }
+    return {
+      masteryThresholdPercent: 82,
+      speakingMinWords: 20,
+      writingMinWords: 28,
+      productionInstruction: 'Benchmark mode: complete and practical response with clear support.',
+      testWritingInstruction: 'Use full benchmark structure with clear purpose, details, and action.'
+    };
+  }
+
+  if (lessonNumber <= 6) {
+    return {
+      masteryThresholdPercent: 83,
+      speakingMinWords: 22,
+      writingMinWords: 34,
+      productionInstruction: 'CLB7 entry ramp: keep structure clear before adding deeper nuance.',
+      testWritingInstruction: 'Write a concise analytical response with one reasoned support point.'
+    };
+  }
+  if (lessonNumber <= 14) {
+    return {
+      masteryThresholdPercent: 84,
+      speakingMinWords: 25,
+      writingMinWords: 38,
+      productionInstruction: 'Use balanced reasoning with at least one connector and one trade-off detail.',
+      testWritingInstruction: 'Include position, support detail, and one implication or next step.'
+    };
+  }
+  return {
+    masteryThresholdPercent: 85,
+    speakingMinWords: 28,
+    writingMinWords: 42,
+    productionInstruction: 'Full CLB7 benchmark response: analytical, coherent, and action-oriented.',
+    testWritingInstruction: 'Deliver a complete benchmark-quality written response with clear structure.'
+  };
+}
+
 function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): StructuredLessonContent {
   const idb = `${track}l${lessonNumber}`;
   const titlePrefix = track === 'clb5' ? 'CLB 5' : 'CLB 7';
   const sessionType = clbProgramSessionType(lessonNumber);
   const sessionLabel = clbSessionTypeLabel(sessionType);
-  const masteryThresholdPercent = track === 'clb5' ? 82 : 85;
-  const writingMinWords = track === 'clb5' ? 28 : 42;
-  const speakingMinWords = track === 'clb5' ? 20 : 28;
+  const difficulty = clbDifficultyProfile(track, lessonNumber);
+  const masteryThresholdPercent = difficulty.masteryThresholdPercent;
+  const writingMinWords = difficulty.writingMinWords;
+  const speakingMinWords = difficulty.speakingMinWords;
+  const isEarlyRamp = (track === 'clb5' && lessonNumber <= 8) || (track === 'clb7' && lessonNumber <= 6);
   const productionMode: Topic['productionMode'] =
     sessionType === 'speaking'
       ? 'spoken'
@@ -495,7 +561,9 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
           ? 'mixed'
           : topic.productionMode;
   const productionPromptTail =
-    sessionType === 'review'
+    isEarlyRamp
+      ? ' Keep the response clear and practical (2-3 short sentences) before adding complexity.'
+      : sessionType === 'review'
       ? ' Add one correction from a past mistake.'
       : sessionType === 'benchmark'
         ? ' Keep it complete and benchmark-ready.'
@@ -503,7 +571,9 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
   const grammarAnchor = topic.grammarTargets[0] ?? 'task language pattern';
   const sentencePuzzle = buildClbSentencePuzzle(topic);
   const scenarioExplanation =
-    sessionType === 'review'
+    isEarlyRamp
+      ? `Entry ramp: build stable ${titlePrefix} control for ${topic.focus.toLowerCase()} before full benchmark pressure.`
+      : sessionType === 'review'
       ? `Review: reinforce ${topic.focus.toLowerCase()} and fix one recurring mistake.`
       : sessionType === 'benchmark'
         ? `Benchmark: apply ${topic.focus.toLowerCase()} with minimal hints and full completion.`
@@ -662,7 +732,7 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
         productionTask: {
           id: `${idb}-prod`,
           title: `${titlePrefix} Performance Task`,
-          instructions: 'Complete in order: context, action, support.',
+          instructions: `${difficulty.productionInstruction} Complete in order: context, action, support.`,
           mode: productionMode,
           mandatory: true,
           targetMinutes: 6,
@@ -724,7 +794,9 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
             acceptedAnswers: Array.from(
               new Set([
                 ...topic.vocabularyTargets.slice(0, 4).map((item) => item.toLowerCase()),
-                ...topic.vocabularyTargets.slice(0, 4).map((item) => normalizeClbToken(item))
+                ...topic.vocabularyTargets.slice(0, 4).map((item) => normalizeClbToken(item)),
+                ...topic.productionExpected.slice(0, 3).map((item) => item.toLowerCase()),
+                ...topic.productionExpected.slice(0, 3).map((item) => normalizeClbToken(item))
               ])
             ),
             normalizeAccents: true,
@@ -735,7 +807,7 @@ function makeClbLesson(track: ClbTrack, lessonNumber: number, topic: Topic): Str
           {
             id: `${idb}-t3`,
             kind: 'writingPrompt',
-            prompt: topic.writingPrompt,
+            prompt: `${topic.writingPrompt} ${difficulty.testWritingInstruction}`,
             expectedElements: topic.writingExpected,
             minWords: writingMinWords,
             rubricFocus: ['taskCompletion', 'grammar', 'coherence', 'vocabulary'],
