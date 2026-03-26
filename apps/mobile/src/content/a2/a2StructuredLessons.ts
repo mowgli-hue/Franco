@@ -388,7 +388,7 @@ function makeA2Lesson(spec: A2Spec): StructuredLessonContent {
   const context = spec.authoredContext ?? A2_AUTHORED_CONTEXTS[spec.lessonNumber];
   const grammarAnchor = spec.grammarTargets[0] ?? 'target form';
   const isStarterRamp = spec.lessonNumber <= 2;
-  const isEarlyRamp = spec.lessonNumber <= 5;
+  const isEarlyRamp = spec.lessonNumber <= 10;
   const spokenMinWords = isStarterRamp ? 7 : isEarlyRamp ? 8 : 10;
   const writingMinWords = isStarterRamp ? 12 : isEarlyRamp ? 14 : 16;
   const miniTestWritingMinWords = isStarterRamp ? 14 : isEarlyRamp ? 16 : 18;
@@ -815,7 +815,7 @@ const A2_SPECS: A2Spec[] = [
     shortPrompt: 'Type the French word for landlord/owner.',
     shortAnswers: ['propriétaire', 'proprietaire'],
     productionMode: 'written',
-    productionPrompt: 'Write a short landlord message about a housing problem and requested action.',
+    productionPrompt: 'Write 2 short lines to your landlord: state one housing problem and one repair request.',
     productionExpected: ['appartement', 'problème', 'pouvez-vous'],
     productionSample: "Bonjour, j'ai un problème dans l'appartement. Le chauffage ne marche pas.",
     testPrompt: 'Which is a clear repair request?',
@@ -827,7 +827,7 @@ const A2_SPECS: A2Spec[] = [
     ],
     testCorrect: 0,
     testWrong: 'Use pouvez-vous + infinitif for a clear request.',
-    writingPrompt: 'Write a 2-3 line landlord message (problem + request + time detail).',
+    writingPrompt: 'Write a simple landlord message (2-3 lines): problem + request + one time detail.',
     writingExpected: ['chauffage', 'pouvez-vous'],
     writingSample: 'Bonjour, le chauffage ne marche pas dans mon appartement. Pouvez-vous venir demain soir ?'
   },
@@ -851,10 +851,10 @@ const A2_SPECS: A2Spec[] = [
     shortPrompt: 'Type the French word for pharmacy.',
     shortAnswers: ['pharmacie'],
     productionMode: 'spoken',
-    productionPrompt: 'Describe one symptom and ask for help at a pharmacy (2-3 lines).',
+    productionPrompt: 'Say 2 short lines: one symptom + one polite pharmacy request.',
     productionExpected: ['j’ai mal', 'pharmacie'],
     productionSample: "Bonjour, j'ai mal à la tête depuis ce matin. Je cherche un médicament, s'il vous plaît.",
-    testPrompt: 'Which line asks for medicine?',
+    testPrompt: 'Which line directly asks for medicine?',
     testOptions: [
       'Je cherche un médicament.',
       "J'ai besoin d'un conseil.",
@@ -863,7 +863,7 @@ const A2_SPECS: A2Spec[] = [
     ],
     testCorrect: 0,
     testWrong: 'Use chercher + item to request what you need.',
-    writingPrompt: 'Write a short pharmacy request (symptom + what you need + polite close).',
+    writingPrompt: 'Write a short pharmacy request (2-3 lines: symptom + medicine request).',
     writingExpected: ['mal', 'médicament'],
     writingSample: "Bonjour, j'ai mal à la gorge. Je cherche un médicament pour la toux. Merci."
   },
@@ -875,11 +875,11 @@ const A2_SPECS: A2Spec[] = [
     vocabularyTargets: ['horaire', 'disponible', 'quart', 'matin', 'soir'],
     grammarTargets: ['Schedule statements', 'Availability forms'],
     sampleTeach: ['Mon horaire change cette semaine.', 'Je suis disponible le soir.'],
-    mcqPrompt: 'Choose the sentence about availability.',
+    mcqPrompt: 'Choose the sentence that clearly states availability.',
     mcqOptions: [
-      'Je suis disponible jeudi.',
-      'Mon horaire change cette semaine.',
       'Je suis disponible mardi soir.',
+      'Mon horaire change cette semaine.',
+      'Je change mon horaire demain.',
       'Merci pour la confirmation.'
     ],
     mcqCorrect: 0,
@@ -887,7 +887,7 @@ const A2_SPECS: A2Spec[] = [
     shortPrompt: 'Type the French word for schedule.',
     shortAnswers: ['horaire'],
     productionMode: 'mixed',
-    productionPrompt: 'Explain your availability and request a schedule change politely.',
+    productionPrompt: 'Give your availability and ask one polite schedule-change question.',
     productionExpected: ['disponible', 'horaire'],
     productionSample: 'Je suis disponible vendredi matin. Est-ce possible de changer mon horaire ?',
     testPrompt: 'Which sentence requests a schedule change politely?',
@@ -911,10 +911,10 @@ const A2_SPECS: A2Spec[] = [
     vocabularyTargets: ['service', 'bureau', 'document', 'formulaire', 'aide'],
     grammarTargets: ['Practical service-desk questions'],
     sampleTeach: ['Je cherche le bureau des services.', "J'ai besoin d'aide pour ce formulaire."],
-    mcqPrompt: 'Choose the sentence that explains a service need.',
+    mcqPrompt: 'Choose the clearest sentence explaining a service need.',
     mcqOptions: [
       "J'ai besoin d'aide pour ce formulaire.",
-      'Bonjour, je cherche ce service.',
+      'Bonjour, je cherche le bon service.',
       "J'ai un document à compléter.",
       'Merci pour votre aide.'
     ],
@@ -926,12 +926,12 @@ const A2_SPECS: A2Spec[] = [
     productionPrompt: 'Ask for help at a service office and explain what form/document you need.',
     productionExpected: ['aide', 'formulaire'],
     productionSample: "Bonjour, j'ai besoin d'aide pour ce formulaire. Où est le bon bureau ?",
-    testPrompt: 'Which line asks where to go?',
+    testPrompt: 'Which line asks where to go in the office?',
     testOptions: [
       'Où est le bon bureau ?',
-      'Pouvez-vous me diriger vers le bon service ?',
       "J'ai besoin d'aide pour ce formulaire.",
-      'Merci pour votre réponse.'
+      'Merci pour votre réponse.',
+      'Je remplis le formulaire.'
     ],
     testCorrect: 0,
     testWrong: 'Use Où est... ? for location/help desk navigation.',
@@ -954,13 +954,13 @@ const A2_SPECS: A2Spec[] = [
     shortPrompt: 'Type the French verb meaning "to cancel" (infinitive).',
     shortAnswers: ['annuler'],
     productionMode: 'written',
-    productionPrompt: 'Write a short response to confirm or reschedule an appointment with one detail.',
+    productionPrompt: 'Write a short reply (2 lines) to confirm or reschedule an appointment with one detail.',
     productionExpected: ['rendez-vous'],
     productionSample: 'Bonjour, je confirme mon rendez-vous de jeudi. Merci.',
-    testPrompt: 'Which is a good callback response?',
+    testPrompt: 'Which is the clearest callback response?',
     testOptions: [
-      'Je confirme le rendez-vous.',
       'Je rappelle pour confirmer la date.',
+      'Je confirme le rendez-vous.',
       'Je peux venir jeudi après-midi.',
       'Merci pour votre message.'
     ],
