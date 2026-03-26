@@ -389,10 +389,11 @@ function makeA2Lesson(spec: A2Spec): StructuredLessonContent {
   const grammarAnchor = spec.grammarTargets[0] ?? 'target form';
   const isStarterRamp = spec.lessonNumber <= 2;
   const isEarlyRamp = spec.lessonNumber <= 10;
-  const spokenMinWords = isStarterRamp ? 7 : isEarlyRamp ? 8 : 10;
-  const writingMinWords = isStarterRamp ? 12 : isEarlyRamp ? 14 : 16;
-  const miniTestWritingMinWords = isStarterRamp ? 14 : isEarlyRamp ? 16 : 18;
-  const masteryThresholdPercent = isStarterRamp ? 72 : isEarlyRamp ? 74 : 78;
+  const isMidRamp = spec.lessonNumber <= 20;
+  const spokenMinWords = isStarterRamp ? 7 : isEarlyRamp ? 8 : isMidRamp ? 9 : 10;
+  const writingMinWords = isStarterRamp ? 12 : isEarlyRamp ? 14 : isMidRamp ? 15 : 16;
+  const miniTestWritingMinWords = isStarterRamp ? 14 : isEarlyRamp ? 16 : isMidRamp ? 17 : 18;
+  const masteryThresholdPercent = isStarterRamp ? 72 : isEarlyRamp ? 74 : isMidRamp ? 76 : 78;
   return {
     id: `a2-structured-${spec.lessonNumber}`,
     curriculumLessonId: `a2-lesson-${spec.lessonNumber}`,
@@ -990,7 +991,7 @@ const A2_SPECS: A2Spec[] = [
     shortPrompt: 'Type the phrase that means "I am writing to you".',
     shortAnswers: ['je vous écris', 'je vous ecris'],
     productionMode: 'written',
-    productionPrompt: 'Write a short email to request or reschedule an appointment (3-4 lines, formal tone).',
+    productionPrompt: 'Write a short practical email (2-3 lines) to request or reschedule an appointment.',
     productionExpected: ['bonjour', 'rendez-vous', 'merci'],
     productionSample: "Bonjour, je vous écris pour demander un rendez-vous la semaine prochaine. Merci.",
     testPrompt: 'Which line clearly states email purpose?',
@@ -1002,7 +1003,7 @@ const A2_SPECS: A2Spec[] = [
     ],
     testCorrect: 0,
     testWrong: 'State the purpose directly in the first line.',
-    writingPrompt: 'Write a short practical email (request/reschedule/explain) with greeting, purpose, and closing.',
+    writingPrompt: 'Write a short practical email (2-3 lines) with greeting, purpose, and closing.',
     writingExpected: ['bonjour', 'merci'],
     writingSample: "Bonjour, je vous écris pour reporter mon rendez-vous de mardi. Merci de votre aide."
   },
@@ -1026,7 +1027,7 @@ const A2_SPECS: A2Spec[] = [
     shortPrompt: 'Type one key A2 practical noun you studied (appointment / problem / form).',
     shortAnswers: ['rendez-vous', 'probleme', 'problème', 'formulaire'],
     productionMode: 'mixed',
-    productionPrompt: 'Complete a practical scenario: explain a problem, ask for help, and give one key detail (time/day/document).',
+    productionPrompt: 'Complete a practical scenario in 2-3 lines: explain one problem, ask for help, and add one key detail.',
     productionExpected: ['problème', 'aide'],
     productionSample: "Bonjour, j'ai un problème avec mon rendez-vous. Pouvez-vous m'aider ? Je suis disponible demain matin.",
     testPrompt: 'Which response is most complete for A2 practical communication?',
@@ -1038,7 +1039,7 @@ const A2_SPECS: A2Spec[] = [
     ],
     testCorrect: 0,
     testWrong: 'A complete A2 response names the issue and the need.',
-    writingPrompt: 'Write a short practical message (3-4 lines) explaining a problem and requesting help clearly.',
+    writingPrompt: 'Write a short practical message (2-3 lines) explaining a problem and requesting help clearly.',
     writingExpected: ['problème', 'aide'],
     writingSample: "Bonjour, j'ai un problème avec mon horaire de jeudi. J'ai besoin d'aide pour changer mon rendez-vous."
   }
@@ -1400,6 +1401,7 @@ function buildA2GeneratedShortPrompt(topic: (typeof A2_GENERATED_TOPICS)[number]
 function makeGeneratedA2Spec(lessonNumber: number, topicIndex: number): A2Spec {
   const topic = A2_GENERATED_TOPICS[topicIndex % A2_GENERATED_TOPICS.length];
   const sessionType = a2ProgramSessionType(lessonNumber);
+  const isMidRampGenerated = lessonNumber <= 20;
   const sessionLabel = a2SessionTypeLabel(sessionType);
   const productionMode: A2Spec['productionMode'] =
     sessionType === 'speaking'
@@ -1430,11 +1432,13 @@ function makeGeneratedA2Spec(lessonNumber: number, topicIndex: number): A2Spec {
         : `Pick the best A2 sentence for: ${topic.focus.toLowerCase()}.`,
     mcqOptions: buildA2GeneratedMcqOptions(topic, sessionType),
     mcqCorrect: 0,
-    mcqWrong: 'Use a complete practical sentence with clear purpose.',
+    mcqWrong: isMidRampGenerated
+      ? 'Choose the clearest practical sentence with one concrete detail.'
+      : 'Use a complete practical sentence with clear purpose.',
     shortPrompt: buildA2GeneratedShortPrompt(topic, sessionType),
     shortAnswers: buildA2GeneratedShortAnswers(topic),
     productionMode,
-    productionPrompt: `${topic.productionPrompt}${promptTail}`,
+    productionPrompt: `${topic.productionPrompt}${promptTail}${isMidRampGenerated ? ' Keep it short (2-3 lines).' : ''}`,
     productionExpected: topic.productionExpected,
     productionSample: topic.productionSample,
     testPrompt:
@@ -1443,11 +1447,13 @@ function makeGeneratedA2Spec(lessonNumber: number, topicIndex: number): A2Spec {
         : 'Which response is the most complete and practical?',
     testOptions: buildA2GeneratedTestOptions(topic, sessionType),
     testCorrect: 0,
-    testWrong: 'At A2, include practical context plus one detail.',
+    testWrong: isMidRampGenerated
+      ? 'At this stage, include one clear context and one useful detail.'
+      : 'At A2, include practical context plus one detail.',
     writingPrompt:
       sessionType === 'writing'
-        ? `${topic.writingPrompt} Include greeting, purpose, and one concrete detail.`
-        : topic.writingPrompt,
+        ? `${topic.writingPrompt} Include greeting, purpose, and one concrete detail.${isMidRampGenerated ? ' Keep to 2-3 lines.' : ''}`
+        : `${topic.writingPrompt}${isMidRampGenerated ? ' Keep to 2-3 lines.' : ''}`,
     writingExpected: topic.writingExpected,
     writingSample: topic.writingSample,
     authoredContext: {
