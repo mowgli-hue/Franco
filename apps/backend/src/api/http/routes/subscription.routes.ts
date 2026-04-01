@@ -339,3 +339,22 @@ subscriptionRouter.post('/sync-from-stripe', async (req, res) => {
     return res.status(400).json({ ok: false, message });
   }
 });
+
+subscriptionRouter.post('/admin-grant', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ ok: false, message: 'userId required' });
+    await upsertSubscriptionProfileFromStripe({
+      userId,
+      planType: 'pro',
+      subscriptionStatus: 'active',
+      stripeCustomerId: undefined,
+      stripeSubscriptionId: undefined,
+      stripePriceId: undefined
+    });
+    return res.json({ ok: true, message: `Premium granted to ${userId}` });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unexpected error';
+    return res.status(400).json({ ok: false, message });
+  }
+});
